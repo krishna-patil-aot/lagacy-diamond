@@ -1,0 +1,40 @@
+import { z } from "zod";
+
+export const diamondFormSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters").max(100),
+  sku: z.string().min(3, "SKU is required").max(30),
+  shape: z.enum([
+    "Round",
+    "Princess",
+    "Cushion",
+    "Emerald",
+    "Oval",
+    "Radiant",
+    "Pear",
+    "Marquise",
+    "Asscher",
+    "Heart",
+  ]),
+  carat: z.coerce.number().min(0.1, "Carat must be at least 0.1ct").max(50),
+  color: z.enum(["D", "E", "F", "G", "H", "I", "J", "K"]),
+  clarity: z.enum(["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2"]),
+  cut: z.enum(["Ideal", "Excellent", "Very Good", "Good"]),
+  price: z.coerce.number().min(100, "Price must be at least $100"),
+  discountPercentage: z.coerce.number().min(0).max(90),
+  lab: z.enum(["GIA", "IGI", "AGS", "HRD"]),
+  certificateNumber: z.string().min(3, "Certificate number is required"),
+  length: z.coerce.number().min(0.1, "Length is required"),
+  width: z.coerce.number().min(0.1, "Width is required"),
+  depth: z.coerce.number().min(0.1, "Depth is required"),
+  tablePercentage: z.coerce.number().min(30).max(90),
+  depthPercentage: z.coerce.number().min(30).max(90),
+  polish: z.enum(["Ideal", "Excellent", "Very Good", "Good"]),
+  symmetry: z.enum(["Ideal", "Excellent", "Very Good", "Good"]),
+  fluorescence: z.enum(["None", "Faint", "Medium", "Strong"]),
+  images: z.array(z.string()).min(1, "At least one image URL is required"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  stockQuantity: z.coerce.number().min(0),
+  featured: z.boolean(),
+});
+
+export type DiamondFormValues = z.infer<typeof diamondFormSchema>;
