@@ -10,9 +10,9 @@ export function Footer() {
           © 2026 Legacy Diamond Foundry Inc. All rights reserved.
         </p>
         <p className="text-stone-600 flex items-center justify-center gap-1.5 flex-wrap">
-          <span className="text-stone-500">Site Architect & Lead Engineer:</span>
+          <span className="text-stone-500">Software Engineer:</span>
           <Link
-            href="https://www.linkedin.com/in/krishnapatil"
+            href="https://www.linkedin.com/in/krishnapatil-dev"
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold text-stone-900 hover:text-amber-800 underline underline-offset-4 decoration-stone-300 hover:decoration-amber-800 transition-colors inline-flex items-center gap-1 group"
@@ -26,5 +26,3 @@ export function Footer() {
     </footer>
   );
 }
-
-
