@@ -9,6 +9,8 @@ export type OrderStatus =
   | "DELIVERED"
   | "CANCELLED";
 
+export type IOrderItem = IDiamond;
+
 export interface IShippingAddress {
   fullName: string;
   email: string;
@@ -67,3 +69,10 @@ export interface ICouponRule {
   discountPercentage: number;
   description: string;
 }
+
+export interface ISendOrderDocumentsResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+

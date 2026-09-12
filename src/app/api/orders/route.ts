@@ -37,23 +37,21 @@ export async function POST(request: NextRequest) {
         status: "PENDING_APPROVAL",
         createdAt: new Date().toISOString(),
       },
-      verified?.userId
+      verified?.userId,
+      verified?.email
     );
 
-    // Send order receipt email (under review - no invoice issued until approved by curator)
-    try {
-      if (newOrder.shippingAddress?.email) {
-        await sendOrderReceiptPendingEmail({
-          to: newOrder.shippingAddress.email,
-          clientName: newOrder.shippingAddress.fullName,
-          orderNumber: newOrder.orderNumber || newOrder.id,
-          totalAmount: newOrder.totalAmount,
-          itemCount: newOrder.items.length,
-        });
-      }
-    } catch (emailError) {
-      // Log dispatch error but do not fail order creation
-      console.error("[Order Mailer Pipeline Error]:", emailError);
+    // Dispatch acknowledgement email (Pending Curator Review - No Invoice or Certificate attached yet)
+    if (newOrder.shippingAddress?.email) {
+      sendOrderReceiptPendingEmail({
+        to: newOrder.shippingAddress.email,
+        clientName: newOrder.shippingAddress.fullName || "Valued Client",
+        orderNumber: newOrder.orderNumber || newOrder.id,
+        totalAmount: newOrder.totalAmount,
+        itemCount: newOrder.items.length,
+      }).catch((emailError) => {
+        console.error("[Order Mailer Pipeline Error]:", emailError);
+      });
     }
 
     return NextResponse.json({ success: true, data: newOrder }, { status: 201 });
@@ -78,7 +76,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const orders = await getUserOrders(verified.userId, verified.email);
+    // A client's "My Orders" endpoint must strictly return only their own orders
+    const orders = await getUserOrders(
+      verified.userId,
+      verified.email,
+      false
+    );
     return NextResponse.json({ success: true, data: orders });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch orders";

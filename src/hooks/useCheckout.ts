@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ICouponRule, IOrder } from "@/types/order.types";
+import { broadcastOrderEvent, ORDER_EVENTS } from "@/lib/order-events";
 import { toast } from "sonner";
 
 export type CheckoutStep =
@@ -46,7 +47,7 @@ export interface IUseCheckoutReturn {
 }
 
 export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, token, isAuthenticated } = useAuthStore();
   const [step, setStep] = useState<CheckoutStep>("CART");
   const [couponInput, setCouponInput] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<ICouponRule | null>(null);
@@ -176,12 +177,12 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      const token =
-        typeof window !== "undefined"
+      const authToken =
+        (typeof window !== "undefined"
           ? localStorage.getItem("diamond_auth_token")
-          : null;
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+          : null) || token;
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
       }
 
       const res = await fetch("/api/orders", {
@@ -198,6 +199,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
           createdOrder.id || createdOrder.orderNumber || orderId,
         );
       } else {
+        console.error("[Checkout Server Error]:", json.error);
         const fallbackOrder: IOrder = {
           ...orderPayload,
           id: orderId,
@@ -206,8 +208,10 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
         };
         addOrder(fallbackOrder);
         setSubmittedOrderId(orderId);
+        broadcastOrderEvent(ORDER_EVENTS.ORDER_PLACED, orderId, orderId);
       }
-    } catch {
+    } catch (err) {
+      console.error("[Checkout Network Error]:", err);
       const fallbackOrder: IOrder = {
         ...orderPayload,
         id: orderId,
@@ -216,6 +220,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       };
       addOrder(fallbackOrder);
       setSubmittedOrderId(orderId);
+      broadcastOrderEvent(ORDER_EVENTS.ORDER_PLACED, orderId, orderId);
     } finally {
       clearCart();
       setIsProcessing(false);

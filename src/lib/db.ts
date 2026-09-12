@@ -1,12 +1,16 @@
 import mongoose from "mongoose";
 import dns from "node:dns";
 
-// Fix Node.js on Windows querySrv ECONNREFUSED for mongodb+srv URIs
-try {
-  dns.setServers(["8.8.8.8", "8.8.4.4"]);
-} catch {
-  // Ignore in restricted environments
+function configureDns() {
+  try {
+    dns.setDefaultResultOrder?.("ipv4first");
+    dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+  } catch {
+    // Ignore in restricted environments
+  }
 }
+
+configureDns();
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -35,11 +39,13 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
     return cached.conn;
   }
 
+  configureDns();
+
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
       dbName: "diamond_luxury",
-      serverSelectionTimeoutMS: 6000,
+      serverSelectionTimeoutMS: 8000,
     };
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => m);
   }
@@ -49,6 +55,7 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
     return cached.conn;
   } catch (e) {
     cached.promise = null;
+    cached.conn = null;
     console.error("⚠️ [MongoDB Connection Warning]:", e instanceof Error ? e.message : e);
     return null;
   }

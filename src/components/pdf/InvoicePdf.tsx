@@ -252,7 +252,7 @@ export function InvoicePdf({
             <Text style={styles.invoiceTitle}>Official Invoice</Text>
             <Text style={styles.invoiceNum}>INV #: {invoiceNumber}</Text>
             <Text style={styles.metaText}>Date: {issueDate}</Text>
-            <Text style={styles.metaText}>Order ID: #{order.id.slice(-8).toUpperCase()}</Text>
+            <Text style={styles.metaText}>Order ID: #{order.orderNumber || (order.id ? order.id.slice(-8).toUpperCase() : "ORDER")}</Text>
             <Text style={styles.metaText}>Status: {paymentStatus}</Text>
           </View>
         </View>
@@ -261,14 +261,14 @@ export function InvoicePdf({
         <View style={styles.addressSection}>
           <View style={styles.addressCol}>
             <Text style={styles.sectionTitle}>Billed & Shipped To</Text>
-            <Text style={styles.clientName}>{order.shippingAddress.fullName}</Text>
-            <Text style={styles.addressText}>{order.shippingAddress.street}</Text>
+            <Text style={styles.clientName}>{order.shippingAddress?.fullName || "Valued Client"}</Text>
+            <Text style={styles.addressText}>{order.shippingAddress?.street || ""}</Text>
             <Text style={styles.addressText}>
-              {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-              {order.shippingAddress.postalCode}
+              {order.shippingAddress?.city || ""}, {order.shippingAddress?.state || ""}{" "}
+              {order.shippingAddress?.postalCode || ""}
             </Text>
-            <Text style={styles.addressText}>{order.shippingAddress.country}</Text>
-            <Text style={styles.addressText}>Email: {order.shippingAddress.email}</Text>
+            <Text style={styles.addressText}>{order.shippingAddress?.country || ""}</Text>
+            <Text style={styles.addressText}>Email: {order.shippingAddress?.email || ""}</Text>
           </View>
 
           <View style={styles.addressCol}>
@@ -277,7 +277,7 @@ export function InvoicePdf({
             <Text style={styles.addressText}>Origin: Diamond Foundry Vault 1</Text>
             <Text style={styles.addressText}>Biometric Signature Required: Yes</Text>
             <Text style={styles.addressText}>
-              Payment Channel: {order.paymentInfo.method.replace("_", " ")}
+              Payment Channel: {order.paymentInfo?.method ? order.paymentInfo.method.replace("_", " ") : "SECURE PAYMENT"}
             </Text>
           </View>
         </View>
@@ -299,29 +299,39 @@ export function InvoicePdf({
             </View>
           </View>
 
-          {order.items.map((item, index) => (
-            <View key={item._id || index} style={styles.tableRow}>
-              <View style={styles.thCol1}>
-                <Text style={styles.tdTitle}>{item.name}</Text>
-                <Text style={styles.tdSubtitle}>
-                  SKU: {item.sku} • {item.shape} Shape
-                </Text>
+          {(order.items || []).map((item, index) => {
+            const priceDisplay = (
+              typeof item.finalPrice === "number"
+                ? item.finalPrice
+                : typeof item.price === "number"
+                ? item.price
+                : 0
+            ).toLocaleString();
+
+            return (
+              <View key={item._id || index} style={styles.tableRow}>
+                <View style={styles.thCol1}>
+                  <Text style={styles.tdTitle}>{item.name || "Certified Diamond"}</Text>
+                  <Text style={styles.tdSubtitle}>
+                    SKU: {item.sku || "DIA"} • {item.shape || "Round"} Shape
+                  </Text>
+                </View>
+                <View style={styles.thCol2}>
+                  <Text style={styles.tdTextCenter}>
+                    {item.carat || 1}ct • {item.color || "F"} • {item.clarity || "VS1"}
+                  </Text>
+                  <Text style={styles.tdSubtitle}>{item.cut || "Ideal"} Cut</Text>
+                </View>
+                <View style={styles.thCol3}>
+                  <Text style={styles.tdTextCenter}>{item.lab || "GIA"}</Text>
+                  <Text style={styles.tdSubtitle}>#{item.certificateNumber || "GENUINE"}</Text>
+                </View>
+                <View style={styles.thCol4}>
+                  <Text style={styles.tdTextRight}>${priceDisplay}</Text>
+                </View>
               </View>
-              <View style={styles.thCol2}>
-                <Text style={styles.tdTextCenter}>
-                  {item.carat}ct • {item.color} • {item.clarity}
-                </Text>
-                <Text style={styles.tdSubtitle}>{item.cut} Cut</Text>
-              </View>
-              <View style={styles.thCol3}>
-                <Text style={styles.tdTextCenter}>{item.lab}</Text>
-                <Text style={styles.tdSubtitle}>#{item.certificateNumber}</Text>
-              </View>
-              <View style={styles.thCol4}>
-                <Text style={styles.tdTextRight}>${item.finalPrice.toLocaleString()}</Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Totals & Payment Info */}
@@ -336,12 +346,12 @@ export function InvoicePdf({
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalVal}>${order.subtotal.toLocaleString()}</Text>
+              <Text style={styles.totalVal}>${(order.subtotal || 0).toLocaleString()}</Text>
             </View>
-            {order.couponDiscount > 0 && (
+            {(order.couponDiscount || 0) > 0 && (
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>VIP Coupon Discount</Text>
-                <Text style={styles.totalVal}>-${order.couponDiscount.toLocaleString()}</Text>
+                <Text style={styles.totalVal}>-${(order.couponDiscount || 0).toLocaleString()}</Text>
               </View>
             )}
             <View style={styles.totalRow}>
@@ -350,7 +360,7 @@ export function InvoicePdf({
             </View>
             <View style={styles.grandTotalRow}>
               <Text style={styles.grandTotalLabel}>Total Paid</Text>
-              <Text style={styles.grandTotalVal}>${order.totalAmount.toLocaleString()} USD</Text>
+              <Text style={styles.grandTotalVal}>${(order.totalAmount || 0).toLocaleString()} USD</Text>
             </View>
           </View>
         </View>

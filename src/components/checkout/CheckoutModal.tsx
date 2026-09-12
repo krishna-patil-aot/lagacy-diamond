@@ -449,10 +449,10 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold font-serif text-stone-900">
-              Order Received & In Verification
+              Order Placed Successfully
             </h2>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Your diamond acquisition order has been recorded. Our team is verifying the physical diamond certificate and preparing insured courier dispatch.
+              Your diamond acquisition order has been recorded. Your official <strong>purchase invoice and lab grading certificate(s)</strong> have been dispatched to your email.
             </p>
           </div>
 

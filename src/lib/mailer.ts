@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 import { IEmailDispatchPayload, IEmailDispatchResult } from "@/types/pdf.types";
+import { IOrder } from "@/types/order.types";
+import { generateOrderDocuments } from "@/lib/pdf-generator";
 
 /**
  * Get configured Nodemailer Transporter
@@ -39,6 +41,7 @@ export async function sendOrderInvoiceAndCertificatesEmail(
         `\nOrder: #${payload.orderNumber}` +
         `\nAmount: $${payload.totalAmount.toLocaleString()}` +
         `\nAttachments: Invoice PDF (${payload.invoicePdfBuffer.length} bytes), ${payload.certificatePdfBuffers.length} Lab Certificate(s)` +
+        `\nSubject: ${payload.subject || `Order #${payload.orderNumber} Confirmed - Official Invoice & Lab Certificate(s)`}` +
         `\nNote: To dispatch live emails to client Gmail, set GMAIL_USER and GMAIL_APP_PASSWORD in .env.local\n`,
     );
 
@@ -62,22 +65,40 @@ export async function sendOrderInvoiceAndCertificatesEmail(
       })),
     ];
 
+    const subject =
+      payload.subject ||
+      `Order #${payload.orderNumber} Confirmed - Official Invoice & Lab Certificate(s) - Legacy Diamond`;
+    const badgeText =
+      payload.badgeText || "ORDER PURCHASE SUCCESSFUL • OFFICIAL CERTIFICATION ISSUED";
+    const statusTitle =
+      payload.statusTitle || `Order #${payload.orderNumber} Confirmed & Certified`;
+    const customMessage =
+      payload.customMessage ||
+      `Thank you for your purchase! Your gemstone order <strong>#${payload.orderNumber}</strong> has been successfully placed. Attached to this email, please find your official <strong>Purchase & Tax Invoice</strong> and official <strong>Lab Authorized Certificate(s) of Authenticity & Grading</strong>.`;
+    const fulfillmentStatus =
+      payload.fulfillmentStatus || "Payment Confirmed & Invoiced";
+
+    const certCountText =
+      payload.certificatePdfBuffers.length === 1
+        ? "1 Lab Certificate"
+        : `${payload.certificatePdfBuffers.length} Lab Certificates`;
+
     const htmlBody = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f0e0c; color: #f5f5f4; border: 1px solid #332b1a; border-radius: 12px; overflow: hidden;">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #1c1917 0%, #0c0a09 100%); padding: 32px 24px; text-align: center; border-bottom: 2px solid #c59b27;">
           <h1 style="color: #e8c567; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Legacy Diamond Foundry</h1>
-          <p style="color: #a8a29e; font-size: 11px; margin: 6px 0 0; letter-spacing: 1px;">ORDER HAND-DELIVERED & FULFILLED</p>
+          <p style="color: #a8a29e; font-size: 11px; margin: 6px 0 0; letter-spacing: 1px;">${badgeText}</p>
         </div>
 
         <!-- Body -->
         <div style="padding: 32px 24px;">
-          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0;">Order #${payload.orderNumber} Delivered & Signed</h2>
+          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0;">${statusTitle}</h2>
           <p style="color: #d6d3d1; font-size: 14px; line-height: 1.6;">
             Dear <strong>${payload.clientName}</strong>,
           </p>
           <p style="color: #d6d3d1; font-size: 14px; line-height: 1.6;">
-            Your order <strong>#${payload.orderNumber}</strong> has been successfully hand-delivered and verified under armed courier protocol. Your gemstone acquisition is now complete and fulfilled.
+            ${customMessage}
           </p>
 
           <!-- Order Summary Card -->
@@ -96,21 +117,21 @@ export async function sendOrderInvoiceAndCertificatesEmail(
                 <td style="color: #e8c567; font-weight: bold; text-align: right; padding: 6px 0; font-size: 16px;">$${payload.totalAmount.toLocaleString()} USD</td>
               </tr>
               <tr>
-                <td style="color: #a8a29e; padding: 6px 0;">Fulfillment Status:</td>
-                <td style="color: #4ade80; font-weight: bold; text-align: right; padding: 6px 0;">Hand-Delivered & Signed</td>
+                <td style="color: #a8a29e; padding: 6px 0;">Order Status:</td>
+                <td style="color: #4ade80; font-weight: bold; text-align: right; padding: 6px 0;">${fulfillmentStatus}</td>
               </tr>
             </table>
           </div>
 
           <p style="color: #e8c567; font-size: 13px; font-weight: bold; margin-bottom: 8px;">
-            Attached Official Documentation:
+            Attached Official Documentation (${payload.certificatePdfBuffers.length + 1} Attached PDF Document${payload.certificatePdfBuffers.length > 0 ? "s" : ""}):
           </p>
-          <ul style="color: #a8a29e; font-size: 13px; line-height: 1.7; padding-left: 20px; margin-top: 0;">
+          <ul style="color: #d6d3d1; font-size: 13px; line-height: 1.8; padding-left: 20px; margin-top: 0;">
             <li><strong>Official Purchase & Tax Invoice</strong> (PDF attached)</li>
-            <li><strong>Lab Authorized Certificate of Authenticity & Grading</strong> (PDF attached with security seal & QR)</li>
+            <li><strong>Lab Authorized Certificate(s) of Authenticity & Grading</strong> (${certCountText} attached with individual gemstone grading, security seal & verification QR)</li>
           </ul>
 
-          <p style="color: #78716c; font-size: 12px; line-height: 1.5; margin-top: 24px; border-top: 1px solid #292524; paddingTop: 16px;">
+          <p style="color: #78716c; font-size: 12px; line-height: 1.5; margin-top: 24px; border-top: 1px solid #292524; padding-top: 16px;">
             If you have any questions regarding your acquisition or certificate authenticity, simply reply directly to this email or reach our master gemologist at concierge@legacydiamond.luxury.
           </p>
         </div>
@@ -127,7 +148,7 @@ export async function sendOrderInvoiceAndCertificatesEmail(
     const info = await transporter.sendMail({
       from: `"Legacy Diamond Vault" <${process.env.GMAIL_USER}>`,
       to: payload.to,
-      subject: `Order #${payload.orderNumber} Delivered & Signed - Official Invoice & Lab Certificates - Legacy Diamond`,
+      subject,
       html: htmlBody,
       attachments,
     });
@@ -145,6 +166,46 @@ export async function sendOrderInvoiceAndCertificatesEmail(
       error: errorMsg,
     };
   }
+}
+
+/**
+ * Helper to generate order PDF documents (Invoice + Lab Certificates) and send them in one call (DRY)
+ */
+export async function sendOrderDocumentsEmail(
+  order: IOrder,
+  options?: {
+    subject?: string;
+    badgeText?: string;
+    statusTitle?: string;
+    customMessage?: string;
+    fulfillmentStatus?: string;
+  },
+): Promise<IEmailDispatchResult> {
+  const recipientEmail = order.shippingAddress?.email;
+  if (!recipientEmail) {
+    return {
+      success: false,
+      error: "No recipient email found in shipping address.",
+    };
+  }
+
+  const { invoiceBuffer, certificateBuffers } =
+    await generateOrderDocuments(order);
+
+  return sendOrderInvoiceAndCertificatesEmail({
+    to: recipientEmail,
+    clientName: order.shippingAddress?.fullName || "Valued Client",
+    orderNumber: order.orderNumber || order.id,
+    totalAmount: order.totalAmount || 0,
+    itemCount: (order.items || []).length,
+    invoicePdfBuffer: invoiceBuffer,
+    certificatePdfBuffers: certificateBuffers || [],
+    subject: options?.subject,
+    badgeText: options?.badgeText,
+    statusTitle: options?.statusTitle,
+    customMessage: options?.customMessage,
+    fulfillmentStatus: options?.fulfillmentStatus,
+  });
 }
 
 /**

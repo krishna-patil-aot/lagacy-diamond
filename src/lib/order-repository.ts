@@ -1,7 +1,92 @@
 import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
+import { UserModel } from "@/models/User";
 import { IOrder, OrderStatus, IOrderTimelineEvent } from "@/types/order.types";
+import {
+  IDiamond,
+  DiamondShape,
+  DiamondColor,
+  DiamondClarity,
+  DiamondCut,
+  CertificationLab,
+} from "@/types/diamond.types";
 const memoryOrders: IOrder[] = [];
+
+export function clearMemoryOrders(): void {
+  memoryOrders.length = 0;
+}
+
+/**
+ * Resiliently sanitize an order gemstone item, ensuring complete IDiamond compliance
+ * even if stored under legacy or incomplete schemas without dimensions.
+ */
+export function sanitizeOrderItem(item: unknown, idx = 0): IDiamond {
+  const r = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+  const rawId = r._id || r.id || `dia-${idx}-${Date.now()}`;
+  const name = String(r.name || r.title || "Certified Lab Diamond");
+  const price = typeof r.price === "number" ? r.price : 0;
+  const finalPrice = typeof r.finalPrice === "number" ? r.finalPrice : price;
+  const carat = Number(r.carat) || 1.0;
+  const certNum =
+    r.certificateNumber ||
+    r.certificate ||
+    `GIA-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
+  const rawDimensions =
+    typeof r.dimensions === "object" && r.dimensions
+      ? (r.dimensions as Record<string, unknown>)
+      : {};
+
+  const length =
+    typeof rawDimensions.length === "number" && rawDimensions.length > 0
+      ? rawDimensions.length
+      : Number((carat * 6.5).toFixed(2));
+  const width =
+    typeof rawDimensions.width === "number" && rawDimensions.width > 0
+      ? rawDimensions.width
+      : Number((carat * 6.5).toFixed(2));
+  const depth =
+    typeof rawDimensions.depth === "number" && rawDimensions.depth > 0
+      ? rawDimensions.depth
+      : Number((carat * 4.0).toFixed(2));
+
+  return {
+    _id: String(rawId),
+    name,
+    sku: String(r.sku || `DIA-${String(rawId).slice(-6)}`),
+    shape: (r.shape as DiamondShape) || "Round",
+    carat,
+    color: (r.color as DiamondColor) || "F",
+    clarity: (r.clarity as DiamondClarity) || "VS1",
+    cut: (r.cut as DiamondCut) || "Ideal",
+    price,
+    discountPercentage: Number(r.discountPercentage) || 0,
+    finalPrice,
+    lab: (r.lab as CertificationLab) || "GIA",
+    certificateNumber: String(certNum),
+    dimensions: {
+      length,
+      width,
+      depth,
+    },
+    tablePercentage: typeof r.tablePercentage === "number" ? r.tablePercentage : 58,
+    depthPercentage: typeof r.depthPercentage === "number" ? r.depthPercentage : 61.5,
+    polish: (r.polish as DiamondCut) || "Excellent",
+    symmetry: (r.symmetry as DiamondCut) || "Excellent",
+    fluorescence:
+      (r.fluorescence as "None" | "Faint" | "Medium" | "Strong") || "None",
+    images: Array.isArray(r.images)
+      ? (r.images as string[])
+      : typeof r.image === "string"
+      ? [r.image]
+      : [],
+    description: String(r.description || ""),
+    stockQuantity: typeof r.stockQuantity === "number" ? r.stockQuantity : 1,
+    featured: Boolean(r.featured),
+    createdAt: String(r.createdAt || new Date().toISOString()),
+    updatedAt: String(r.updatedAt || new Date().toISOString()),
+  };
+}
 
 export function sanitizeOrderDoc(doc: {
   _id?: string | { toString(): string };
@@ -28,17 +113,31 @@ export function sanitizeOrderDoc(doc: {
     id: idStr,
     orderNumber: orderNumberStr,
     userId: doc.userId ? String(doc.userId) : undefined,
-    items: doc.items,
-    shippingAddress: doc.shippingAddress,
-    paymentInfo: doc.paymentInfo,
-    subtotal: doc.subtotal,
+    items: Array.isArray(doc.items)
+      ? doc.items.map((item, idx) => sanitizeOrderItem(item, idx))
+      : [],
+    shippingAddress: doc.shippingAddress || {
+      fullName: "Valued Client",
+      email: "client@diamond.luxury",
+      phone: "",
+      street: "",
+      city: "Geneva",
+      state: "",
+      postalCode: "",
+      country: "India",
+    },
+    paymentInfo: doc.paymentInfo || {
+      method: "CREDIT_CARD",
+      couponDiscountPercentage: 0,
+    },
+    subtotal: doc.subtotal || 0,
     couponDiscount: doc.couponDiscount || 0,
-    totalAmount: doc.totalAmount,
-    status: doc.status,
+    totalAmount: doc.totalAmount || 0,
+    status: doc.status || "PENDING_APPROVAL",
     trackingInfo: doc.trackingInfo || {
       carrier: "Brink's Global Armored Services",
       trackingNumber: `BRK-${orderNumberStr}`,
-      vaultOrigin: "Geneva Vault Facility A",
+      vaultOrigin: "Geneva Central Foundry Vault",
       transitType: "ARMORED_GROUND",
       biometricSignatureRequired: true,
       estimatedDeliveryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toLocaleDateString("en-US", {
@@ -48,15 +147,7 @@ export function sanitizeOrderDoc(doc: {
         year: "numeric",
       }),
     },
-    timeline: doc.timeline && doc.timeline.length > 0 ? doc.timeline : [
-      {
-        status: doc.status,
-        title: "Order Received & Verified",
-        description: "Your acquisition request is logged in the foundry vault register.",
-        location: "Geneva Central Foundry Vault",
-        timestamp: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-      },
-    ],
+    timeline: doc.timeline || [],
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : undefined,
     approvedAt: doc.approvedAt,
@@ -65,7 +156,8 @@ export function sanitizeOrderDoc(doc: {
 
 export async function createOrder(
   orderInput: Omit<IOrder, "id">,
-  userId?: string
+  userId?: string,
+  userEmail?: string
 ): Promise<IOrder> {
   const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
   const initialTimeline: IOrderTimelineEvent[] = [
@@ -92,15 +184,66 @@ export async function createOrder(
     }),
   };
 
+  // Resilient sanitization of items to match DB schema guarantees (DRY)
+  const sanitizedItems: IDiamond[] = (orderInput.items || []).map((item, idx) =>
+    sanitizeOrderItem(item, idx)
+  );
+
+  // Resilient sanitization of shipping address
+  const rawAddress = (orderInput.shippingAddress || {}) as unknown as Record<string, unknown>;
+  const resolvedEmail = String(rawAddress.email || userEmail || "client@diamond.luxury").trim().toLowerCase();
+  const sanitizedAddress = {
+    fullName: String(rawAddress.fullName || "Valued Client").trim(),
+    email: resolvedEmail,
+    phone: String(rawAddress.phone || "").trim(),
+    street: String(rawAddress.street || rawAddress.addressLine1 || rawAddress.address || "Curator Vault Custody").trim(),
+    city: String(rawAddress.city || "Geneva").trim(),
+    state: String(rawAddress.state || "").trim(),
+    postalCode: String(rawAddress.postalCode || rawAddress.zipCode || "").trim(),
+    country: String(rawAddress.country || "India").trim(),
+  };
+
+  // Resilient sanitization of payment info
+  const rawPayment = (orderInput.paymentInfo || {}) as unknown as Record<string, unknown>;
+  let normalizedMethod: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW" = "CREDIT_CARD";
+  if (rawPayment.method) {
+    const m = String(rawPayment.method).toUpperCase();
+    if (m.includes("WIRE")) normalizedMethod = "WIRE_TRANSFER";
+    else if (m.includes("ESCROW") || m.includes("VAULT")) normalizedMethod = "VAULT_ESCROW";
+    else normalizedMethod = "CREDIT_CARD";
+  }
+  const sanitizedPayment = {
+    method: normalizedMethod,
+    couponCode: String(rawPayment.couponCode || "").toUpperCase().trim(),
+    couponDiscountPercentage: Number(rawPayment.couponDiscountPercentage) || 0,
+  };
+
   const mongoose = await connectToDatabase();
 
   if (mongoose) {
+    let safeUserId: InstanceType<typeof mongoose.Types.ObjectId> | undefined =
+      userId && mongoose.Types.ObjectId.isValid(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : undefined;
+
+    // If userId was not passed in token, attempt lookup by user email
+    if (!safeUserId && resolvedEmail) {
+      try {
+        const foundUser = await UserModel.findOne({ email: resolvedEmail }).lean();
+        if (foundUser && foundUser._id) {
+          safeUserId = foundUser._id as InstanceType<typeof mongoose.Types.ObjectId>;
+        }
+      } catch {
+        // Continue with undefined safeUserId
+      }
+    }
+
     const newDoc = await OrderModel.create({
       orderNumber,
-      userId: userId || undefined,
-      items: orderInput.items,
-      shippingAddress: orderInput.shippingAddress,
-      paymentInfo: orderInput.paymentInfo,
+      userId: safeUserId,
+      items: sanitizedItems,
+      shippingAddress: sanitizedAddress,
+      paymentInfo: sanitizedPayment,
       subtotal: orderInput.subtotal,
       couponDiscount: orderInput.couponDiscount || 0,
       totalAmount: orderInput.totalAmount,
@@ -118,6 +261,9 @@ export async function createOrder(
     id: `mem-${orderNumber}`,
     orderNumber,
     userId,
+    items: sanitizedItems,
+    shippingAddress: sanitizedAddress,
+    paymentInfo: sanitizedPayment,
     status: "PENDING_APPROVAL",
     trackingInfo: initialTracking,
     timeline: initialTimeline,
@@ -129,27 +275,39 @@ export async function createOrder(
 
 export async function getUserOrders(
   userId?: string,
-  userEmail?: string
+  userEmail?: string,
+  isAdmin: boolean = false
 ): Promise<IOrder[]> {
   const mongoose = await connectToDatabase();
 
   if (mongoose) {
-    const query: Record<string, unknown> = {};
-    if (userId) {
-      query.$or = [{ userId }, { "shippingAddress.email": userEmail?.toLowerCase() }];
-    } else if (userEmail) {
-      query["shippingAddress.email"] = userEmail.toLowerCase();
+    if (isAdmin) {
+      const allDocs = await OrderModel.find({}).sort({ createdAt: -1 }).lean();
+      return allDocs.map(sanitizeOrderDoc);
     }
 
-    const docs = await OrderModel.find(query).sort({ createdAt: -1 }).lean();
+    const orConditions: Array<Record<string, unknown>> = [];
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      orConditions.push({ userId: new mongoose.Types.ObjectId(userId) });
+    }
+    if (userEmail) {
+      orConditions.push({ "shippingAddress.email": userEmail.toLowerCase() });
+    }
+
+    if (orConditions.length === 0) {
+      return [];
+    }
+
+    const docs = await OrderModel.find({ $or: orConditions }).sort({ createdAt: -1 }).lean();
     return docs.map(sanitizeOrderDoc);
   }
 
   // Memory fallback
+  if (isAdmin) return memoryOrders;
   return memoryOrders.filter(
     (o) =>
       (userId && o.userId === userId) ||
-      (userEmail && o.shippingAddress.email.toLowerCase() === userEmail.toLowerCase())
+      (userEmail && o.shippingAddress?.email?.toLowerCase() === userEmail.toLowerCase())
   );
 }
 

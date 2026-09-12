@@ -45,6 +45,11 @@ export interface IEmailDispatchPayload {
     filename: string;
     buffer: Buffer;
   }>;
+  subject?: string;
+  badgeText?: string;
+  statusTitle?: string;
+  customMessage?: string;
+  fulfillmentStatus?: string;
 }
 
 export interface IEmailDispatchResult {

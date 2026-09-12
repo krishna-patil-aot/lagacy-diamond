@@ -34,9 +34,11 @@ export interface IUseAdminOrdersReturn {
   isUpdating: boolean;
 }
 
+import { subscribeToOrderEvents, broadcastOrderEvent, ORDER_EVENTS } from "@/lib/order-events";
+
 export function useAdminOrders(): IUseAdminOrdersReturn {
   const { token, user } = useAuthStore();
-  const { orders: storeOrders, approveOrder, rejectOrder } = useOrderStore();
+  const { approveOrder, rejectOrder, updateOrderStatus } = useOrderStore();
   const [dbOrders, setDbOrders] = useState<IOrder[]>([]);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -44,13 +46,33 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   const [pageSize, setPageSize] = useState<number>(10);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
+  const getEffectiveAuth = useCallback(() => {
+    const activeToken =
+      token ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("diamond_auth_token")
+        : null);
+
+    let activeUser = user;
+    if (!activeUser && typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("diamond_auth_user");
+        if (stored) activeUser = JSON.parse(stored);
+      } catch {
+        // Fallback
+      }
+    }
+    return { activeToken, activeUser };
+  }, [token, user]);
+
   const fetchOrders = useCallback(async () => {
-    if (!token || user?.role !== "ADMIN") return;
+    const { activeToken, activeUser } = getEffectiveAuth();
+    if (!activeToken || activeUser?.role !== "ADMIN") return;
 
     try {
       const res = await fetch("/api/admin/orders", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${activeToken}`,
         },
         cache: "no-store",
       });
@@ -61,17 +83,18 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
     } catch {
       // Fallback to storeOrders
     }
-  }, [token, user]);
+  }, [getEffectiveAuth]);
 
   useEffect(() => {
     let isSubscribed = true;
 
     async function loadAdminOrders() {
-      if (!token || user?.role !== "ADMIN") return;
+      const { activeToken, activeUser } = getEffectiveAuth();
+      if (!activeToken || activeUser?.role !== "ADMIN") return;
       try {
         const res = await fetch("/api/admin/orders", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${activeToken}`,
           },
           cache: "no-store",
         });
@@ -86,16 +109,31 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
 
     void loadAdminOrders();
 
+    // 1. Unified Real-Time Event Subscription (BroadcastChannel, Storage, CustomEvents, Focus)
+    const unsubscribe = subscribeToOrderEvents(() => {
+      void loadAdminOrders();
+    });
+
+    // 2. Live heartbeat polling every 2.5 seconds when admin tab is visible
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void loadAdminOrders();
+      }
+    }, 2500);
+
     return () => {
       isSubscribed = false;
+      unsubscribe();
+      clearInterval(pollInterval);
     };
-  }, [token, user]);
+  }, [getEffectiveAuth]);
 
-  // Combine DB orders with store fallback if DB is empty
+  // Authoritative admin orders directly from MongoDB Database (no local storage ghost orders)
   const orders = useMemo(() => {
-    if (dbOrders.length > 0) return dbOrders;
-    return storeOrders;
-  }, [dbOrders, storeOrders]);
+    return [...dbOrders].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [dbOrders]);
 
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -187,8 +225,12 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
 
       // Update local state immediately
       setDbOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
+        prev.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, status: nextStatus } : o))
       );
+
+      // Update zustand store
+      updateOrderStatus(orderId, nextStatus, { note });
+
       if (nextStatus === "APPROVED") {
         approveOrder(orderId);
       } else if (nextStatus === "CANCELLED") {
@@ -198,6 +240,8 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
           description: `Status advanced to ${nextStatus}`,
         });
       }
+
+      broadcastOrderEvent(ORDER_EVENTS.ORDER_STATUS_CHANGED, orderId);
       await fetchOrders();
     } catch {
       toast.error("Status update error");
@@ -212,6 +256,10 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
 
   const handleDispatchOrder = async (orderId: string, carrier?: string, trackingNumber?: string) => {
     setIsUpdating(true);
+    const resolvedCarrier = carrier || "Brink's Global Armored Services";
+    const resolvedTracking = trackingNumber || `BRK-${Date.now().toString().slice(-6)}`;
+    const note = "Vault sealed and handed to armed courier convoy";
+
     try {
       if (token) {
         await fetch(`/api/admin/orders/${orderId}/status`, {
@@ -222,15 +270,41 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
           },
           body: JSON.stringify({
             status: "DISPATCHED",
-            carrier: carrier || "Brink's Global Armored Services",
-            trackingNumber: trackingNumber || `BRK-${Date.now().toString().slice(-6)}`,
-            note: "Vault sealed and handed to armed courier convoy",
+            carrier: resolvedCarrier,
+            trackingNumber: resolvedTracking,
+            note,
           }),
         });
       }
+
       setDbOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: "DISPATCHED" } : o))
+        prev.map((o) =>
+          o.id === orderId || o.orderNumber === orderId
+            ? {
+                ...o,
+                status: "DISPATCHED",
+                trackingInfo: {
+                  ...(o.trackingInfo || {
+                    vaultOrigin: "Geneva Central Foundry Vault",
+                    transitType: "ARMORED_GROUND",
+                    biometricSignatureRequired: true,
+                  }),
+                  carrier: resolvedCarrier,
+                  trackingNumber: resolvedTracking,
+                },
+              }
+            : o
+        )
       );
+
+      updateOrderStatus(orderId, "DISPATCHED", {
+        carrier: resolvedCarrier,
+        trackingNumber: resolvedTracking,
+        note,
+      });
+
+      broadcastOrderEvent(ORDER_EVENTS.ORDER_STATUS_CHANGED, orderId);
+
       toast.success("Order Dispatched via Armored Carrier!", {
         description: "Brink's security escort tracking active.",
       });

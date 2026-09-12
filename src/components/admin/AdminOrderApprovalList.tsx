@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
+import { IDiamond } from "@/types/diamond.types";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
 import {
   Table,
@@ -48,7 +49,10 @@ import {
   Eye,
   Phone,
   Mail,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
+import { useOrderDocumentsEmail } from "@/hooks/useOrderDocumentsEmail";
 
 export function AdminOrderApprovalList() {
   const {
@@ -73,10 +77,28 @@ export function AdminOrderApprovalList() {
     handleDispatchOrder,
     handleAdvanceStatus,
     handleRejectOrder,
+    refetch,
     isUpdating,
   } = useAdminOrders();
 
-  const [inspectOrder, setInspectOrder] = useState<IOrder | null>(null);
+  const [inspectOrderId, setInspectOrderId] = useState<string | null>(null);
+  const inspectOrder = useMemo(() => {
+    if (!inspectOrderId) return null;
+    const target = inspectOrderId.toUpperCase().trim();
+    return (
+      orders.find(
+        (o) =>
+          (o.id && o.id.toUpperCase() === target) ||
+          (o.orderNumber && o.orderNumber.toUpperCase() === target)
+      ) || null
+    );
+  }, [inspectOrderId, orders]);
+
+  const setInspectOrder = (order: IOrder | null) => {
+    setInspectOrderId(order ? order.orderNumber || order.id : null);
+  };
+
+  const { sendOrderDocuments, isSending } = useOrderDocumentsEmail();
 
   const startRecord = totalFilteredCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endRecord = Math.min(currentPage * pageSize, totalFilteredCount);
@@ -146,6 +168,17 @@ export function AdminOrderApprovalList() {
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono text-stone-500 self-start sm:self-center shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="h-8 text-xs text-stone-600 hover:text-stone-900 border-stone-200 shadow-2xs"
+            title="Synchronize orders with vault database"
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1 text-stone-500" />
+            <span>Sync</span>
+          </Button>
           <span className="inline-flex items-center gap-1.5 rounded-xl bg-stone-100 px-3 py-1.5 text-stone-700 border border-stone-200 shadow-xs">
             <ShoppingBag className="h-3.5 w-3.5 text-stone-500" />
             <span>Total Orders:</span>
@@ -258,13 +291,13 @@ export function AdminOrderApprovalList() {
       <div className="rounded-xl border border-stone-200 overflow-hidden bg-white shadow-xs">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[140px]">Order Reference</TableHead>
-              <TableHead className="min-w-[180px]">Client Details</TableHead>
-              <TableHead className="min-w-[200px]">Gemstone Lots</TableHead>
-              <TableHead className="w-[130px]">Settlement</TableHead>
-              <TableHead className="w-[130px]">Fulfillment Status</TableHead>
-              <TableHead className="w-[180px] text-right">Curator Actions</TableHead>
+            <TableRow className="bg-stone-50/80 border-b border-stone-200">
+              <TableHead className="w-[150px] font-mono text-xs py-3.5 px-4">Order Reference</TableHead>
+              <TableHead className="min-w-[190px] text-xs py-3.5 px-4">Client Details</TableHead>
+              <TableHead className="min-w-[210px] text-xs py-3.5 px-4">Gemstone Lots</TableHead>
+              <TableHead className="w-[140px] text-xs py-3.5 px-4">Settlement</TableHead>
+              <TableHead className="w-[150px] text-xs py-3.5 px-4">Fulfillment Status</TableHead>
+              <TableHead className="w-[210px] text-right text-xs py-3.5 px-4">Curator Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -291,20 +324,23 @@ export function AdminOrderApprovalList() {
               </TableRow>
             ) : (
               paginatedOrders.map((order) => (
-                <TableRow key={order.id} className="hover:bg-stone-50/70 transition-colors">
+                <TableRow key={order.id} className="hover:bg-stone-50/70 transition-colors border-b border-stone-100">
                   {/* 1. Order ID & Date */}
-                  <TableCell className="align-top font-mono">
+                  <TableCell className="align-middle font-mono py-3.5 px-4">
                     <div className="font-bold text-stone-900 text-xs sm:text-sm">
                       #{order.orderNumber || order.id}
                     </div>
-                    <div className="text-[11px] text-stone-500 mt-0.5" suppressHydrationWarning>
-                      {new Date(order.createdAt).toLocaleDateString([], {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                    <div className="inline-flex items-center gap-1.5 text-[11px] text-stone-500 mt-1 font-mono" suppressHydrationWarning>
+                      <Clock className="h-3 w-3 text-stone-400 shrink-0" />
+                      <span>
+                        {new Date(order.createdAt).toLocaleDateString([], {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
                     </div>
-                    <div className="text-[10px] text-stone-400" suppressHydrationWarning>
+                    <div className="text-[10px] text-stone-400 font-mono pl-4.5" suppressHydrationWarning>
                       {new Date(order.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -313,32 +349,32 @@ export function AdminOrderApprovalList() {
                   </TableCell>
 
                   {/* 2. Client Details */}
-                  <TableCell className="align-top">
-                    <div className="font-semibold text-stone-900 text-xs sm:text-sm">
+                  <TableCell className="align-middle py-3.5 px-4">
+                    <div className="font-semibold text-stone-900 text-xs sm:text-sm truncate max-w-[190px]">
                       {order.shippingAddress?.fullName || "Private Client"}
                     </div>
-                    <div className="text-[11px] text-stone-500 flex items-center gap-1 mt-0.5 truncate max-w-[200px]">
+                    <div className="text-[11px] text-stone-500 inline-flex items-center gap-1.5 mt-1 truncate max-w-[190px]">
                       <Mail className="h-3 w-3 text-stone-400 shrink-0" />
-                      <span>{order.shippingAddress?.email}</span>
+                      <span className="truncate">{order.shippingAddress?.email}</span>
                     </div>
-                    <div className="text-[11px] text-stone-500 flex items-center gap-1 mt-0.5">
+                    <div className="text-[11px] text-stone-500 inline-flex items-center gap-1.5 mt-0.5">
                       <Phone className="h-3 w-3 text-stone-400 shrink-0" />
                       <span>{order.shippingAddress?.phone}</span>
                     </div>
-                    <div className="text-[10px] text-stone-400 flex items-center gap-1 mt-0.5">
+                    <div className="text-[10px] text-stone-400 inline-flex items-center gap-1.5 mt-0.5 truncate max-w-[190px]">
                       <MapPin className="h-3 w-3 text-amber-600 shrink-0" />
-                      <span>
+                      <span className="truncate">
                         {order.shippingAddress?.city}, {order.shippingAddress?.state}
                       </span>
                     </div>
                   </TableCell>
 
                   {/* 3. Gemstones Lots */}
-                  <TableCell className="align-top">
+                  <TableCell className="align-middle py-3.5 px-4">
                     <div className="space-y-1.5">
                       {order.items.slice(0, 2).map((item) => (
-                        <div key={item._id} className="flex items-center gap-2">
-                          <div className="relative h-8 w-8 rounded overflow-hidden border border-stone-200 bg-stone-50 shrink-0">
+                        <div key={item._id} className="flex items-center gap-2.5">
+                          <div className="relative h-9 w-9 rounded-lg overflow-hidden border border-stone-200 bg-stone-50 shrink-0 shadow-2xs">
                             <Image
                               src={item.images[0] || ""}
                               alt={item.name}
@@ -358,7 +394,7 @@ export function AdminOrderApprovalList() {
                       ))}
 
                       {order.items.length > 2 && (
-                        <span className="text-[10px] font-mono text-stone-500 italic block">
+                        <span className="text-[10px] font-mono text-stone-500 italic block pl-1">
                           +{order.items.length - 2} more gemstone lot(s)
                         </span>
                       )}
@@ -366,51 +402,53 @@ export function AdminOrderApprovalList() {
                   </TableCell>
 
                   {/* 4. Settlement & Total */}
-                  <TableCell className="align-top font-mono">
+                  <TableCell className="align-middle font-mono py-3.5 px-4">
                     <div className="font-bold text-stone-900 text-xs sm:text-sm">
                       {formatPrice(order.totalAmount)}
                     </div>
                     {order.couponDiscount > 0 && (
-                      <div className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5 mt-0.5">
-                        <Tag className="h-3 w-3" />
+                      <div className="text-[10px] text-emerald-700 font-semibold inline-flex items-center gap-1 mt-1">
+                        <Tag className="h-3 w-3 shrink-0" />
                         <span>Saved {formatPrice(order.couponDiscount)}</span>
                       </div>
                     )}
-                    <div className="text-[10px] text-stone-400 mt-0.5 uppercase">
+                    <div className="text-[10px] text-stone-500 mt-1 uppercase block">
                       {order.paymentInfo?.method?.replace("_", " ") || "Card"}
                     </div>
                   </TableCell>
 
                   {/* 5. Status Badge */}
-                  <TableCell className="align-top">
-                    {getStatusBadge(order.status)}
+                  <TableCell className="align-middle py-3.5 px-4">
+                    <div className="inline-flex items-center">
+                      {getStatusBadge(order.status)}
+                    </div>
                   </TableCell>
 
                   {/* 6. Actions */}
-                  <TableCell className="align-top text-right">
-                    <div className="flex flex-col items-end gap-1.5">
+                  <TableCell className="align-middle py-3.5 px-4 text-right">
+                    <div className="flex flex-col items-end justify-center gap-1.5">
                       {order.status === "PENDING_APPROVAL" && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="inline-flex items-center gap-1.5">
                           <Button
                             variant="luxury"
                             size="sm"
-                            className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs"
+                            className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs inline-flex items-center gap-1 whitespace-nowrap"
                             disabled={isUpdating}
                             onClick={() => handleApproveOrder(order.id)}
                             title="Accept and Approve Order"
                           >
-                            <Check className="h-3.5 w-3.5 mr-1" />
-                            Accept
+                            <Check className="h-3.5 w-3.5 shrink-0" />
+                            <span>Accept</span>
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-rose-700 border-rose-300 bg-rose-50 hover:bg-rose-100 hover:text-rose-900"
+                            className="h-7 px-2 text-rose-700 border-rose-300 bg-rose-50 hover:bg-rose-100 hover:text-rose-900 inline-flex items-center gap-1"
                             disabled={isUpdating}
                             onClick={() => handleRejectOrder(order.id)}
                             title="Reject / Cancel Order"
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <X className="h-3.5 w-3.5 shrink-0" />
                           </Button>
                         </div>
                       )}
@@ -419,12 +457,12 @@ export function AdminOrderApprovalList() {
                         <Button
                           variant="luxury"
                           size="sm"
-                          className="h-7 text-xs px-2.5"
+                          className="h-7 text-xs px-2.5 inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap"
                           disabled={isUpdating}
                           onClick={() => handleDispatchOrder(order.id)}
                         >
-                          <Truck className="h-3.5 w-3.5 mr-1" />
-                          Dispatch
+                          <Truck className="h-3.5 w-3.5 shrink-0" />
+                          <span>Dispatch</span>
                         </Button>
                       )}
 
@@ -432,7 +470,7 @@ export function AdminOrderApprovalList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs px-2.5 text-amber-900 border-amber-300 bg-amber-50 hover:bg-amber-100"
+                          className="h-7 text-xs px-2.5 text-amber-900 border-amber-300 bg-amber-50 hover:bg-amber-100 inline-flex items-center gap-1.5 whitespace-nowrap"
                           disabled={isUpdating}
                           onClick={() =>
                             handleAdvanceStatus(
@@ -442,8 +480,8 @@ export function AdminOrderApprovalList() {
                             )
                           }
                         >
-                          <Navigation className="h-3.5 w-3.5 mr-1" />
-                          In Transit
+                          <Navigation className="h-3.5 w-3.5 shrink-0" />
+                          <span>In Transit</span>
                         </Button>
                       )}
 
@@ -451,7 +489,7 @@ export function AdminOrderApprovalList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs px-2.5 text-amber-900 border-amber-300 bg-amber-50 hover:bg-amber-100"
+                          className="h-7 text-xs px-2.5 text-amber-900 border-amber-300 bg-amber-50 hover:bg-amber-100 inline-flex items-center gap-1.5 whitespace-nowrap"
                           disabled={isUpdating}
                           onClick={() =>
                             handleAdvanceStatus(
@@ -461,8 +499,8 @@ export function AdminOrderApprovalList() {
                             )
                           }
                         >
-                          <Truck className="h-3.5 w-3.5 mr-1" />
-                          Out for Delivery
+                          <Truck className="h-3.5 w-3.5 shrink-0" />
+                          <span>Out for Delivery</span>
                         </Button>
                       )}
 
@@ -470,7 +508,7 @@ export function AdminOrderApprovalList() {
                         <Button
                           variant="luxury"
                           size="sm"
-                          className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                          className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
                           disabled={isUpdating}
                           onClick={() =>
                             handleAdvanceStatus(
@@ -480,21 +518,48 @@ export function AdminOrderApprovalList() {
                             )
                           }
                         >
-                          <ShieldCheck className="h-3.5 w-3.5 mr-1" />
-                          Confirm Delivery
+                          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                          <span>Confirm Delivery</span>
                         </Button>
                       )}
 
                       {order.status === "DELIVERED" && (
-                        <span className="text-[11px] font-mono text-emerald-700 font-semibold flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3 text-emerald-600" /> Fulfilled
+                        <span className="text-[11px] font-mono text-emerald-700 font-semibold inline-flex items-center gap-1">
+                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>Fulfilled</span>
                         </span>
                       )}
 
                       {order.status === "CANCELLED" && (
-                        <span className="text-[11px] font-mono text-rose-700 font-medium">
-                          Lot Released
+                        <span className="text-[11px] font-mono text-rose-700 font-medium inline-flex items-center gap-1">
+                          <X className="h-3 w-3 shrink-0" />
+                          <span>Lot Released</span>
                         </span>
+                      )}
+
+                      {/* Admin Email Documents Dispatch Action - Only displayed when order is Fulfilled */}
+                      {order.status === "DELIVERED" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendOrderDocuments(order)}
+                          disabled={isSending(order.id)}
+                          className="h-6 px-2 text-[11px] font-mono text-stone-700 hover:text-stone-900 border-stone-200 bg-white hover:bg-stone-50 shadow-2xs inline-flex items-center gap-1 whitespace-nowrap"
+                          title={`Dispatch official invoice and certificates to ${order.shippingAddress?.email || "customer"}`}
+                        >
+                          {isSending(order.id) ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin text-amber-600 shrink-0" />
+                              <span>Sending...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="h-3 w-3 text-amber-600 shrink-0" />
+                              <span>Email Docs</span>
+                            </>
+                          )}
+                        </Button>
                       )}
 
                       {/* View Details Modal Trigger */}
@@ -503,9 +568,9 @@ export function AdminOrderApprovalList() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setInspectOrder(order)}
-                        className="h-6 px-2 text-[11px] text-stone-600 hover:text-stone-900 font-mono hover:bg-stone-100 mt-0.5 gap-1"
+                        className="h-6 px-2 text-[11px] text-stone-600 hover:text-stone-900 font-mono hover:bg-stone-100 mt-0.5 inline-flex items-center gap-1 whitespace-nowrap"
                       >
-                        <Eye className="h-3 w-3" />
+                        <Eye className="h-3 w-3 shrink-0" />
                         <span>View Details</span>
                       </Button>
                     </div>
@@ -640,7 +705,7 @@ export function AdminOrderApprovalList() {
                   Gemstone Lots ({inspectOrder.items.length})
                 </span>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {inspectOrder.items.map((item) => (
+                  {inspectOrder.items.map((item: IDiamond) => (
                     <div
                       key={item._id}
                       className="flex items-center justify-between rounded-lg border border-stone-200 bg-white p-2.5"
@@ -692,6 +757,48 @@ export function AdminOrderApprovalList() {
                   <span>Settlement Total:</span>
                   <span className="font-mono text-base text-emerald-700">{formatPrice(inspectOrder.totalAmount)}</span>
                 </div>
+              </div>
+
+              {/* Client Documentation Email Dispatch (Admin Action) */}
+              <div className="rounded-xl border border-stone-200 bg-stone-900 p-3.5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-semibold text-stone-100 flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-amber-400" />
+                    <span>Client Documentation Dispatch</span>
+                  </div>
+                  <div className="text-[11px] text-stone-400">
+                    Recipient: <strong className="text-amber-300">{inspectOrder.shippingAddress?.email}</strong>
+                  </div>
+                </div>
+
+                {inspectOrder.status === "DELIVERED" ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="luxury"
+                    onClick={() => sendOrderDocuments(inspectOrder)}
+                    disabled={isSending(inspectOrder.id)}
+                    className="h-7 text-xs font-mono gap-1.5 shrink-0 shadow-xs"
+                  >
+                    {isSending(inspectOrder.id) ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Sending Email...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-3.5 w-3.5" />
+                        <span>Send Invoice & Cert Email</span>
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <span className="text-[10px] font-mono text-amber-300/80 italic">
+                    {inspectOrder.status === "CANCELLED"
+                      ? "Order voided"
+                      : "Email available once order is fulfilled"}
+                  </span>
+                )}
               </div>
             </div>
           </DialogContent>
