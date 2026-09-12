@@ -7,6 +7,13 @@ import { toast } from "sonner";
 export interface IUseAdminDiamondsReturn {
   diamonds: IDiamond[];
   filteredDiamonds: IDiamond[];
+  paginatedDiamonds: IDiamond[];
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  pageSize: number;
+  setPageSize: (size: number) => void;
+  totalPages: number;
+  totalFilteredCount: number;
   stats: IAdminInventoryStats;
   isLoading: boolean;
   error: string | null;
@@ -34,6 +41,8 @@ export function useAdminDiamonds(): IUseAdminDiamondsReturn {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   const [selectedDiamond, setSelectedDiamond] = useState<IDiamond | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -107,6 +116,19 @@ export function useAdminDiamonds(): IUseAdminDiamondsReturn {
     );
   }, [diamonds, searchQuery]);
 
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const totalFilteredCount = filteredDiamonds.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / pageSize));
+
+  const paginatedDiamonds = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredDiamonds.slice(start, start + pageSize);
+  }, [filteredDiamonds, currentPage, pageSize]);
+
   const stats = useMemo<IAdminInventoryStats>(() => {
     const totalDiamonds = diamonds.length;
     const totalInventoryValue = diamonds.reduce((acc, d) => acc + d.finalPrice * d.stockQuantity, 0);
@@ -170,11 +192,18 @@ export function useAdminDiamonds(): IUseAdminDiamondsReturn {
   return {
     diamonds,
     filteredDiamonds,
+    paginatedDiamonds,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalFilteredCount,
     stats,
     isLoading,
     error,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: handleSearchChange,
     selectedDiamond,
     setSelectedDiamond,
     isAddModalOpen,

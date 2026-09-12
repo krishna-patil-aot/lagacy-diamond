@@ -19,6 +19,8 @@ import {
   Layers,
   Search,
   Atom,
+  Star,
+  Quote,
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -57,8 +59,8 @@ export default function HomePage() {
             transition={{ duration: 0.4 }}
             className="inline-flex items-center gap-2 rounded-full border border-stone-200/90 bg-white/90 px-3.5 py-1 text-xs font-mono font-medium text-stone-700 shadow-xs backdrop-blur-xs"
           >
-            <Atom className="h-3.5 w-3.5 text-stone-700" />
-            <span>CULTIVATED IN OUR ADVANCED FOUNDRY • DIRECT TO CONSUMER</span>
+            <Atom className="h-3.5 w-3.5 text-amber-700" />
+            <span>100% CERTIFIED LAB-GROWN DIAMONDS • DIRECT FACTORY RATES</span>
           </motion.div>
 
           <motion.h1
@@ -67,14 +69,14 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-stone-900 leading-[1.15]"
           >
-            From Our Lab To{" "}
+            Direct From Our Lab To{" "}
             <motion.span
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.25 }}
               className="inline-block text-stone-800 underline decoration-stone-300 underline-offset-8 transition-colors hover:decoration-amber-400"
             >
-              Your Legacy
+              Your Special Moments
             </motion.span>
           </motion.h1>
 
@@ -84,7 +86,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mx-auto max-w-2xl text-xs sm:text-sm text-stone-600 leading-relaxed"
           >
-            Legacy Diamond cultivates certified Type IIa diamonds in our proprietary laboratory. By cutting out middleman jewelers, we deliver pure optical fire with zero earth mining footprint at direct foundry pricing.
+            Legacy Diamond brings you 100% genuine Type IIa certified diamonds grown with solar power. By eliminating retail middlemen, we offer the finest sparkle, IGI & GIA certifications, and honest pricing.
           </motion.p>
 
           {/* Call to Actions */}
@@ -95,15 +97,15 @@ export default function HomePage() {
             className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1"
           >
             <Link href="/diamonds">
-              <Button variant="luxury" size="lg" className="w-full sm:w-auto text-xs sm:text-sm px-6 h-10 sm:h-11 shadow-xs hover:shadow-md transition-shadow">
+              <Button variant="luxury" size="lg" className="w-full sm:w-auto text-xs sm:text-sm px-6 h-10 sm:h-11 shadow-xs hover:shadow-md transition-shadow bg-stone-900 hover:bg-stone-800 text-white">
                 <Search className="h-3.5 w-3.5 mr-2" />
-                Explore Cultivated Diamonds
+                Browse Certified Diamonds
               </Button>
             </Link>
 
-            <Link href="/diamonds?discount=true">
+            <Link href="/gemology">
               <Button variant="outline" size="lg" className="w-full sm:w-auto text-xs sm:text-sm px-6 h-10 sm:h-11 hover:border-stone-400 transition-colors">
-                Direct Foundry Lots
+                Diamond Buying Guide (4Cs)
                 <ArrowRight className="h-3.5 w-3.5 ml-2" />
               </Button>
             </Link>
@@ -117,7 +119,7 @@ export default function HomePage() {
             className="pt-2 sm:pt-3"
           >
             <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-mono block mb-2">
-              Explore by Cultivated Silhouette
+              Shop by Popular Diamond Shape
             </span>
             <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
               {QUICK_SHAPES.map(({ shape, label }) => (
@@ -149,20 +151,20 @@ export default function HomePage() {
             <div className="flex items-center gap-2">
               <Gem className="h-4 w-4 text-amber-700" />
               <span className="text-xs uppercase font-mono tracking-widest text-stone-500">
-                Foundry Selection
+                Handpicked Collection
               </span>
             </div>
             <h2 className="mt-1 font-serif text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
-              Featured Laboratory Cultivations
+              Featured Certified Diamonds
             </h2>
             <p className="mt-1 text-xs sm:text-sm text-stone-600">
-              Direct-from-foundry certified gemstones displaying exceptional crystal clarity and optical dispersion.
+              Direct-from-factory certified diamonds with exceptional crystal clarity, eye-clean perfection, and maximum sparkle.
             </p>
           </div>
 
           <Link href="/diamonds">
             <Button variant="ghost" className="text-xs text-stone-800 hover:text-stone-900 group">
-              <span>View Full Foundry Catalog</span>
+              <span>View All Diamonds</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
@@ -209,13 +211,13 @@ export default function HomePage() {
             className="text-center max-w-2xl mx-auto space-y-2"
           >
             <Badge variant="gold" className="uppercase tracking-widest text-[10px]">
-              Clean Crystallization Science
+              Simple Diamond Guide
             </Badge>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-              The 4 Cs of Lab-Grown Diamonds
+              The 4 Cs of Lab-Grown Diamonds Made Simple
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-              Every diamond cultivated in our foundry is chemically identical to earth diamonds, graded according to rigorous IGI and GIA laboratory criteria.
+              Every diamond is 100% genuine carbon, independently certified and graded to the highest laboratory standards by IGI and GIA.
             </p>
           </motion.div>
 
@@ -234,7 +236,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-stone-900">1. Precision Cut</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Determines how light reflects through pavilion facets. Our master cutters craft Ideal and Excellent grades for optimal brilliance.
+                Determines how brightly your diamond sparkles. We specialize in Ideal and Excellent cuts for breathtaking brilliance.
               </p>
               <div className="text-[11px] font-mono text-stone-500 pt-1">
                 Ideal • Excellent • Very Good
@@ -253,12 +255,12 @@ export default function HomePage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-stone-200 text-stone-800 shadow-xs">
                 <Layers className="h-4.5 w-4.5 text-sky-600" />
               </div>
-              <h3 className="text-base font-bold text-stone-900">2. Optical Color</h3>
+              <h3 className="text-base font-bold text-stone-900">2. Diamond Colour</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Graded from D (pure colorless) through warm tint scales. Our CVD crystallization chambers ensure rare D, E, and F colorless purity.
+                Graded from D (completely colourless) to warm shades. Our diamonds shine in rare, pure D, E, and F colourless grades.
               </p>
               <div className="text-[11px] font-mono text-stone-500 pt-1">
-                D (Pure Colorless) to K
+                D (Pure Colourless) to J
               </div>
             </motion.div>
 
@@ -274,9 +276,9 @@ export default function HomePage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-stone-200 text-stone-800 shadow-xs">
                 <Award className="h-4.5 w-4.5 text-rose-600" />
               </div>
-              <h3 className="text-base font-bold text-stone-900">3. Crystal Clarity</h3>
+              <h3 className="text-base font-bold text-stone-900">3. Clarity & Purity</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Free of earth mineral inclusions. We curate diamonds graded Flawless (FL) down to Very Slightly Included (VS), assuring eye-clean perfection.
+                Clean and sparkling with zero visible flaws. We offer Flawless (FL) down to Very Slightly Included (VS), all 100% eye-clean.
               </p>
               <div className="text-[11px] font-mono text-stone-500 pt-1">
                 FL • IF • VVS1 • VVS2 • VS1
@@ -297,7 +299,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-stone-900">4. Carat Weight</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Because we cultivate diamonds in our own lab, you acquire larger, commanding carat weights for a fraction of mined diamond retail costs.
+                Direct factory pricing means you get a larger, grander diamond carat for a fraction of traditional showroom prices.
               </p>
               <div className="text-[11px] font-mono text-stone-500 pt-1">
                 0.30 ct to 10.00 ct+
@@ -307,7 +309,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Foundry Story Banner */}
+      {/* 4. Factory Story Banner */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -317,29 +319,136 @@ export default function HomePage() {
           className="relative overflow-hidden rounded-3xl border border-stone-200 bg-gradient-to-r from-amber-50/60 via-rose-50/40 to-orange-50/60 p-8 sm:p-12 text-center space-y-5 shadow-xs"
         >
           <Badge variant="orange" className="font-mono text-[10px]">
-            Direct-to-Consumer Foundry
+            Direct From Factory To You
           </Badge>
           <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 tracking-tight">
-            Cultivated in Our Lab. Delivered to Your Door.
+            Grown in Our Lab. Delivered Safely to Your Door.
           </h2>
           <p className="mx-auto max-w-xl text-xs sm:text-sm text-stone-600 leading-relaxed">
-            Eliminate traditional jeweler markups. Browse certified lab-grown diamonds with full IGI/GIA documentation, armored insured delivery, and our 30-day foundry guarantee.
+            Save up to 60-70% compared to traditional retail jewelers. Enjoy genuine IGI/GIA certificates, free insured delivery across India, and an easy 30-day money-back guarantee.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link href="/diamonds">
-              <Button variant="luxury" size="lg" className="w-full sm:w-auto px-7">
-                Browse Foundry Collection
+              <Button variant="luxury" size="lg" className="w-full sm:w-auto px-7 bg-stone-900 hover:bg-stone-800 text-white">
+                Browse All Diamonds
               </Button>
             </Link>
-            <Link href="/diamonds?discount=true">
+            <Link href="/sustainability">
               <Button variant="outline" size="lg" className="w-full sm:w-auto px-7">
-                View Direct Offers
+                Our Eco-Friendly Promise
               </Button>
             </Link>
           </div>
         </motion.div>
       </section>
+
+      {/* 5. Collector Experiences & Testimonials */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-4 w-4 fill-current" />
+            ))}
+          </div>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
+            Customer Reviews & Experiences
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-600">
+            Real stories from couples, families, and engagement ring buyers across India.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Review 1 */}
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <Quote className="h-6 w-6 text-amber-600/40" />
+              <p className="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                &ldquo;We ordered a 2.4ct Oval D-VVS1 for our engagement. When our family jeweller inspected the stone under 40x magnification, he was stunned by the Type IIa purity and fire. Legacy Diamond saved us over ₹1.5 Lakhs compared to showroom prices.&rdquo;
+              </p>
+            </div>
+            <div className="border-t border-stone-100 pt-3">
+              <span className="font-bold text-xs text-stone-900 block">Aarav & Meera S.</span>
+              <span className="text-[10px] text-stone-400 font-mono">Mumbai, Maharashtra • Custom Oval Engagement Ring</span>
+            </div>
+          </div>
+
+          {/* Review 2 */}
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <Quote className="h-6 w-6 text-amber-600/40" />
+              <p className="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                &ldquo;Knowing our diamond was grown using 100% solar energy with zero environmental destruction gave us complete peace of mind. The insured doorstep delivery was safe and the IGI certificate was easily verified online.&rdquo;
+              </p>
+            </div>
+            <div className="border-t border-stone-100 pt-3">
+              <span className="font-bold text-xs text-stone-900 block">Rohan & Ananya K.</span>
+              <span className="text-[10px] text-stone-400 font-mono">Bengaluru, Karnataka • 2.1ct Round Solitaire</span>
+            </div>
+          </div>
+
+          {/* Review 3 */}
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <Quote className="h-6 w-6 text-amber-600/40" />
+              <p className="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                &ldquo;The AI Assistant helped me find an eye-clean Emerald cut diamond that fit my exact budget within seconds. The custom platinum setting crafted by their artisans is stunning.&rdquo;
+              </p>
+            </div>
+            <div className="border-t border-stone-100 pt-3">
+              <span className="font-bold text-xs text-stone-900 block">Pooja M.</span>
+              <span className="text-[10px] text-stone-400 font-mono">New Delhi • Emerald Step Solitaire</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Private Consultation Callout */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-stone-800 bg-stone-950 p-8 sm:p-12 text-stone-100 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
+          <div className="space-y-3 max-w-xl text-center md:text-left">
+            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-400">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Custom Jewellery & Free Consultations</span>
+            </div>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              Design Your Dream Custom Jewellery
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-400 leading-relaxed">
+              Book a personalized appointment with our diamond specialists in Mumbai, Bengaluru, Delhi, or connect with us directly over a video call.
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            <Link href="/contact">
+              <Button variant="luxury" size="lg" className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold px-8 h-12 text-sm shadow-lg shadow-amber-600/20">
+                Book Free Consultation
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* JSON-LD Structured Data Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "JewelryStore",
+            name: "Legacy Diamond Foundry",
+            description:
+              "Cultivating Type IIa certified diamonds in high-temperature solar reactors with zero earth displacement.",
+            url: "https://legacydiamond.luxury",
+            logo: "https://legacydiamond.luxury/favicon.ico",
+            telephone: "+1-800-LEGACY-DIA",
+            priceRange: "$$$$",
+            paymentAccepted: "Credit Card, Wire Transfer, Vault Escrow",
+            currenciesAccepted: "USD, EUR, GBP, CHF",
+          }),
+        }}
+      />
 
       {/* Quick View Modal */}
       <DiamondQuickViewModal

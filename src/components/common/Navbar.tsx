@@ -55,7 +55,7 @@ export function Navbar() {
               LEGACY DIAMOND
             </span>
             <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.22em] text-stone-400 font-mono mt-0.5">
-              Lab-Grown Foundry
+              100% Certified Diamonds
             </span>
           </div>
         </Link>
@@ -70,19 +70,28 @@ export function Navbar() {
                 : "text-stone-600"
             }`}
           >
-            Cultivated Diamonds
+            All Diamonds
+          </Link>
+
+          <Link
+            href="/about"
+            className={`whitespace-nowrap transition-colors hover:text-stone-900 ${
+              pathname === "/about"
+                ? "text-stone-900 font-semibold"
+                : "text-stone-600"
+            }`}
+          >
+            About Us
           </Link>
           <Link
-            href="/diamonds?discount=true"
-            className="whitespace-nowrap text-stone-600 hover:text-stone-900 transition-colors inline-flex items-center gap-1.5"
+            href="/contact"
+            className={`whitespace-nowrap transition-colors hover:text-stone-900 ${
+              pathname === "/contact"
+                ? "text-stone-900 font-semibold"
+                : "text-stone-600"
+            }`}
           >
-            <span>Direct Lots</span>
-            <Badge
-              variant="orange"
-              className="text-[10px] py-0 px-1.5 font-mono whitespace-nowrap"
-            >
-              Direct Pricing
-            </Badge>
+            Contact & Help
           </Link>
           {activeAuth && !isAdmin && (
             <Link
@@ -107,16 +116,16 @@ export function Navbar() {
               }`}
             >
               <Shield className="h-3.5 w-3.5 text-stone-600" />
-              <span>Curator Portal</span>
+              <span>Admin Portal</span>
             </Link>
           )}
         </nav>
 
         {/* Right Utility & Auth Controls */}
         <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0 whitespace-nowrap">
-          {/* Wishlist Indicator */}
+          {/* Wishlist Indicator - Dedicated /wishlist URL */}
           <Link
-            href="/diamonds"
+            href="/wishlist"
             className="relative p-2 text-stone-500 hover:text-stone-900 transition-colors rounded-lg hover:bg-stone-100/80"
             title="Saved Diamonds"
           >
@@ -235,15 +244,32 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="py-1.5 text-stone-700 hover:text-stone-900 font-medium"
             >
-              Cultivated Diamonds
+              All Diamonds
+            </Link>
+
+            <Link
+              href="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 text-stone-700 hover:text-stone-900 font-medium"
+            >
+              About Us
             </Link>
             <Link
-              href="/diamonds?discount=true"
+              href="/wishlist"
               onClick={() => setMobileMenuOpen(false)}
               className="py-1.5 text-stone-700 hover:text-stone-900 font-medium flex items-center justify-between"
             >
-              <span>Direct Foundry Lots</span>
-              <Badge variant="orange">Direct</Badge>
+              <span>Wishlist</span>
+              {wishlistCount > 0 && (
+                <Badge variant="outline">{wishlistCount}</Badge>
+              )}
+            </Link>
+            <Link
+              href="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 text-stone-700 hover:text-stone-900 font-medium"
+            >
+              Contact & Help
             </Link>
             {activeAuth && !isAdmin && (
               <Link
@@ -252,7 +278,7 @@ export function Navbar() {
                 className="py-1.5 text-stone-700 hover:text-stone-900 font-medium flex items-center gap-2"
               >
                 <Package className="h-4 w-4 text-stone-600" />
-                <span>My Orders & Armored Tracking</span>
+                <span>My Orders & Tracking</span>
               </Link>
             )}
             {isAdmin && (

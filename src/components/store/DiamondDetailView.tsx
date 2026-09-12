@@ -8,6 +8,9 @@ import { formatPrice, formatCarat } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/store/useCartStore";
+import { useProductPdf } from "@/hooks/useProductPdf";
+import { useCertificateViewer } from "@/hooks/useCertificateViewer";
+import { CertificateViewerModal } from "./CertificateViewerModal";
 import {
   ShieldCheck,
   Award,
@@ -17,6 +20,8 @@ import {
   ChevronLeft,
   Compass,
   Sparkles,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Diamond360Viewer } from "./Diamond360Viewer";
 
@@ -28,6 +33,8 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<"gallery" | "360">("gallery");
   const { addToCart, isInCart, toggleWishlist, isInWishlist } = useCartStore();
+  const { downloadSpecPdf, isDownloadingSpec } = useProductPdf();
+  const { viewerState, openCertificate, closeCertificate } = useCertificateViewer();
 
   const isCart = isInCart(diamond._id);
   const isWish = isInWishlist(diamond._id);
@@ -255,19 +262,19 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
             <Button
               variant="luxury"
               size="lg"
-              className="w-full justify-center text-xs sm:text-sm h-11"
+              className="w-full justify-center text-xs sm:text-sm h-11 bg-stone-900 hover:bg-stone-800 text-white font-medium"
               onClick={() => addToCart(diamond)}
               disabled={isCart}
             >
               {isCart ? (
                 <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Reserved in Private Vault
+                  <Check className="h-4 w-4 mr-2 text-emerald-400" />
+                  Added to Your Cart
                 </>
               ) : (
                 <>
                   <ShoppingBag className="h-4 w-4 mr-2" />
-                  Reserve Direct from Lab
+                  Add to Cart
                 </>
               )}
             </Button>
@@ -279,23 +286,73 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
               onClick={() => toggleWishlist(diamond)}
             >
               <Heart className={`h-3.5 w-3.5 mr-1.5 ${isWish ? "fill-current text-rose-500" : ""}`} />
-              {isWish ? "Saved to Private Curations" : "Save to Wishlist"}
+              {isWish ? "Saved in Wishlist" : "Add to Wishlist"}
             </Button>
+          </div>
+
+          {/* Official Documentation & PDF Downloads */}
+          <div className="rounded-2xl border border-amber-900/20 bg-gradient-to-br from-amber-50/50 to-stone-50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-wider text-amber-900 font-semibold flex items-center gap-1.5">
+                <Award className="h-3.5 w-3.5 text-amber-700" />
+                <span>Official Certification</span>
+              </span>
+              <span className="text-[10px] font-mono text-stone-500">
+                {diamond.lab} #{diamond.certificateNumber}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* View Certificate — opens inline viewer modal, no download */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openCertificate(diamond)}
+                className="w-full justify-center gap-2 border-amber-300/80 hover:border-amber-500 text-xs font-medium text-stone-800"
+              >
+                <Award className="h-3.5 w-3.5 text-amber-700" />
+                <span>View Certificate</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => downloadSpecPdf(diamond._id, diamond.sku)}
+                disabled={isDownloadingSpec}
+                className="w-full justify-center gap-2 text-xs font-medium text-stone-700"
+              >
+                {isDownloadingSpec ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-600" />
+                ) : (
+                  <Download className="h-3.5 w-3.5 text-stone-600" />
+                )}
+                <span>Details Card (PDF)</span>
+              </Button>
+            </div>
           </div>
 
           {/* Security & Guarantees */}
           <div className="grid grid-cols-2 gap-3 pt-3 border-t border-stone-200 text-[11px] text-stone-500">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-              <span>Full Armored Transit</span>
+              <span>Free Insured Delivery</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Award className="h-4 w-4 text-amber-600 flex-shrink-0" />
-              <span>Laser-Inscribed IGI/GIA</span>
+              <span>Certified &amp; Hallmarked</span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Certificate View-Only Modal */}
+      <CertificateViewerModal
+        open={viewerState.open}
+        onClose={closeCertificate}
+        diamond={viewerState.diamond}
+      />
     </div>
   );
 }

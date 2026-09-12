@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { AuthGuard } from "@/components/common/AuthGuard";
 import { useUserOrders } from "@/hooks/useUserOrders";
+import { useCertificateViewer } from "@/hooks/useCertificateViewer";
+import { CertificateViewerModal } from "@/components/store/CertificateViewerModal";
 import { OrderTrackingTimeline } from "@/components/orders/OrderTrackingTimeline";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +22,8 @@ import {
   ArrowRight,
   Sparkles,
   RefreshCw,
+  Award,
+  Mail,
 } from "lucide-react";
 
 export default function OrdersPage() {
@@ -42,6 +46,7 @@ function OrdersContent() {
     refetch,
     orders,
   } = useUserOrders();
+  const { viewerState, openCertificate, closeCertificate } = useCertificateViewer();
 
   if (isAdmin) {
     return (
@@ -149,9 +154,9 @@ function OrdersContent() {
       {/* Orders List */}
       {isLoading ? (
         <div className="py-20 text-center space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900 mx-auto" />
-          <span className="text-xs font-mono text-stone-400 uppercase tracking-wider block">
-            Synchronizing Armored Tracking with Geneva Vault Registry...
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-amber-600 mx-auto" />
+          <span className="text-xs font-mono text-stone-600 uppercase tracking-wider block font-medium">
+            Loading your diamond orders...
           </span>
         </div>
       ) : filteredOrders.length === 0 ? (
@@ -217,11 +222,28 @@ function OrdersContent() {
                   </span>
                 </div>
 
-                <div className="text-left sm:text-right">
-                  <span className="text-[10px] uppercase font-mono text-stone-400 block">Total Settlement</span>
-                  <span className="text-lg font-bold font-mono text-stone-900">
-                    {formatPrice(order.totalAmount)}
-                  </span>
+                <div className="text-left sm:text-right flex flex-col sm:items-end gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-stone-400 block">Total Settlement</span>
+                    <span className="text-lg font-bold font-mono text-stone-900">
+                      {formatPrice(order.totalAmount)}
+                    </span>
+                  </div>
+                  {order.status === "CANCELLED" ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono text-rose-700 bg-rose-50 border border-rose-200">
+                      Invoice Voided (Order Cancelled)
+                    </span>
+                  ) : order.status === "DELIVERED" ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200">
+                      <Mail className="h-3 w-3 text-emerald-600 shrink-0" />
+                      <span>Official invoice & certs emailed</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono text-amber-800 bg-amber-50/80 border border-amber-200">
+                      <Mail className="h-3 w-3 text-amber-600 shrink-0" />
+                      <span>Invoice emailed upon delivery fulfillment</span>
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -239,10 +261,10 @@ function OrdersContent() {
                     {order.items.map((diamond) => (
                       <div
                         key={diamond._id}
-                        className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 p-3 text-xs"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 text-xs shadow-xs hover:border-stone-300 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-stone-200 bg-white flex-shrink-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative h-13 w-13 rounded-lg overflow-hidden border border-stone-200 bg-white shrink-0">
                             <Image
                               src={diamond.images[0] || ""}
                               alt={diamond.name}
@@ -250,21 +272,29 @@ function OrdersContent() {
                               className="object-cover"
                             />
                           </div>
-                          <div>
-                            <div className="font-semibold text-stone-900">{diamond.name}</div>
-                            <div className="text-[11px] font-mono text-amber-800">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-stone-900 truncate">{diamond.name}</div>
+                            <div className="text-[11px] font-mono text-amber-800 mt-0.5">
                               {diamond.carat} ct • {diamond.shape} • {diamond.color} / {diamond.clarity} • Cut: {diamond.cut}
                             </div>
-                            <div className="text-[10px] text-stone-400 font-mono">
+                            <div className="text-[10px] text-stone-500 font-mono mt-0.5">
                               Cert: {diamond.certificateNumber} ({diamond.lab || "GIA"})
                             </div>
                           </div>
                         </div>
 
-                        <div className="text-right">
-                          <span className="font-mono font-bold text-stone-900">
+                        <div className="flex items-center justify-between sm:justify-end sm:flex-col sm:items-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-200/80">
+                          <span className="font-mono font-bold text-stone-900 text-sm">
                             {formatPrice(diamond.finalPrice)}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => openCertificate(diamond)}
+                            className="inline-flex items-center gap-1 text-[11px] text-amber-800 hover:text-amber-950 font-mono underline cursor-pointer"
+                          >
+                            <Award className="h-3.5 w-3.5 text-amber-600" />
+                            <span>View Certificate</span>
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -329,6 +359,13 @@ function OrdersContent() {
           ))}
         </div>
       )}
+
+      {/* Certificate View-Only Modal */}
+      <CertificateViewerModal
+        open={viewerState.open}
+        onClose={closeCertificate}
+        diamond={viewerState.diamond}
+      />
     </div>
   );
 }

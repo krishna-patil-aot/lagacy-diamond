@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { IDiamond } from "@/types/diamond.types";
 import { toast } from "sonner";
 
@@ -16,57 +17,78 @@ interface ICartStore {
   clearCart: () => void;
 }
 
-export const useCartStore = create<ICartStore>((set, get) => ({
-  cart: [],
-  wishlist: [],
-  isCheckoutOpen: false,
+export const useCartStore = create<ICartStore>()(
+  persist(
+    (set, get) => ({
+      cart: [],
+      wishlist: [],
+      isCheckoutOpen: false,
 
-  openCheckout: () => set({ isCheckoutOpen: true }),
-  closeCheckout: () => set({ isCheckoutOpen: false }),
+      openCheckout: () => set({ isCheckoutOpen: true }),
+      closeCheckout: () => set({ isCheckoutOpen: false }),
 
-  addToCart: (diamond: IDiamond) => {
-    set((state) => {
-      if (state.cart.some((item) => item._id === diamond._id)) {
-        toast.info("Already in your Private Vault reservation");
-        return state;
-      }
-      toast.success("Reserved in Private Vault!", {
-        description: `${diamond.name} (${diamond.carat} ct ${diamond.shape})`,
-      });
-      return { cart: [...state.cart, diamond] };
-    });
-  },
+      addToCart: (diamond: IDiamond) => {
+        set((state) => {
+          if (state.cart.some((item) => item._id === diamond._id)) {
+            toast.info("Item is already in your shopping cart");
+            return state;
+          }
+          toast.success("Added to Cart!", {
+            description: `${diamond.name} (${diamond.carat} ct ${diamond.shape})`,
+          });
+          return { cart: [...state.cart, diamond] };
+        });
+      },
 
-  removeFromCart: (id: string) => {
-    set((state) => ({
-      cart: state.cart.filter((item) => item._id !== id),
-    }));
-    toast.info("Removed from Private Vault reservation");
-  },
+      removeFromCart: (id: string) => {
+        set((state) => ({
+          cart: state.cart.filter((item) => item._id !== id),
+        }));
+        toast.info("Removed from Cart");
+      },
 
-  toggleWishlist: (diamond: IDiamond) => {
-    set((state) => {
-      const exists = state.wishlist.some((item) => item._id === diamond._id);
-      if (exists) {
-        toast.info("Removed from Private Collection");
-        return {
-          wishlist: state.wishlist.filter((item) => item._id !== diamond._id),
-        };
-      }
-      toast.success("Saved to Private Collection!", {
-        description: `${diamond.name} added to your wishlist.`,
-      });
-      return { wishlist: [...state.wishlist, diamond] };
-    });
-  },
+      toggleWishlist: (diamond: IDiamond) => {
+        set((state) => {
+          const exists = state.wishlist.some(
+            (item) => item._id === diamond._id,
+          );
+          if (exists) {
+            toast.info("Removed from Wishlist");
+            return {
+              wishlist: state.wishlist.filter(
+                (item) => item._id !== diamond._id,
+              ),
+            };
+          }
+          toast.success("Added to Wishlist!", {
+            description: `${diamond.name} has been added to your wishlist.`,
+          });
+          return { wishlist: [...state.wishlist, diamond] };
+        });
+      },
 
-  isInWishlist: (id: string) => {
-    return get().wishlist.some((item) => item._id === id);
-  },
+      isInWishlist: (id: string) => {
+        return get().wishlist.some((item) => item._id === id);
+      },
 
-  isInCart: (id: string) => {
-    return get().cart.some((item) => item._id === id);
-  },
+      isInCart: (id: string) => {
+        return get().cart.some((item) => item._id === id);
+      },
 
-  clearCart: () => set({ cart: [] }),
-}));
+      clearCart: () => set({ cart: [] }),
+    }),
+    {
+      name: "legacy_diamond_cart_wishlist_storage",
+      partialize: (state) => ({
+        cart: state.cart,
+        wishlist: state.wishlist,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (!state.cart) state.cart = [];
+          if (!state.wishlist) state.wishlist = [];
+        }
+      },
+    },
+  ),
+);

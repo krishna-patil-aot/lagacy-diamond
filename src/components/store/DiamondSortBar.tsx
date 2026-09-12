@@ -5,6 +5,7 @@ import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp } from "lucide-rea
 import { useFilterStore } from "@/store/useFilterStore";
 import { DiamondSortOption } from "@/types/filter.types";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   Select,
   SelectContent,
@@ -50,18 +51,18 @@ export function DiamondSortBar({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Search Bar */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-          <input
+          <Input
+            icon={<Search className="h-4 w-4 text-stone-400" />}
             type="text"
-            placeholder="Search by name, SKU, or IGI/GIA certificate..."
+            placeholder="Search by shape, SKU, or IGI/GIA certificate..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-stone-200 bg-stone-50/70 pl-9 pr-8 py-2 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:bg-white transition-colors"
+            className="h-10 bg-stone-50/70 border-stone-200 text-xs sm:text-sm focus-visible:bg-white focus-visible:border-stone-400 pr-8"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-900"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-900 cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>

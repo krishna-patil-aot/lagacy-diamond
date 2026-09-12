@@ -76,47 +76,67 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       }}
       className="max-w-2xl"
     >
-      {/* Step Indicator Header */}
-      <div className="border-b border-zinc-800 pb-4 mb-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
-            <ShoppingBag className="h-4 w-4" />
-            <span>Private Vault Checkout</span>
-          </span>
-          <span className="text-xs font-mono text-zinc-500">
-            {step === "CART" && "Step 1/3: Selection"}
-            {step === "SHIPPING" && "Step 2/3: Insured Delivery"}
-            {step === "PAYMENT" && "Step 3/3: Valuation & Privilege"}
+      {/* Step Indicator Header with clearance for the close button */}
+      <div className="border-b border-stone-200 pb-3.5 mb-4 pr-8 sm:pr-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">
+              <ShoppingBag className="h-3.5 w-3.5 text-amber-600" />
+            </span>
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-stone-900">
+              Shopping Cart & Checkout
+            </span>
+          </div>
+          <span className="text-[11px] font-mono font-medium text-stone-600 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200 w-fit">
+            {step === "CART" && "Step 1 of 3: Cart Review"}
+            {step === "SHIPPING" && "Step 2 of 3: Delivery Address"}
+            {step === "PAYMENT" && "Step 3 of 3: Payment & Offers"}
             {step === "AWAITING_APPROVAL" && "Verification"}
-            {step === "SUCCESS" && "Vault Confirmed"}
+            {step === "SUCCESS" && "Order Confirmed"}
           </span>
         </div>
       </div>
 
       {/* STEP 1: CART ITEMS REVIEW */}
       {step === "CART" && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-white font-serif">
-            Your Private Vault Selection ({cart.length})
-          </h2>
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg sm:text-xl font-bold text-stone-900 font-serif">
+              Your Cart Selection ({cart.length})
+            </h2>
+            {cart.length > 0 && (
+              <span className="text-xs text-stone-500 font-mono">
+                {cart.length} {cart.length === 1 ? "diamond" : "diamonds"}
+              </span>
+            )}
+          </div>
 
           {cart.length === 0 ? (
-            <div className="py-12 text-center space-y-3">
-              <ShoppingBag className="mx-auto h-10 w-10 text-zinc-600" />
-              <p className="text-sm text-zinc-400">Your vault reservation list is empty.</p>
-              <Button variant="luxury" size="sm" onClick={onClose}>
+            <div className="py-10 sm:py-14 text-center space-y-3 px-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-100 border border-stone-200 text-stone-400">
+                <ShoppingBag className="h-7 w-7" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm sm:text-base font-semibold text-stone-800">
+                  Your shopping cart is empty
+                </p>
+                <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                  Browse our certified lab-grown diamond collection to add your favourite gems.
+                </p>
+              </div>
+              <Button variant="luxury" size="sm" onClick={onClose} className="mt-2">
                 Browse Certified Diamonds
               </Button>
             </div>
           ) : (
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
               {cart.map((diamond) => (
                 <div
                   key={diamond._id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/60 p-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-stone-200 bg-stone-50/70 p-3 sm:p-3.5 gap-3 hover:border-stone-300 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 flex-shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative h-13 w-13 sm:h-14 sm:w-14 rounded-lg overflow-hidden border border-stone-200 bg-white shrink-0">
                       <Image
                         src={diamond.images[0] || ""}
                         alt={diamond.name}
@@ -124,30 +144,36 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                         className="object-cover"
                       />
                     </div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-white truncate max-w-[220px]">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-semibold text-stone-900 truncate">
                         {diamond.name}
                       </h4>
-                      <div className="text-[11px] font-mono text-amber-300">
+                      <div className="text-[11px] font-mono text-stone-600 mt-0.5">
                         {diamond.carat} ct • {diamond.shape} • {diamond.color} / {diamond.clarity}
+                      </div>
+                      <div className="text-[10px] font-mono text-amber-700 mt-0.5">
+                        Cert: {diamond.lab} #{diamond.certificateNumber}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-bold font-mono text-white">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-200/80">
+                    <span className="text-sm sm:text-base font-bold font-mono text-stone-900">
                       {formatPrice(diamond.finalPrice)}
                     </span>
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => {
                         removeFromCart(diamond._id);
-                        toast.info("Removed from Vault Reservation");
+                        toast.info("Removed from Cart");
                       }}
-                      className="text-zinc-500 hover:text-red-400 p-1"
-                      title="Remove"
+                      className="h-8 w-8 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                      title="Remove diamond"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -155,25 +181,27 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           )}
 
           {cart.length > 0 && (
-            <div className="border-t border-zinc-800 pt-4 space-y-4">
+            <div className="border-t border-stone-200 pt-4 space-y-4">
               {!isAuthenticated && (
-                <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-amber-300 bg-amber-50/80 p-3 text-xs text-amber-900 gap-2">
                   <div className="flex items-center gap-2">
-                    <Lock className="h-4 w-4 text-amber-400 shrink-0" />
-                    <span>Client sign-in required to access insured armored delivery & payment.</span>
+                    <Lock className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span>Please sign in to proceed with secure delivery address and checkout.</span>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setIsLoginModalOpen(true)}
-                    className="underline underline-offset-2 font-semibold hover:text-white shrink-0 ml-2 cursor-pointer"
+                    className="shrink-0 h-7 text-xs font-semibold border-amber-300 text-amber-900 bg-white hover:bg-amber-100"
                   >
                     Sign In
-                  </button>
+                  </Button>
                 </div>
               )}
               <div className="flex justify-between items-center text-sm">
-                <span className="text-zinc-400">Total Lot Valuation:</span>
-                <span className="text-xl font-bold font-mono text-amber-300">
+                <span className="text-stone-600 font-medium">Cart Subtotal:</span>
+                <span className="text-lg sm:text-xl font-bold font-mono text-stone-900">
                   {formatPrice(subtotal)}
                 </span>
               </div>
@@ -189,7 +217,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   </>
                 ) : (
                   <>
-                    Proceed to Insured Delivery Address
+                    Proceed to Delivery Address
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -202,64 +230,66 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       {/* STEP 2: SHIPPING ADDRESS */}
       {step === "SHIPPING" && (
         <form onSubmit={handleSubmit(submitShippingAddress)} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white font-serif">
-              Insured Armored Delivery Details
+          <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+            <h2 className="text-base sm:text-lg font-bold text-stone-900 font-serif">
+              Insured Delivery Address
             </h2>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setStep("CART")}
-              className="text-xs text-zinc-400 hover:text-amber-300 flex items-center gap-1"
+              className="text-xs text-stone-600 hover:text-stone-900 h-8 px-2"
             >
-              <ChevronLeft className="h-3.5 w-3.5" /> Back
-            </button>
+              <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Back to Cart
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">Full Legal Name *</label>
-              <Input placeholder="Lady Victoria Kensington" {...register("fullName")} error={errors.fullName?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">Full Legal Name *</label>
+              <Input placeholder="e.g. Rahul Sharma" {...register("fullName")} error={errors.fullName?.message} />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">Secure Tracking Email *</label>
-              <Input type="email" placeholder="client@estate.luxury" {...register("email")} error={errors.email?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">Tracking Email Address *</label>
+              <Input type="email" placeholder="e.g. rahul.sharma@example.com" {...register("email")} error={errors.email?.message} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">Contact Telephone (For Delivery Protocol) *</label>
-              <Input placeholder="+1 (555) 019-2831" {...register("phone")} error={errors.phone?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">Contact Telephone *</label>
+              <Input placeholder="e.g. +91 98765 43210" {...register("phone")} error={errors.phone?.message} />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">Country *</label>
-              <Input placeholder="United States" {...register("country")} error={errors.country?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">Country *</label>
+              <Input placeholder="e.g. India" {...register("country")} error={errors.country?.message} />
             </div>
           </div>
 
           <div>
-            <label className="block mb-1 text-xs font-medium text-zinc-300">Street & Vault Address *</label>
-            <Input placeholder="740 Park Avenue, Penthouse B" {...register("street")} error={errors.street?.message} />
+            <label className="block mb-1 text-xs font-medium text-stone-700">Street & Apartment / Building Address *</label>
+            <Input placeholder="e.g. 102, Bandra Kurla Complex, Bandra East" {...register("street")} error={errors.street?.message} />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">City *</label>
-              <Input placeholder="New York" {...register("city")} error={errors.city?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">City *</label>
+              <Input placeholder="e.g. Mumbai" {...register("city")} error={errors.city?.message} />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">State / Region *</label>
-              <Input placeholder="NY" {...register("state")} error={errors.state?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">State / Region *</label>
+              <Input placeholder="e.g. Maharashtra" {...register("state")} error={errors.state?.message} />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-medium text-zinc-300">Postal / ZIP *</label>
-              <Input placeholder="10021" {...register("postalCode")} error={errors.postalCode?.message} />
+              <label className="block mb-1 text-xs font-medium text-stone-700">PIN / Postal Code *</label>
+              <Input placeholder="e.g. 400051" {...register("postalCode")} error={errors.postalCode?.message} />
             </div>
           </div>
 
-          <div className="border-t border-zinc-800 pt-4">
+          <div className="border-t border-stone-200 pt-4">
             <Button type="submit" variant="luxury" className="w-full justify-center text-sm h-11">
-              Proceed to Valuation & Payment
+              Proceed to Payment & Summary
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
@@ -268,25 +298,28 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       {/* STEP 3: PAYMENT & DISCOUNT COUPON */}
       {step === "PAYMENT" && (
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white font-serif">
-              Payment & Privilege Discounts
+        <div className="space-y-4 sm:space-y-5">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+            <h2 className="text-base sm:text-lg font-bold text-stone-900 font-serif">
+              Payment & Discount Offers
             </h2>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setStep("SHIPPING")}
-              className="text-xs text-zinc-400 hover:text-amber-300 flex items-center gap-1"
+              className="text-xs text-stone-600 hover:text-stone-900 h-8 px-2"
             >
-              <ChevronLeft className="h-3.5 w-3.5" /> Back
-            </button>
+              <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Back
+            </Button>
           </div>
 
           {/* Coupon Code Input & Chips */}
-          <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 space-y-3">
+          <div className="rounded-xl border border-amber-300 bg-amber-50/50 p-3.5 sm:p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-amber-300 flex items-center gap-1.5 font-mono">
-                <Tag className="h-3.5 w-3.5" />
-                <span>Apply Privilege Discount Coupon</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-900 flex items-center gap-1.5 font-mono">
+                <Tag className="h-3.5 w-3.5 text-amber-700" />
+                <span>Apply Promo / Discount Code</span>
               </span>
               {appliedCoupon && (
                 <Badge variant="gold" className="text-[10px]">
@@ -295,28 +328,28 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="Enter coupon (e.g. KRISHNAVIP)"
+                placeholder="Enter code (e.g. KRISHNAVIP)"
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                 disabled={Boolean(appliedCoupon)}
-                className="font-mono"
+                className="font-mono bg-white border-stone-300"
               />
               {appliedCoupon ? (
-                <Button variant="outline" size="sm" onClick={removeCoupon}>
+                <Button variant="outline" size="sm" onClick={removeCoupon} className="h-10 sm:h-9 shrink-0">
                   Remove
                 </Button>
               ) : (
-                <Button variant="luxury" size="sm" onClick={applyCoupon}>
+                <Button variant="luxury" size="sm" onClick={applyCoupon} className="h-10 sm:h-9 shrink-0 px-5">
                   Apply
                 </Button>
               )}
             </div>
 
             {/* Quick Coupon Helper Chips */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-              <span className="text-zinc-500 font-mono">Quick Codes:</span>
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+              <span className="text-stone-500 font-mono">Available Offers:</span>
               {AVAILABLE_COUPONS.map((coupon) => (
                 <button
                   key={coupon.code}
@@ -328,7 +361,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                       toast.info(`Selected "${coupon.code}" - Click Apply to save ${coupon.discountPercentage}%`);
                     }
                   }}
-                  className="rounded-full border border-zinc-700 bg-zinc-800/80 px-2.5 py-0.5 text-zinc-300 hover:border-amber-400 hover:text-amber-300 font-mono transition-colors"
+                  className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-stone-700 hover:border-amber-500 hover:text-amber-800 font-mono transition-colors shadow-xs"
                 >
                   {coupon.code} (-{coupon.discountPercentage}%)
                 </button>
@@ -338,50 +371,53 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
           {/* Payment Method Selection */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-zinc-300 block">
-              Payment Protocol
+            <span className="text-xs font-medium text-stone-700 block">
+              Payment Method
             </span>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
               {[
-                { id: "CREDIT_CARD", label: "Encrypted Card" },
-                { id: "WIRE_TRANSFER", label: "Bank Wire / SWIFT" },
-                { id: "VAULT_ESCROW", label: "Vault Escrow" },
-              ].map(({ id, label }) => (
+                { id: "CREDIT_CARD", label: "Credit / Debit Card", sub: "Visa, Mastercard, RuPay" },
+                { id: "WIRE_TRANSFER", label: "Bank Transfer / UPI", sub: "NEFT, RTGS, IMPS & UPI" },
+                { id: "VAULT_ESCROW", label: "Escrow Protection", sub: "Insured escrow handover" },
+              ].map(({ id, label, sub }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setPaymentMethod(id as "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW")}
-                  className={`rounded-lg border p-3 text-center text-xs font-medium transition-all ${
+                  className={`rounded-xl border p-3 text-left transition-all cursor-pointer ${
                     paymentMethod === id
-                      ? "border-amber-400 bg-amber-400/15 text-amber-200"
-                      : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700"
+                      ? "border-stone-900 bg-stone-900 text-white shadow-xs"
+                      : "border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700"
                   }`}
                 >
-                  {label}
+                  <div className="text-xs font-semibold">{label}</div>
+                  <div className={`text-[10px] mt-0.5 ${paymentMethod === id ? "text-stone-300" : "text-stone-500"}`}>
+                    {sub}
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Summary Breakdown */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2 text-xs">
-            <div className="flex justify-between text-zinc-400">
-              <span>Lot Subtotal:</span>
-              <span className="font-mono">{formatPrice(subtotal)}</span>
+          <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 sm:p-4 space-y-2 text-xs">
+            <div className="flex justify-between text-stone-600">
+              <span>Diamond Subtotal:</span>
+              <span className="font-mono text-stone-900 font-medium">{formatPrice(subtotal)}</span>
             </div>
             {couponSavings > 0 && (
-              <div className="flex justify-between text-amber-300 font-semibold">
-                <span>Coupon Privilege Savings ({appliedCoupon?.code}):</span>
+              <div className="flex justify-between text-emerald-700 font-semibold">
+                <span>Promotional Discount ({appliedCoupon?.code}):</span>
                 <span className="font-mono">-{formatPrice(couponSavings)}</span>
               </div>
             )}
-            <div className="flex justify-between text-zinc-400">
+            <div className="flex justify-between text-stone-600">
               <span>Armored & Insured Transit:</span>
-              <span className="font-mono text-emerald-400">COMPLIMENTARY</span>
+              <span className="font-mono text-emerald-700 font-semibold">FREE / COMPLIMENTARY</span>
             </div>
-            <div className="flex justify-between text-sm font-bold text-white border-t border-zinc-800 pt-2">
-              <span>Final Settlement Amount:</span>
-              <span className="font-mono text-lg text-emerald-400">
+            <div className="flex justify-between text-sm font-bold text-stone-900 border-t border-stone-200 pt-2.5">
+              <span>Final Payable Amount:</span>
+              <span className="font-mono text-base sm:text-lg text-emerald-700">
                 {formatPrice(finalTotal)}
               </span>
             </div>
@@ -393,137 +429,131 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             onClick={placeOrder}
             isLoading={isProcessing}
           >
-            Authorize & Submit Order to Vault
+            Confirm & Place Order
           </Button>
         </div>
       )}
 
       {/* STEP 4: AWAITING ADMIN APPROVAL */}
       {step === "AWAITING_APPROVAL" && activeOrder && (
-        <div className="py-6 text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 animate-pulse">
-            <Clock className="h-8 w-8" />
+        <div className="py-6 text-center space-y-5">
+          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-amber-500/15 text-amber-700 border border-amber-500/30 animate-pulse">
+            <Clock className="h-7 w-7 sm:h-8 sm:w-8" />
           </div>
 
-          <div className="space-y-2 max-w-md mx-auto">
+          <div className="space-y-2 max-w-md mx-auto px-2">
             <div className="flex items-center justify-center gap-2">
               <Badge variant="gold">ORDER #{activeOrder.id}</Badge>
-              <span className="rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-mono font-medium">
-                Sent to Admin
+              <span className="rounded-full bg-amber-500/10 text-amber-800 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-mono font-medium">
+                Under Verification
               </span>
             </div>
-            <h2 className="text-2xl font-bold font-serif text-white">
-              Order Transmitted to Vault Admin
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-stone-900">
+              Order Received & In Verification
             </h2>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Your diamond acquisition request has been securely transmitted to the Lead Gemologist & Vault Curator in the Admin Portal for physical lot verification.
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Your diamond acquisition order has been recorded. Our team is verifying the physical diamond certificate and preparing insured courier dispatch.
             </p>
           </div>
 
           {/* Detailed Order Status Card */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 max-w-md mx-auto text-left text-xs space-y-2.5">
-            <div className="flex justify-between text-zinc-400">
+          <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-4 max-w-md mx-auto text-left text-xs space-y-2.5">
+            <div className="flex justify-between text-stone-600">
               <span>Order Reference:</span>
-              <span className="font-mono text-zinc-200 font-semibold">#{activeOrder.id}</span>
+              <span className="font-mono text-stone-900 font-semibold">#{activeOrder.id}</span>
             </div>
-            <div className="flex justify-between text-zinc-400">
-              <span>Settlement Total:</span>
-              <span className="font-mono font-bold text-emerald-400">
+            <div className="flex justify-between text-stone-600">
+              <span>Payable Total:</span>
+              <span className="font-mono font-bold text-emerald-700">
                 {formatPrice(activeOrder.totalAmount)}
               </span>
             </div>
-            <div className="flex justify-between text-zinc-400">
-              <span>Transit Recipient:</span>
-              <span className="text-zinc-200 truncate max-w-[200px]">
+            <div className="flex justify-between text-stone-600">
+              <span>Delivery Recipient:</span>
+              <span className="text-stone-900 truncate max-w-[200px]">
                 {activeOrder.shippingAddress.fullName} ({activeOrder.shippingAddress.city}, {activeOrder.shippingAddress.state})
               </span>
             </div>
-            <div className="flex justify-between items-center text-zinc-400 border-t border-zinc-800/80 pt-2">
-              <span>Curator Pipeline:</span>
-              <span className="inline-flex items-center gap-1.5 text-amber-300 font-mono text-[11px] font-semibold">
-                <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping inline-block" />
-                Awaiting Admin Acceptance
+            <div className="flex justify-between items-center text-stone-600 border-t border-stone-200 pt-2">
+              <span>Status:</span>
+              <span className="inline-flex items-center gap-1.5 text-amber-800 font-mono text-[11px] font-semibold">
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
+                Awaiting Curator Confirmation
               </span>
             </div>
           </div>
 
-          {/* Routing information & Client Actions */}
-          <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/40 p-4 max-w-md mx-auto space-y-3 text-center">
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
-              Order acceptance is managed through the <span className="text-amber-300 font-semibold">Curator Admin Portal</span>. Once the administrator approves the request, transit dispatch is immediately sealed.
-            </p>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2 max-w-md mx-auto">
+            <Link href="/orders" onClick={resetCheckout} className="w-full sm:w-auto">
+              <Button
+                variant="luxury"
+                size="sm"
+                className="w-full sm:w-auto px-6 text-xs h-10"
+              >
+                <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
+                Track in My Orders
+              </Button>
+            </Link>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
-              <Link href="/orders" onClick={resetCheckout} className="w-full sm:w-auto">
+            {user?.role === "ADMIN" && (
+              <Link href="/admin" onClick={resetCheckout} className="w-full sm:w-auto">
                 <Button
-                  variant="luxury"
+                  variant="outline"
                   size="sm"
-                  className="w-full sm:w-auto px-6 text-xs"
+                  className="w-full sm:w-auto text-xs text-amber-800 hover:text-amber-900 border-amber-300 bg-amber-50 h-10"
                 >
-                  <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
-                  Track in My Orders
+                  <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                  Approve in Admin Portal
                 </Button>
               </Link>
+            )}
 
-              {user?.role === "ADMIN" && (
-                <Link href="/admin" onClick={resetCheckout} className="w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto text-xs text-amber-300 hover:text-white border-amber-500/40 bg-amber-500/10"
-                  >
-                    <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                    Approve in Admin Portal
-                  </Button>
-                </Link>
-              )}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full sm:w-auto text-xs text-zinc-400 hover:text-zinc-200"
-                onClick={resetCheckout}
-              >
-                Continue Browsing
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full sm:w-auto text-xs text-stone-600 hover:text-stone-900 h-10"
+              onClick={resetCheckout}
+            >
+              Continue Browsing
+            </Button>
           </div>
         </div>
       )}
 
       {/* STEP 5: ORDER PLACED SUCCESS */}
       {step === "SUCCESS" && (
-        <div className="py-8 text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-in zoom-in-50 duration-300">
-            <CheckCircle2 className="h-10 w-10" />
+        <div className="py-6 sm:py-8 text-center space-y-5">
+          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 animate-in zoom-in-50 duration-300">
+            <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10" />
           </div>
 
-          <div className="space-y-2 max-w-md mx-auto">
-            <Badge variant="success">ORDER CONFIRMED & APPROVED</Badge>
-            <h2 className="text-2xl font-serif font-bold text-white">
-              Vault Order Placed Successfully!
+          <div className="space-y-2 max-w-md mx-auto px-2">
+            <Badge variant="success">ORDER CONFIRMED & DISPATCHED</Badge>
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+              Order Placed Successfully!
             </h2>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Order <span className="font-mono text-amber-300 font-semibold">#{activeOrder?.id}</span> has been formally accepted by the Diamond Curator. Your gemstones are now sealed for armored insured transit.
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Order <span className="font-mono text-stone-900 font-semibold">#{activeOrder?.id}</span> has been confirmed. Your gemstones are packaged in tamper-proof security seals with insurance.
             </p>
           </div>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 max-w-md mx-auto text-left text-xs space-y-2">
-            <div className="flex justify-between text-zinc-400">
+          <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-4 max-w-md mx-auto text-left text-xs space-y-2">
+            <div className="flex justify-between text-stone-600">
               <span>Settlement Total:</span>
-              <span className="font-mono font-bold text-emerald-400">
+              <span className="font-mono font-bold text-emerald-700">
                 {formatPrice(activeOrder?.totalAmount || 0)}
               </span>
             </div>
-            <div className="flex justify-between text-zinc-400">
+            <div className="flex justify-between text-stone-600">
               <span>Destination:</span>
-              <span className="text-zinc-200 truncate max-w-[220px]">
+              <span className="text-stone-900 truncate max-w-[220px]">
                 {activeOrder?.shippingAddress.street}, {activeOrder?.shippingAddress.city}
               </span>
             </div>
-            <div className="flex justify-between text-zinc-400">
-              <span>Verification Status:</span>
-              <span className="text-emerald-400 font-mono">GIA Inscription Confirmed</span>
+            <div className="flex justify-between text-stone-600">
+              <span>Certification:</span>
+              <span className="text-emerald-700 font-mono font-medium">Lab Inscription Verified</span>
             </div>
           </div>
 
@@ -531,12 +561,12 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             <Link href="/orders" onClick={resetCheckout} className="w-full sm:w-auto">
               <Button variant="luxury" size="md" className="w-full sm:w-auto px-6">
                 <ShoppingBag className="h-4 w-4 mr-2" />
-                Live Transit Tracking
+                Track Order
               </Button>
             </Link>
             <Button variant="outline" size="md" onClick={resetCheckout} className="w-full sm:w-auto px-6">
               <Sparkles className="h-4 w-4 mr-2" />
-              Continue Exploring Vault
+              Continue Shopping
             </Button>
           </div>
         </div>
@@ -552,7 +582,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           setStep("SHIPPING");
         }}
         title="Sign In Required to Complete Order"
-        description="To safeguard your certified diamond acquisition with physical GIA/IGI inscriptions and armored Brink's courier handover, please sign in or register."
+        description="To safeguard your certified diamond acquisition with physical lab inscriptions and insured courier handover, please sign in or register."
       />
     </Dialog>
   );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, getUserOrders } from "@/lib/order-repository";
 import { verifyToken } from "@/lib/auth";
+import { sendOrderReceiptPendingEmail } from "@/lib/mailer";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,22 @@ export async function POST(request: NextRequest) {
       },
       verified?.userId
     );
+
+    // Send order receipt email (under review - no invoice issued until approved by curator)
+    try {
+      if (newOrder.shippingAddress?.email) {
+        await sendOrderReceiptPendingEmail({
+          to: newOrder.shippingAddress.email,
+          clientName: newOrder.shippingAddress.fullName,
+          orderNumber: newOrder.orderNumber || newOrder.id,
+          totalAmount: newOrder.totalAmount,
+          itemCount: newOrder.items.length,
+        });
+      }
+    } catch (emailError) {
+      // Log dispatch error but do not fail order creation
+      console.error("[Order Mailer Pipeline Error]:", emailError);
+    }
 
     return NextResponse.json({ success: true, data: newOrder }, { status: 201 });
   } catch (err) {

@@ -9,12 +9,22 @@ import { toast } from "sonner";
 export interface IUseAdminOrdersReturn {
   orders: IOrder[];
   filteredOrders: IOrder[];
+  paginatedOrders: IOrder[];
   statusFilter: OrderStatus | "ALL";
   setStatusFilter: (status: OrderStatus | "ALL") => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  pageSize: number;
+  setPageSize: (size: number) => void;
+  totalPages: number;
+  totalFilteredCount: number;
   pendingCount: number;
   approvedCount: number;
   dispatchedCount: number;
   deliveredCount: number;
+  cancelledCount: number;
   totalOrderRevenue: number;
   handleApproveOrder: (orderId: string) => Promise<void>;
   handleDispatchOrder: (orderId: string, carrier?: string, trackingNumber?: string) => Promise<void>;
@@ -29,6 +39,9 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   const { orders: storeOrders, approveOrder, rejectOrder } = useOrderStore();
   const [dbOrders, setDbOrders] = useState<IOrder[]>([]);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
   const fetchOrders = useCallback(async () => {
@@ -85,9 +98,52 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   }, [dbOrders, storeOrders]);
 
   const filteredOrders = useMemo(() => {
-    if (statusFilter === "ALL") return orders;
-    return orders.filter((o) => o.status === statusFilter);
-  }, [orders, statusFilter]);
+    let result = orders;
+    if (statusFilter !== "ALL") {
+      result = result.filter((o) => o.status === statusFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((o) => {
+        const orderNum = (o.orderNumber || o.id).toLowerCase();
+        const clientName = o.shippingAddress?.fullName?.toLowerCase() || "";
+        const clientEmail = o.shippingAddress?.email?.toLowerCase() || "";
+        const clientCity = o.shippingAddress?.city?.toLowerCase() || "";
+        const clientPhone = o.shippingAddress?.phone?.toLowerCase() || "";
+        const diamondNames = o.items.map((i) => i.name.toLowerCase()).join(" ");
+        const diamondSkus = o.items.map((i) => i.sku.toLowerCase()).join(" ");
+        return (
+          orderNum.includes(q) ||
+          clientName.includes(q) ||
+          clientEmail.includes(q) ||
+          clientCity.includes(q) ||
+          clientPhone.includes(q) ||
+          diamondNames.includes(q) ||
+          diamondSkus.includes(q)
+        );
+      });
+    }
+    return result;
+  }, [orders, statusFilter, searchQuery]);
+
+  const totalFilteredCount = filteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / pageSize));
+
+  // Reset to page 1 on filter or search change
+  const handleStatusFilterChange = (status: OrderStatus | "ALL") => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, currentPage, pageSize]);
 
   const pendingCount = useMemo(() => {
     return orders.filter((o) => o.status === "PENDING_APPROVAL").length;
@@ -103,6 +159,10 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
 
   const deliveredCount = useMemo(() => {
     return orders.filter((o) => o.status === "DELIVERED").length;
+  }, [orders]);
+
+  const cancelledCount = useMemo(() => {
+    return orders.filter((o) => o.status === "CANCELLED").length;
   }, [orders]);
 
   const totalOrderRevenue = useMemo(() => {
@@ -147,7 +207,7 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   };
 
   const handleApproveOrder = async (orderId: string) => {
-    await handleAdvanceStatus(orderId, "APPROVED", "Curator verified physical lot & GIA inscription");
+    await handleAdvanceStatus(orderId, "APPROVED", "Curator verified physical lot & lab inscription");
   };
 
   const handleDispatchOrder = async (orderId: string, carrier?: string, trackingNumber?: string) => {
@@ -189,12 +249,22 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   return {
     orders,
     filteredOrders,
+    paginatedOrders,
     statusFilter,
-    setStatusFilter,
+    setStatusFilter: handleStatusFilterChange,
+    searchQuery,
+    setSearchQuery: handleSearchChange,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalFilteredCount,
     pendingCount,
     approvedCount,
     dispatchedCount,
     deliveredCount,
+    cancelledCount,
     totalOrderRevenue,
     handleApproveOrder,
     handleDispatchOrder,

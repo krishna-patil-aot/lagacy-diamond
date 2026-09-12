@@ -6,6 +6,7 @@ import { IDiamond, DiamondShape, DiamondColor, DiamondClarity, DiamondCut, Certi
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { FormSelect, FormSelectOption } from "@/components/ui/FormSelect";
 import { useAdminDiamondForm } from "@/hooks/useAdminDiamondForm";
 import { formatPrice } from "@/lib/utils";
@@ -438,9 +439,9 @@ export function AdminDiamondFormModal({
           <label className="block mb-1 text-xs font-medium text-stone-700">
             Gemological Description & Provenance Notes *
           </label>
-          <textarea
+          <Textarea
             rows={3}
-            className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400"
+            className="text-xs"
             placeholder="Describe facet proportion, scintillation, and optical dispersion..."
             {...register("description")}
           />

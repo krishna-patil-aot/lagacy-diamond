@@ -21,7 +21,13 @@ export default function AdminPage() {
   const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD">("INVENTORY");
   const pendingOrdersCount = orders.filter((o) => o.status === "PENDING_APPROVAL").length;
   const {
-    filteredDiamonds,
+    paginatedDiamonds,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalFilteredCount,
     stats,
     error,
     searchQuery,
@@ -138,11 +144,17 @@ export default function AdminPage() {
 
       {adminTab === "INVENTORY" && (
         <AdminDiamondTable
-          diamonds={filteredDiamonds}
+          diamonds={paginatedDiamonds}
+          totalCount={totalFilteredCount}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          totalPages={totalPages}
         />
       )}
 

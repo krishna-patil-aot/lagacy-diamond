@@ -28,7 +28,9 @@ export interface IUseCheckoutReturn {
   applyCoupon: () => void;
   removeCoupon: () => void;
   paymentMethod: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW";
-  setPaymentMethod: (method: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW") => void;
+  setPaymentMethod: (
+    method: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW",
+  ) => void;
   subtotal: number;
   couponSavings: number;
   finalTotal: number;
@@ -68,7 +70,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       city: "",
       state: "",
       postalCode: "",
-      country: "United States",
+      country: "India",
     },
   });
 
@@ -106,8 +108,8 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
     !isAuthenticated && step !== "CART"
       ? "CART"
       : step === "AWAITING_APPROVAL" && activeOrder?.status === "APPROVED"
-      ? "SUCCESS"
-      : step;
+        ? "SUCCESS"
+        : step;
 
   const applyCoupon = () => {
     if (!couponInput.trim()) return;
@@ -171,8 +173,13 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
     };
 
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      const token = typeof window !== "undefined" ? localStorage.getItem("diamond_auth_token") : null;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("diamond_auth_token")
+          : null;
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -187,7 +194,9 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       if (json.success && json.data) {
         const createdOrder: IOrder = json.data;
         addOrder(createdOrder);
-        setSubmittedOrderId(createdOrder.id || createdOrder.orderNumber || orderId);
+        setSubmittedOrderId(
+          createdOrder.id || createdOrder.orderNumber || orderId,
+        );
       } else {
         const fallbackOrder: IOrder = {
           ...orderPayload,

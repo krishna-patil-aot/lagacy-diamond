@@ -8,6 +8,13 @@ import { CertificationLab, DiamondClarity, DiamondColor, DiamondCut, DiamondShap
 export interface IUseAdminSoldProductsReturn {
   soldProducts: ISoldProductItem[];
   filteredSoldProducts: ISoldProductItem[];
+  paginatedSoldProducts: ISoldProductItem[];
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  pageSize: number;
+  setPageSize: (size: number) => void;
+  totalPages: number;
+  totalFilteredCount: number;
   stats: ISoldProductsStats;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -28,6 +35,8 @@ export function useAdminSoldProducts(): IUseAdminSoldProductsReturn {
   const { orders, isUpdating } = useAdminOrders();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
 
   const soldProducts: ISoldProductItem[] = useMemo(() => {
     const list: ISoldProductItem[] = [];
@@ -83,6 +92,16 @@ export function useAdminSoldProducts(): IUseAdminSoldProductsReturn {
     };
   }, [soldProducts]);
 
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
   const filteredSoldProducts = useMemo(() => {
     return soldProducts.filter((item) => {
       const matchesStatus = statusFilter === "ALL" || item.orderStatus === statusFilter;
@@ -101,14 +120,29 @@ export function useAdminSoldProducts(): IUseAdminSoldProductsReturn {
     });
   }, [soldProducts, searchQuery, statusFilter]);
 
+  const totalFilteredCount = filteredSoldProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / pageSize));
+
+  const paginatedSoldProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredSoldProducts.slice(start, start + pageSize);
+  }, [filteredSoldProducts, currentPage, pageSize]);
+
   return {
     soldProducts,
     filteredSoldProducts,
+    paginatedSoldProducts,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalFilteredCount,
     stats,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: handleSearchChange,
     statusFilter,
-    setStatusFilter,
+    setStatusFilter: handleStatusFilterChange,
     isLoading: isUpdating,
   };
 }
