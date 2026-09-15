@@ -9,19 +9,19 @@ interface AdminStatsGridProps {
 
 export function AdminStatsGrid({ stats }: AdminStatsGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
       {/* 1. Total Diamonds */}
-      <div className="rounded-xl border border-stone-200/80 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase font-mono tracking-wider text-stone-500">
+      <div className="rounded-xl border border-stone-200/80 bg-white p-3 sm:p-4 shadow-xs">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-stone-500 truncate">
             Total Diamonds
           </span>
-          <Gem className="h-4 w-4 text-amber-600" />
+          <Gem className="h-4 w-4 text-amber-600 shrink-0" />
         </div>
-        <div className="mt-2 text-2xl font-bold font-mono text-stone-900">
+        <div className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold font-mono text-stone-900 truncate">
           {stats.totalDiamonds}
         </div>
-        <p className="mt-1 text-[11px] text-stone-400">Foundry cultivated lots</p>
+        <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-stone-400 truncate">Foundry cultivated lots</p>
       </div>
 
       {/* 2. Total Catalog Value */}

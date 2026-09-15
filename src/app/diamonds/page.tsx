@@ -7,18 +7,23 @@ import { DiamondCard } from "@/components/store/DiamondCard";
 import { DiamondFilterSidebar } from "@/components/store/DiamondFilterSidebar";
 import { DiamondSortBar } from "@/components/store/DiamondSortBar";
 import { DiamondQuickViewModal } from "@/components/store/DiamondQuickViewModal";
+import { DiamondPagination } from "@/components/store/DiamondPagination";
 import { IDiamond } from "@/types/diamond.types";
 import { Button } from "@/components/ui/Button";
-import { Gem, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { Gem, SlidersHorizontal } from "lucide-react";
+import { siteConfig } from "@/config/site.config";
 
 export default function DiamondsCatalogPage() {
   const { diamonds, meta, isLoading, error, refetch } = useDiamonds();
-  const { page, setPage, resetFilters } = useFilterStore();
+  const { resetFilters } = useFilterStore();
   const [quickViewDiamond, setQuickViewDiamond] = useState<IDiamond | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+    <div
+      id="diamonds-catalog-section"
+      className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6 scroll-mt-20"
+    >
       {/* Page Header */}
       <div className="border-b border-stone-200 pb-5">
         <div className="flex items-center gap-2">
@@ -28,10 +33,10 @@ export default function DiamondsCatalogPage() {
           </span>
         </div>
         <h1 className="mt-1 font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 tracking-tight">
-          Legacy Diamond Collection
+          {siteConfig.brandName} Certified Collection
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-stone-600 max-w-2xl leading-relaxed">
-          Grown in our advanced diamond laboratory with zero mining impact. Pure optical clarity, laser-inscribed certifications, and direct foundry pricing.
+          Cultivated inside advanced solar plasma reactors with zero earth displacement. Sovereign Type IIa optical purity, laser-inscribed GIA &amp; IGI certifications, and transparent direct atelier pricing.
         </p>
       </div>
 
@@ -100,34 +105,11 @@ export default function DiamondsCatalogPage() {
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-stone-200 pt-6">
-          <span className="text-xs font-mono text-stone-500">
-            Page {meta.currentPage} of {meta.totalPages} ({meta.totalCount} diamonds)
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= meta.totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Dynamic Client Pagination Controls (5, 10, 15 cards per page) */}
+      <DiamondPagination
+        meta={meta}
+        targetScrollElementId="diamonds-catalog-section"
+      />
 
       {/* Quick View Dialog */}
       <DiamondQuickViewModal

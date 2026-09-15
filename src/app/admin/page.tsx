@@ -11,14 +11,19 @@ import { AdminDiamondFormModal } from "@/components/admin/AdminDiamondFormModal"
 import { AdminDeleteDialog } from "@/components/admin/AdminDeleteDialog";
 import { AdminOrderApprovalList } from "@/components/admin/AdminOrderApprovalList";
 import { AdminSoldProductsTable } from "@/components/admin/AdminSoldProductsTable";
+import { AdminInquiriesTable } from "@/components/admin/AdminInquiriesTable";
+import { useAdminInquiries } from "@/hooks/useAdminInquiries";
 import { useOrderStore } from "@/store/useOrderStore";
+import { useInquiryStore } from "@/store/useInquiryStore";
 import { Button } from "@/components/ui/Button";
-import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent } from "lucide-react";
+import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent, MessageSquare } from "lucide-react";
 
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { orders } = useOrderStore();
-  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD">("INVENTORY");
+  const { stats: inquiryStats } = useAdminInquiries();
+  const { unreadCount: unreadInquiriesCount } = useInquiryStore();
+  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "INQUIRIES">("INVENTORY");
   const pendingOrdersCount = orders.filter((o) => o.status === "PENDING_APPROVAL").length;
   const {
     paginatedDiamonds,
@@ -83,6 +88,8 @@ export default function AdminPage() {
       <AdminHeader
         onAddNew={() => setIsAddModalOpen(true)}
         onRefresh={refetch}
+        unreadMessagesCount={unreadInquiriesCount}
+        onOpenInquiries={() => setAdminTab("INQUIRIES")}
       />
 
       {/* 2. Top Metric KPI Cards */}
@@ -95,51 +102,70 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab Navigation Switcher */}
-      <div className="flex items-center gap-3 border-b border-stone-200 pb-2">
-        <button
-          onClick={() => setAdminTab("INVENTORY")}
-          className={`flex items-center gap-2 pb-2 px-1 text-sm font-medium transition-all border-b-2 ${
-            adminTab === "INVENTORY"
-              ? "border-stone-900 text-stone-900"
-              : "border-transparent text-stone-500 hover:text-stone-900"
-          }`}
-        >
-          <Gem className="h-4 w-4" />
-          <span>Gemstone Inventory Lots</span>
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700 font-mono">
-            {stats.totalDiamonds}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setAdminTab("ORDERS")}
-          className={`flex items-center gap-2 pb-2 px-1 text-sm font-medium transition-all border-b-2 ${
-            adminTab === "ORDERS"
-              ? "border-stone-900 text-stone-900"
-              : "border-transparent text-stone-500 hover:text-stone-900"
-          }`}
-        >
-          <ShoppingBag className="h-4 w-4" />
-          <span>Client Vault Orders & Approvals</span>
-          {pendingOrdersCount > 0 && (
-            <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 text-xs font-mono font-bold animate-pulse">
-              {pendingOrdersCount} New
+      {/* Tab Navigation Switcher with Mobile Horizontal Scroll */}
+      <div className="overflow-x-auto no-scrollbar scroll-smooth border-b border-stone-200 pb-1 -mb-px">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-max pb-1">
+          <button
+            onClick={() => setAdminTab("INVENTORY")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "INVENTORY"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <Gem className="h-4 w-4" />
+            <span>Gemstone Inventory Lots</span>
+            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-700 font-mono">
+              {stats.totalDiamonds}
             </span>
-          )}
-        </button>
+          </button>
 
-        <button
-          onClick={() => setAdminTab("SOLD")}
-          className={`flex items-center gap-2 pb-2 px-1 text-sm font-medium transition-all border-b-2 ${
-            adminTab === "SOLD"
-              ? "border-stone-900 text-stone-900"
-              : "border-transparent text-stone-500 hover:text-stone-900"
-          }`}
-        >
-          <BadgePercent className="h-4 w-4" />
-          <span>Sold Gemstones & Realized Sales</span>
-        </button>
+          <button
+            onClick={() => setAdminTab("ORDERS")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "ORDERS"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            <span>Client Vault Orders & Approvals</span>
+            {pendingOrdersCount > 0 && (
+              <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 text-[11px] font-mono font-bold animate-pulse">
+                {pendingOrdersCount} New
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setAdminTab("SOLD")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "SOLD"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <BadgePercent className="h-4 w-4" />
+            <span>Sold Gemstones & Realized Sales</span>
+          </button>
+
+          <button
+            onClick={() => setAdminTab("INQUIRIES")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "INQUIRIES"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Customer Messages & Inquiries</span>
+            {(unreadInquiriesCount > 0 || inquiryStats.newCount > 0) && (
+              <span className="rounded-full bg-amber-500 text-white font-mono font-bold px-2 py-0.5 text-[11px] animate-pulse shadow-xs">
+                {unreadInquiriesCount > 0 ? unreadInquiriesCount : inquiryStats.newCount} New
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {adminTab === "INVENTORY" && (
@@ -161,6 +187,8 @@ export default function AdminPage() {
       {adminTab === "ORDERS" && <AdminOrderApprovalList />}
 
       {adminTab === "SOLD" && <AdminSoldProductsTable />}
+
+      {adminTab === "INQUIRIES" && <AdminInquiriesTable />}
 
       {/* Add Diamond Modal */}
       <AdminDiamondFormModal

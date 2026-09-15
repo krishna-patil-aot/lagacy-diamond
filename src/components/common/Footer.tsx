@@ -2,6 +2,8 @@ import React from "react";
 import Link from "next/link";
 import { ExternalLink, Gem, ShieldCheck, Sun, Lock } from "lucide-react";
 
+import { siteConfig } from "@/config/site.config";
+
 export function Footer() {
   return (
     <footer className="border-t border-stone-200/80 bg-[#f7f5f0] text-stone-600">
@@ -16,16 +18,18 @@ export function Footer() {
               </div>
               <div>
                 <span className="font-serif text-base tracking-[0.14em] font-bold text-stone-900 block leading-none">
-                  LEGACY DIAMOND
+                  {siteConfig.brandName.toUpperCase()}
                 </span>
                 <span className="text-[9px] uppercase tracking-[0.22em] text-stone-400 font-mono mt-0.5 block">
-                  Lab-Grown Foundry
+                  Haute Gemology &amp; Solitaires
                 </span>
               </div>
             </Link>
 
             <p className="text-xs text-stone-600 leading-relaxed max-w-sm">
-              100% certified lab-grown diamonds created with clean solar energy. Honest factory pricing, zero middleman markups, and free insured doorstep delivery across India.
+              Cultivated in 100% solar plasma reactors with zero earth
+              displacement. Sovereign Type IIa certified diamonds, transparent
+              atelier pricing, and fully insured white-glove delivery worldwide.
             </p>
 
             <div className="flex items-center gap-3 pt-2 text-[11px] text-stone-500 font-mono">
@@ -34,11 +38,13 @@ export function Footer() {
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" /> IGI & GIA
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" /> IGI
+                &amp; GIA
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Lock className="h-3.5 w-3.5 text-amber-700" /> Insured Delivery
+                <Lock className="h-3.5 w-3.5 text-amber-700" /> Insured Vault
+                Delivery
               </span>
             </div>
           </div>
@@ -50,32 +56,50 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/diamonds" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/diamonds"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   All Diamonds
                 </Link>
               </li>
               <li>
-                <Link href="/diamonds?shape=Round" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/diamonds?shape=Round"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Round Cut
                 </Link>
               </li>
               <li>
-                <Link href="/diamonds?shape=Oval" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/diamonds?shape=Oval"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Oval Cut
                 </Link>
               </li>
               <li>
-                <Link href="/diamonds?shape=Emerald" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/diamonds?shape=Emerald"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Emerald Cut
                 </Link>
               </li>
               <li>
-                <Link href="/diamonds?shape=Cushion" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/diamonds?shape=Cushion"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Cushion Cut
                 </Link>
               </li>
               <li>
-                <Link href="/diamonds?discount=true" className="hover:text-amber-800 transition-colors font-medium">
+                <Link
+                  href="/diamonds?discount=true"
+                  className="hover:text-amber-800 transition-colors font-medium"
+                >
                   Special Offers
                 </Link>
               </li>
@@ -89,22 +113,34 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/about" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/about"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Our Story (About Us)
                 </Link>
               </li>
               <li>
-                <Link href="/gemology" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/gemology"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   4Cs Diamond Buying Guide
                 </Link>
               </li>
               <li>
-                <Link href="/sustainability" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/sustainability"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Eco-Friendly & Pure
                 </Link>
               </li>
               <li>
-                <Link href="/wishlist" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/wishlist"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Saved Wishlist
                 </Link>
               </li>
@@ -118,27 +154,42 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/contact" className="hover:text-stone-900 transition-colors font-medium text-amber-900">
+                <Link
+                  href="/contact"
+                  className="hover:text-stone-900 transition-colors font-medium text-amber-900"
+                >
                   Talk to Diamond Expert
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/faq"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Help & FAQs
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/shipping"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Delivery & 30-Day Returns
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/privacy"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-stone-900 transition-colors">
+                <Link
+                  href="/terms"
+                  className="hover:text-stone-900 transition-colors"
+                >
                   Terms & Conditions
                 </Link>
               </li>
@@ -147,13 +198,16 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar: Copyright & Engineer Credit */}
-        <div className="border-t border-stone-200/80 pt-6 pb-24 sm:pb-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs md:pr-48">
+        <div className="border-t border-stone-200/80 pt-6 pb-28 sm:pb-10 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs sm:pr-28 lg:pr-36 pb-safe mb-5">
           <p className="text-stone-500 font-medium">
-            © 2026 Legacy Diamond Foundry Inc. All rights reserved. 100% Conflict-free certified.
+            © {siteConfig.copyrightYear} {siteConfig.contact.legalEntityName}.
+            All rights reserved. 100% Conflict-free Type IIa certified.
           </p>
 
           <div className="flex items-center gap-2 bg-stone-100/90 border border-stone-200/80 px-3.5 py-1.5 rounded-full shadow-xs">
-            <span className="text-stone-500 font-medium">Software Engineer:</span>
+            <span className="text-stone-500 font-medium">
+              Software Engineer:
+            </span>
             <Link
               href="https://www.linkedin.com/in/krishnapatil-dev"
               target="_blank"

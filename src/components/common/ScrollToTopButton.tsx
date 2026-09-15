@@ -32,7 +32,7 @@ export function ScrollToTopButton() {
             whileTap={{ scale: 0.92 }}
             onClick={scrollToTop}
             aria-label="Smooth scroll back to top"
-            className="fixed bottom-6 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-stone-200/90 bg-white/95 text-stone-700 shadow-md backdrop-blur-md transition-colors hover:border-stone-400 hover:bg-white hover:text-stone-900 cursor-pointer"
+            className="fixed bottom-20 right-4 sm:bottom-22 sm:right-6 z-40 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-stone-200/90 bg-white/95 text-stone-700 shadow-md backdrop-blur-md transition-colors hover:border-stone-400 hover:bg-white hover:text-stone-900 cursor-pointer"
           >
             <ArrowUp className="h-4 w-4" />
           </motion.button>

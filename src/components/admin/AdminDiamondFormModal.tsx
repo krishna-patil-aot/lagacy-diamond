@@ -453,8 +453,8 @@ export function AdminDiamondFormModal({
         </div>
 
         {/* Stock & Featured Switches */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-stone-200">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-stone-200">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
               <label className="text-xs font-medium text-stone-700">
                 Quantity in Vault:
@@ -483,11 +483,11 @@ export function AdminDiamondFormModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-initial text-xs sm:text-sm justify-center">
               Cancel
             </Button>
-            <Button type="submit" variant="luxury" isLoading={isSubmitting}>
+            <Button type="submit" variant="luxury" isLoading={isSubmitting} className="flex-1 sm:flex-initial text-xs sm:text-sm justify-center">
               {diamond ? "Update Diamond" : "Register to Vault"}
             </Button>
           </div>

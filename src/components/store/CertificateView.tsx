@@ -3,6 +3,8 @@
 import React from "react";
 import { IDiamond } from "@/types/diamond.types";
 
+import { siteConfig } from "@/config/site.config";
+
 interface CertificateViewProps {
   diamond: IDiamond;
 }
@@ -17,39 +19,39 @@ export function CertificateView({ diamond }: CertificateViewProps) {
     day: "numeric",
   });
 
-  const vaultId = `VAULT-${diamond.sku}`;
+  const vaultId = `DARKGEM-${diamond.sku}`;
   const securityHash = Buffer.from(
     `${diamond.sku}-${diamond.certificateNumber}-${diamond.carat}`
   ).toString("hex");
-  const verificationUrl = `https://legacydiamond.luxury/verify/${diamond.certificateNumber}`;
+  const verificationUrl = `${siteConfig.appUrl}/verify/${diamond.certificateNumber}`;
 
   return (
     <div
-      className="select-none bg-[#fffdf9] text-[#1c1917] p-6 rounded-sm"
+      className="select-none bg-[#fffdf9] text-[#1c1917] p-2 sm:p-6 rounded-sm w-full max-w-full mx-auto"
       style={{ fontFamily: "'Times New Roman', Times, serif" }}
       onContextMenu={(e) => e.preventDefault()}
     >
       {/* Outer gold border */}
-      <div className="border-[3px] border-[#b48c36] p-1 h-full">
-        <div className="border border-[#785a1a] p-5 flex flex-col gap-4">
+      <div className="border-[2px] sm:border-[3px] border-[#b48c36] p-1 h-full">
+        <div className="border border-[#785a1a] p-3 sm:p-5 flex flex-col gap-3 sm:gap-4">
 
           {/* ── Lab Crest & Title ───────────────────────── */}
-          <div className="text-center border-b border-[#dcd3c2] pb-3">
-            <p className="text-[#855d14] uppercase tracking-[4px] text-sm font-bold">
+          <div className="text-center border-b border-[#dcd3c2] pb-2 sm:pb-3">
+            <p className="text-[#855d14] uppercase tracking-[2px] sm:tracking-[4px] text-xs sm:text-sm font-bold">
               {diamond.lab} Accredited Gemological Laboratory
             </p>
-            <p className="uppercase tracking-[2px] text-xs font-bold mt-1">
-              Certificate of Authenticity
+            <p className="uppercase tracking-[1px] sm:tracking-[2px] text-[11px] sm:text-xs font-bold mt-0.5 sm:mt-1">
+              Certificate of Authenticity · {siteConfig.brandName}
             </p>
-            <p className="text-[#78716c] uppercase tracking-[1.5px] text-[10px] mt-1"
+            <p className="text-[#78716c] uppercase tracking-[1px] sm:tracking-[1.5px] text-[8px] sm:text-[10px] mt-0.5 sm:mt-1 leading-tight"
                style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
-              Official Gemological Grading Dossier • Foundry Cultivated Gemstone
+              Official Gemological Dossier • Solar Plasma Cultivated Gemstone
             </p>
           </div>
 
           {/* ── Meta Bar ────────────────────────────────── */}
           <div
-            className="flex flex-wrap justify-between items-center bg-[#f7f3eb] border border-[#e5dccb] rounded-sm px-3 py-2 gap-2 text-[10px]"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 bg-[#f7f3eb] border border-[#e5dccb] rounded-sm px-2.5 sm:px-3 py-2 text-[9px] sm:text-[10px]"
             style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
           >
             <span className="text-[#44403c]">
@@ -68,11 +70,11 @@ export function CertificateView({ diamond }: CertificateViewProps) {
 
           {/* ── 4Cs Master Grading ──────────────────────── */}
           <div>
-            <p className="text-[#855d14] uppercase tracking-[2px] text-[9px] font-bold mb-2"
+            <p className="text-[#855d14] uppercase tracking-[1.5px] sm:tracking-[2px] text-[9px] font-bold mb-1.5 sm:mb-2"
                style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
               The 4Cs Master Grading
             </p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { label: "Carat Weight", value: `${diamond.carat.toFixed(2)} ct`, sub: "Exact Precision" },
                 { label: "Color Grade",  value: diamond.color,                     sub: "Colorless" },
@@ -81,13 +83,13 @@ export function CertificateView({ diamond }: CertificateViewProps) {
               ].map(({ label, value, sub }) => (
                 <div
                   key={label}
-                  className="border border-[#b48c36] bg-white p-3 text-center rounded-sm"
+                  className="border border-[#b48c36] bg-white p-2 sm:p-3 text-center rounded-sm"
                 >
-                  <p className="text-[#78716c] uppercase text-[8px] tracking-[1px] mb-1"
+                  <p className="text-[#78716c] uppercase text-[8px] tracking-[0.5px] sm:tracking-[1px] mb-0.5 sm:mb-1"
                      style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
                     {label}
                   </p>
-                  <p className="text-[#855d14] text-base font-bold">{value}</p>
+                  <p className="text-[#855d14] text-sm sm:text-base font-bold">{value}</p>
                   <p className="text-[#a8a29e] text-[7px] mt-0.5"
                      style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
                     {sub}
@@ -98,10 +100,10 @@ export function CertificateView({ diamond }: CertificateViewProps) {
           </div>
 
           {/* ── Proportions & Optical Analysis ─────────── */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Left — Physical */}
             <div>
-              <p className="text-[#855d14] uppercase tracking-[2px] text-[9px] font-bold mb-2"
+              <p className="text-[#855d14] uppercase tracking-[1.5px] sm:tracking-[2px] text-[9px] font-bold mb-1.5 sm:mb-2"
                  style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
                 Physical Proportions
               </p>
@@ -127,7 +129,7 @@ export function CertificateView({ diamond }: CertificateViewProps) {
 
             {/* Right — Optical */}
             <div>
-              <p className="text-[#855d14] uppercase tracking-[2px] text-[9px] font-bold mb-2"
+              <p className="text-[#855d14] uppercase tracking-[1.5px] sm:tracking-[2px] text-[9px] font-bold mb-1.5 sm:mb-2"
                  style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
                 Optical Finish &amp; Grading
               </p>
@@ -150,30 +152,31 @@ export function CertificateView({ diamond }: CertificateViewProps) {
           </div>
 
           {/* ── Security Seal & Signature ───────────────── */}
-          <div className="flex items-center justify-between bg-[#faf7f0] border border-[#e5dccb] rounded-sm px-4 py-3 gap-4">
-            {/* Seal */}
-            <div className="border-[1.5px] border-dashed border-[#b48c36] rounded-full w-20 h-20 flex flex-col items-center justify-center flex-shrink-0">
-              <span className="text-[#855d14] text-[7px] font-bold uppercase tracking-wide text-center leading-tight"
-                    style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
-                OFFICIAL<br />VAULT SEAL<br />★ GENUINE ★
-              </span>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between bg-[#faf7f0] border border-[#e5dccb] rounded-sm p-3 sm:px-4 sm:py-3 gap-3 sm:gap-4">
+            {/* Seal & Verification */}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="border-[1.5px] border-dashed border-[#b48c36] rounded-full w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center flex-shrink-0">
+                <span className="text-[#855d14] text-[6px] sm:text-[7px] font-bold uppercase tracking-wide text-center leading-tight"
+                      style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
+                  OFFICIAL<br />VAULT SEAL<br />★ GENUINE ★
+                </span>
+              </div>
 
-            {/* Verification */}
-            <div className="flex-1" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
-              <p className="text-[#855d14] font-bold uppercase text-[8px] tracking-wide">
-                Cryptographic Vault Pass
-              </p>
-              <p className="text-[#78716c] text-[8px] mt-1 leading-snug">
-                Verify online at: {verificationUrl}
-              </p>
-              <p className="text-[#a8a29e] text-[7px] mt-1 font-mono">
-                Hash: {securityHash.slice(0, 24)}...
-              </p>
+              <div className="flex-1 min-w-0" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
+                <p className="text-[#855d14] font-bold uppercase text-[8px] tracking-wide">
+                  Cryptographic Vault Pass
+                </p>
+                <p className="text-[#78716c] text-[8px] mt-0.5 leading-snug break-all sm:break-normal">
+                  Verify: {verificationUrl}
+                </p>
+                <p className="text-[#a8a29e] text-[7px] mt-0.5 font-mono truncate">
+                  Hash: {securityHash.slice(0, 20)}...
+                </p>
+              </div>
             </div>
 
             {/* Signature */}
-            <div className="text-center w-36 flex-shrink-0" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
+            <div className="text-center w-full sm:w-36 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-200 sm:flex-shrink-0" style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
               <p className="text-[#1c1917] text-xs italic mb-1">{GEMOLOGIST}</p>
               <div className="border-b border-[#1c1917] mb-1" />
               <p className="text-[8px] font-bold uppercase text-[#1c1917]">{GEMOLOGIST}</p>
@@ -182,14 +185,13 @@ export function CertificateView({ diamond }: CertificateViewProps) {
           </div>
 
           {/* ── Legal Footer ───────────────────────────── */}
-          <div className="flex justify-between items-start border-t border-[#dcd3c2] pt-2"
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-t border-[#dcd3c2] pt-2 gap-1"
                style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
-            <p className="text-[7px] text-[#a8a29e] max-w-[80%] leading-snug">
+            <p className="text-[7px] text-[#a8a29e] leading-snug">
               This document constitutes an official gemological grading report under ISO standard
-              laboratory testing. The gemstone described has been examined by senior gemologists
-              utilizing optical spectroscopy and micro-laser inspection. Guaranteed conflict-free.
+              laboratory testing. Guaranteed conflict-free.
             </p>
-            <p className="text-[7px] text-[#78716c] font-mono">SEC-ID: {diamond.sku}</p>
+            <p className="text-[7px] text-[#78716c] font-mono flex-shrink-0">SEC-ID: {diamond.sku}</p>
           </div>
 
         </div>

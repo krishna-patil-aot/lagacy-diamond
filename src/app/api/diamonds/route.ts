@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get("search") || "";
     const sortBy = (searchParams.get("sortBy") as DiamondSortOption) || "featured";
     const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
-    const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : 12;
+    const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : 4;
 
     const result = await getDiamonds({
       shapes,

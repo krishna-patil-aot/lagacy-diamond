@@ -76,8 +76,8 @@ export default function WishlistPage() {
                   key={stone._id}
                   className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5 shadow-xs hover:border-amber-400/60 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="relative h-20 w-20 rounded-xl overflow-hidden border border-stone-100 bg-stone-50 shrink-0">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                    <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-stone-100 bg-stone-50 shrink-0">
                       <Image
                         src={
                           stone.images && stone.images[0]
@@ -90,11 +90,11 @@ export default function WishlistPage() {
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/diamonds/${stone._id}`}
-                          className="font-serif font-bold text-sm sm:text-base text-stone-900 hover:text-amber-800 transition-colors"
+                          className="font-serif font-bold text-sm sm:text-base text-stone-900 hover:text-amber-800 transition-colors truncate max-w-[180px] sm:max-w-none"
                         >
                           {stone.name}
                         </Link>
@@ -103,11 +103,11 @@ export default function WishlistPage() {
                         </Badge>
                       </div>
 
-                      <div className="text-xs font-mono text-stone-500">
+                      <div className="text-xs font-mono text-stone-500 truncate">
                         {stone.carat} ct • {stone.shape} • {stone.color} / {stone.clarity} • Cut: {stone.cut}
                       </div>
 
-                      <div className="text-[11px] text-stone-400 font-mono">
+                      <div className="text-[11px] text-stone-400 font-mono truncate">
                         SKU: {stone.sku} • Cert #{stone.certificateNumber}
                       </div>
                     </div>

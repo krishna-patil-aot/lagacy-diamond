@@ -113,13 +113,13 @@ export function DiamondFilterSidebar() {
                 <button
                   key={shape}
                   onClick={() => toggleShape(shape)}
-                  className={`flex items-center justify-center rounded-lg border px-2 py-1.5 text-xs transition-all ${
+                  className={`flex items-center justify-center rounded-lg border px-1.5 py-1.5 text-[11px] sm:text-xs transition-all ${
                     isSelected
                       ? "border-stone-900 bg-stone-900 text-white font-medium shadow-xs"
                       : "border-stone-200 bg-stone-50/70 text-stone-700 hover:border-stone-300 hover:bg-stone-100"
                   }`}
                 >
-                  {label}
+                  <span className="truncate">{label}</span>
                 </button>
               );
             })}

@@ -286,8 +286,8 @@ function OrdersContent() {
           )}
         </div>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-stone-500 font-mono">
-          <span className="hidden sm:inline text-stone-500">
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 text-xs text-stone-500 font-mono w-full sm:w-auto">
+          <span className="text-stone-500">
             Showing <strong className="text-stone-900 font-semibold">{startRecord}</strong>-
             <strong className="text-stone-900 font-semibold">{endRecord}</strong> of{" "}
             <strong className="text-stone-900 font-semibold">{totalFilteredCount}</strong>
@@ -295,8 +295,8 @@ function OrdersContent() {
 
           <div className="hidden sm:block h-4 w-px bg-stone-200" />
 
-          <div className="flex items-center gap-2">
-            <span className="text-stone-600">Rows per page:</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-stone-600 text-[11px] sm:text-xs">Rows:</span>
             <Select
               value={String(pageSize)}
               onValueChange={(val) => {

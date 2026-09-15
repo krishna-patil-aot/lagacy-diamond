@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ShieldCheck, ChevronLeft, Lock, FileText, Eye } from "lucide-react";
+import { siteConfig } from "@/config/site.config";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -12,7 +13,7 @@ export default function PrivacyPolicyPage() {
           className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-stone-500 hover:text-stone-900 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
-          <span>Return to Legacy Diamond</span>
+          <span>Return to {siteConfig.brandName}</span>
         </Link>
       </div>
 
@@ -26,7 +27,7 @@ export default function PrivacyPolicyPage() {
           Privacy & Client Data Protocol
         </h1>
         <p className="text-sm text-stone-600 leading-relaxed max-w-2xl">
-          At Legacy Diamond, our laboratory-grown diamond foundry respects your right to discretion, secure transactional privacy, and transparent custody.
+          At {siteConfig.brandName}, our solar-cultivated diamond atelier respects your right to discretion, secure transactional privacy, and transparent custody.
         </p>
       </div>
 
@@ -107,7 +108,7 @@ export default function PrivacyPolicyPage() {
             For legal inquiries regarding personal data, vault records, or identity authorization, contact our compliance counsel:
           </p>
           <p className="font-mono text-xs text-stone-800 bg-stone-100 p-3 rounded-xl border border-stone-200 inline-block">
-            Legacy Diamond Foundry Compliance • legal@legacydiamond.com • 740 Park Ave, New York, NY
+            {siteConfig.contact.legalEntityName} Compliance • {siteConfig.contact.supportEmail} • {siteConfig.contact.addressLine1}, {siteConfig.contact.city}, {siteConfig.contact.country}
           </p>
         </section>
       </div>

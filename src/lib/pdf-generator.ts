@@ -5,14 +5,15 @@ import { InvoicePdf } from "@/components/pdf/InvoicePdf";
 import { LabCertificatePdf } from "@/components/pdf/LabCertificatePdf";
 import { DiamondSpecPdf } from "@/components/pdf/DiamondSpecPdf";
 import { IInvoicePdfProps, ILabCertificatePdfProps, IDiamondSpecPdfProps } from "@/types/pdf.types";
+import { siteConfig } from "@/config/site.config";
 
 const COMPANY_INFO = {
-  name: "Legacy Diamond Foundry",
-  tagline: "Cultivated in Solar-Powered High-Tech Reactors • Zero Ecological Impact",
-  address: "Vault 1, Diamond Financial District",
-  cityStateZip: "San Francisco, CA 94104",
-  supportEmail: "concierge@legacydiamond.luxury",
-  websiteUrl: "https://legacydiamond.luxury",
+  name: siteConfig.contact.legalEntityName,
+  tagline: `${siteConfig.brandTagline} • Zero Earth Displacement`,
+  address: `${siteConfig.contact.addressLine1}, ${siteConfig.contact.addressLine2}`,
+  cityStateZip: `${siteConfig.contact.city}, ${siteConfig.contact.state} ${siteConfig.contact.postalCode}, ${siteConfig.contact.country}`,
+  supportEmail: siteConfig.contact.conciergeEmail,
+  websiteUrl: siteConfig.appUrl,
 };
 
 /**
@@ -61,9 +62,9 @@ export async function generateLabCertificatePdfBuffer(diamond: IDiamond): Promis
     diamond,
     gemologistName: "Dr. Alistair Sterling, FGA",
     gemologistTitle: "Chief Gemological Appraiser & Vault Master",
-    vaultId: `VAULT-${sku}`,
+    vaultId: `DARKGEM-${sku}`,
     securityHash: Buffer.from(`${sku}-${certNumber}-${diamond.carat || 1}`).toString("hex"),
-    verificationUrl: `https://legacydiamond.luxury/verify/${certNumber}`,
+    verificationUrl: `${siteConfig.appUrl}/verify/${certNumber}`,
   };
 
   const documentElement = LabCertificatePdf(props);

@@ -3,23 +3,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Lock, Eye } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { siteConfig } from "@/config/site.config";
 
 export const metadata: Metadata = {
-  title: "Armored Transit & Escrow Delivery Protocols | Legacy Diamond",
+  title: `Armored Transit & Escrow Delivery Protocols | ${siteConfig.brandName}`,
   description:
-    "Discover how Legacy Diamond ensures 100% insured armored courier transit, tamper-evident vault packaging, biometric delivery verification, and a 30-day inspection privilege.",
+    `Discover how ${siteConfig.brandName} ensures 100% insured armored courier transit, tamper-evident vault packaging, biometric delivery verification, and a 30-day inspection privilege.`,
   keywords: [
+    ...siteConfig.seo.keywords,
     "Armored Diamond Shipping",
     "Insured Jewelry Courier",
-    "Brinks Jewelry Delivery",
     "Secure Diamond Escrow",
-    "Legacy Diamond Delivery",
     "30 Day Diamond Return Policy",
   ],
   openGraph: {
-    title: "Armored Transit & Escrow Delivery Protocols | Legacy Diamond",
+    title: `Armored Transit & Escrow Delivery Protocols | ${siteConfig.brandName}`,
     description: "100% insured armored courier transit and tamper-evident vault delivery.",
-    url: "https://legacydiamond.luxury/shipping",
+    url: `${siteConfig.appUrl}/shipping`,
+    siteName: siteConfig.brandName,
   },
 };
 
@@ -40,7 +41,7 @@ export default function ShippingPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-stone-600 leading-relaxed max-w-2xl mx-auto">
-            Fine diamond jewellery requires the highest standard of safety. Every Legacy Diamond is delivered in tamper-proof, discreet packaging with 100% insurance coverage and real-time tracking across India.
+            Fine diamond jewellery requires the highest standard of safety. Every {siteConfig.brandName} gemstone is dispatched in tamper-proof, discreet vault packaging with 100% insurance coverage and real-time biometric tracking worldwide.
           </p>
         </div>
       </section>
@@ -105,23 +106,23 @@ export default function ShippingPage() {
 
       {/* 30-Day Inspection Privilege */}
       <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-stone-800 bg-stone-950 p-8 sm:p-12 text-stone-100 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
+        <div className="rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50/50 via-white to-stone-50 p-8 sm:p-12 text-stone-900 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
           <div className="space-y-4 max-w-xl">
-            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-400">
-              <Eye className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-800 font-bold">
+              <Eye className="h-4 w-4 text-amber-700" />
               <span>30-Day Money-Back Guarantee</span>
             </div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
               Examine Your Diamond in Natural Sunlight
             </h2>
-            <p className="text-xs sm:text-sm text-stone-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
               View your diamond under natural light, show it to your family, and have it independently verified. If you are not completely in love with it, return it within 30 days for a 100% full refund with free insured pickup.
             </p>
           </div>
 
           <div className="shrink-0 flex flex-col sm:flex-row gap-3">
             <Link href="/orders">
-              <Button variant="luxury" size="lg" className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold px-6">
+              <Button variant="luxury" size="lg" className="bg-stone-900 hover:bg-stone-800 text-white font-medium px-6">
                 Track Existing Order
               </Button>
             </Link>
@@ -129,7 +130,7 @@ export default function ShippingPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="text-stone-200 border-stone-700 bg-transparent hover:bg-stone-800 hover:text-white hover:border-stone-500 px-6 transition-colors"
+                className="text-stone-800 border-stone-300 bg-white hover:bg-stone-100 hover:text-stone-900 px-6 transition-colors"
               >
                 Contact Delivery Support
               </Button>

@@ -26,39 +26,51 @@ import {
 } from "@/components/ui/Select";
 import { useContactForm } from "@/hooks/useContactForm";
 import { InquiryType } from "@/types/contact.types";
+import { InquiryStatusTracker } from "@/components/contact/InquiryStatusTracker";
+import { InquiryConversationModal } from "@/components/contact/InquiryConversationModal";
+import { siteConfig } from "@/config/site.config";
 
 const FAQ_ITEMS = [
   {
-    question: "Are Legacy Diamonds 100% real diamonds?",
+    question: `Are ${siteConfig.brandName} certified Type IIa diamonds 100% real diamonds?`,
     answer:
-      "Yes, 100% real. Our lab-grown diamonds share the exact same chemical structure (pure carbon), physical hardness (10 on Mohs scale), and brilliant sparkle (2.42 refractive index) as mined diamonds. They are certified and graded by top international laboratories like IGI and GIA.",
+      "Yes, absolutely. DarkGem solar-cultivated diamonds share the exact same chemical lattice (100% carbon), physical hardness (10 on Mohs scale), and fiery optical dispersion (2.42 refractive index) as mined diamonds. Every stone is individually certified and laser-inscribed by IGI or GIA.",
   },
   {
-    question: "Which certificate will I receive with my diamond?",
+    question: "Which certificate will I receive with my DarkGem solitaire?",
     answer:
-      "Every single diamond from Legacy Diamond comes with an official, verifiable grading certificate from either IGI (International Gemological Institute) or GIA (Gemological Institute of America). The unique certificate number is also microscopically laser-inscribed on the diamond's girdle for complete verification.",
+      `Every single diamond from ${siteConfig.brandName} is accompanied by an authentic, verifiable grading dossier from either IGI (International Gemological Institute) or GIA (Gemological Institute of America). The unique certificate number is also microscopically laser-inscribed on the diamond's girdle for sovereign verification.`,
   },
   {
-    question: "How does safe and insured delivery work across India?",
+    question: "How does safe and insured delivery work?",
     answer:
-      "We provide 100% free insured delivery across all major cities and pin codes in India via reputed secure logistics partners (such as Sequel Logistics and Blue Dart Apex). Every package is tamper-evident, sealed with a security lock, fully insured, and requires an OTP/signature upon doorstep delivery.",
+      "We provide complimentary, 100% insured armored transit worldwide. Every package is tamper-evident, sealed with a security protocol, fully covered during transit, and requires an OTP/signature upon final hand-delivery.",
   },
   {
-    question: "Can I customize an engagement ring or select my own setting?",
+    question: "Can I commission a bespoke engagement ring or custom setting?",
     answer:
-      "Yes! Our in-house jewelry artisans and 3D CAD designers can create your dream ring in 18k Yellow Gold, Rose Gold, White Gold, or 950 Platinum. Simply select 'Custom Engagement Ring Design' in the form below or chat with our Diamond Expert on WhatsApp.",
+      "Yes. DarkGem's in-house master artisans and 3D CAD ateliers craft bespoke solitaires in 18k Yellow Gold, Rose Gold, Midnight Noir Gold, or 950 Platinum. Simply select 'Custom Engagement Ring Design' in the form below or chat live with our Lead Gemologist.",
   },
   {
-    question: "What is your return and exchange policy?",
+    question: "What is your return and inspection guarantee?",
     answer:
-      "We offer a 30-day money-back guarantee. If you are not completely satisfied with your diamond, you can return it within 30 days in its original condition with the lab certificate for a 100% full refund.",
+      "We provide a 30-day money-back guarantee. If you are not completely spellbound by your diamond, you can return it within 30 days in its original condition with the lab certificate for a 100% full refund.",
   },
 ];
 
 export default function ContactPage() {
-  const { formData, updateField, submitInquiry, isSubmitting, isSuccess, resetSuccess } =
-    useContactForm();
+  const {
+    formData,
+    updateField,
+    submitInquiry,
+    isSubmitting,
+    isSuccess,
+    createdInquiryId,
+    resetSuccess,
+  } = useContactForm();
+
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -71,16 +83,16 @@ export default function ContactPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-900/20 bg-amber-50/80 px-4 py-1.5 text-xs font-mono font-medium text-amber-900">
             <Sparkles className="h-3.5 w-3.5 text-amber-700" />
-            <span>EXPERT DIAMOND CONSULTATION • WE ARE HAPPY TO HELP</span>
+            <span>DARKGEM HAUTE JOAILLERIE • BESPOKE PRIVATE CONCIERGE</span>
           </div>
 
           <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-stone-900">
-            Talk to Our <br />
-            <span className="italic font-normal text-amber-800">Diamond Specialists</span>
+            Consult With Our <br />
+            <span className="italic font-normal text-amber-800">Master Gemologists</span>
           </h1>
 
           <p className="text-xs sm:text-sm text-stone-600 max-w-xl mx-auto leading-relaxed">
-            Whether you want to design a custom engagement ring, select the best 4Cs diamond within your budget, or book a consultation, our team is always ready to guide you.
+            Whether you want to design a custom engagement ring, select the ideal 4Cs diamond within your budget, or book a consultation, our team is always ready to guide you.
           </p>
         </div>
       </section>
@@ -89,7 +101,7 @@ export default function ContactPage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Inquiry Form */}
-          <div className="lg:col-span-7 bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-stone-200 p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
             <div className="border-b border-stone-100 pb-4">
               <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900">
                 Send Us a Message
@@ -105,19 +117,30 @@ export default function ContactPage() {
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <h3 className="font-serif text-xl font-bold text-stone-900">
-                  Message Sent Successfully!
+                  Consultation Ticket Opened!
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto">
-                  Thank you. One of our Senior Diamond Specialists has received your request and will connect with you shortly via Call, WhatsApp, or Email.
+                  Your inquiry has been assigned to a Senior Diamond Specialist. You can converse directly in real-time inside the concierge portal.
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={resetSuccess}
-                  className="text-xs mt-2"
-                >
-                  Send Another Message
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <Button
+                    variant="luxury"
+                    size="sm"
+                    onClick={() => setIsModalOpen(true)}
+                    className="text-xs font-mono h-10 px-5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 mr-2 text-amber-400" />
+                    Open Live Conversation Chat
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetSuccess}
+                    className="text-xs h-10 px-4 rounded-xl"
+                  >
+                    Send Another Message
+                  </Button>
+                </div>
               </div>
             ) : (
               <form onSubmit={submitInquiry} className="space-y-4">
@@ -315,15 +338,15 @@ export default function ContactPage() {
               <div className="border-t border-stone-100 pt-4 space-y-2.5 text-xs text-stone-600">
                 <div className="flex items-center gap-2">
                   <Phone className="h-3.5 w-3.5 text-amber-700" />
-                  <span>Call / WhatsApp: +91 98200 12345</span>
+                  <span>Call / Concierge: {siteConfig.contact.phoneDisplay}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="h-3.5 w-3.5 text-amber-700" />
-                  <span>support@legacydiamond.luxury</span>
+                  <span>{siteConfig.contact.supportEmail}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5 text-amber-700" />
-                  <span>Mon - Sat: 10:00 AM - 8:00 PM IST</span>
+                  <span>{siteConfig.contact.hours}</span>
                 </div>
               </div>
             </div>
@@ -340,6 +363,11 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Inquiry Status Tracker Section */}
+      <section className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <InquiryStatusTracker />
       </section>
 
       {/* FAQ Accordion Section */}
@@ -384,6 +412,16 @@ export default function ContactPage() {
           })}
         </div>
       </section>
+
+      {/* Interactive Consultation Modal */}
+      <InquiryConversationModal
+        inquiryNumber={createdInquiryId}
+        isOpen={isModalOpen || Boolean(createdInquiryId)}
+        onClose={() => {
+          setIsModalOpen(false);
+          resetSuccess();
+        }}
+      />
     </div>
   );
 }

@@ -1,25 +1,24 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site.config";
 
 export const metadata: Metadata = {
-  title: "Certified Lab-Grown Diamonds Collection | Legacy Diamond",
+  title: `Certified Solar-Cultivated Diamonds | ${siteConfig.brandName}`,
   description:
-    "Explore over 500+ certified Type IIa lab-grown diamonds directly from our solar-powered foundry. Filter by carat, shape, color, clarity, cut, and GIA & IGI certifications.",
+    `Explore rare Type IIa certified diamonds cultivated in proprietary solar plasma reactors. Filter by shape, 4Cs, GIA/IGI certification, and acquire directly from ${siteConfig.brandName}.`,
   keywords: [
-    "Lab Grown Diamonds",
-    "Buy Lab Diamonds",
-    "GIA Certified Diamonds",
-    "IGI Diamonds",
+    ...siteConfig.seo.keywords,
+    "Certified Solitaire Gemstones",
     "Round Brilliant",
-    "Oval Diamonds",
-    "Cushion Diamonds",
-    "Emerald Cut Diamonds",
-    "Legacy Diamond Collection",
+    "Oval Solitaires",
+    "Emerald Cut",
+    "Bespoke Diamond Registry",
   ],
   openGraph: {
-    title: "Certified Lab-Grown Diamonds Collection | Legacy Diamond",
+    title: `Certified Solar-Cultivated Diamonds | ${siteConfig.brandName}`,
     description:
-      "Explore rare Type IIa lab-grown diamonds certified by GIA and IGI. Zero mining footprint with direct foundry pricing.",
-    url: "https://legacydiamond.luxury/diamonds",
+      "Explore rare Type IIa diamonds certified by GIA and IGI. Zero earth displacement with direct atelier valuation.",
+    url: `${siteConfig.appUrl}/diamonds`,
+    siteName: siteConfig.brandName,
   },
 };
 

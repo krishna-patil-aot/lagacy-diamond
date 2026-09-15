@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Award, ChevronLeft, CheckCircle2, RotateCcw, Truck } from "lucide-react";
+import { siteConfig } from "@/config/site.config";
 
 export default function TermsConditionsPage() {
   return (
@@ -12,7 +13,7 @@ export default function TermsConditionsPage() {
           className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-stone-500 hover:text-stone-900 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
-          <span>Return to Legacy Diamond</span>
+          <span>Return to {siteConfig.brandName}</span>
         </Link>
       </div>
 
@@ -26,7 +27,7 @@ export default function TermsConditionsPage() {
           Terms & Foundry Guarantees
         </h1>
         <p className="text-sm text-stone-600 leading-relaxed max-w-2xl">
-          Review the contractual conditions, laboratory-grown diamond guarantees, and direct-to-consumer vault protocols established by Legacy Diamond.
+          Review the contractual conditions, solar-cultivated diamond guarantees, and direct-to-consumer vault protocols established by {siteConfig.brandName}.
         </p>
       </div>
 
@@ -69,7 +70,7 @@ export default function TermsConditionsPage() {
             <span>3. Armored Insured Transit & Custody Transfer</span>
           </h2>
           <p>
-            All shipments from our foundry to the designated delivery address are fully insured by Legacy Diamond up to the moment of authorized physical signature. Risk of loss transfers exclusively upon documented receipt by the designated recipient.
+            All shipments from our atelier to the designated delivery address are fully insured by {siteConfig.brandName} up to the moment of authorized physical signature. Risk of loss transfers exclusively upon documented receipt by the designated recipient.
           </p>
         </section>
 
@@ -88,7 +89,7 @@ export default function TermsConditionsPage() {
             These terms are governed by the laws of the State of New York and international commercial arbitration standards. For questions regarding foundry contracts, email:
           </p>
           <p className="font-mono text-xs text-stone-800 bg-stone-100 p-3 rounded-xl border border-stone-200 inline-block">
-            Legacy Diamond Legal Counsel • contracts@legacydiamond.com • 740 Park Ave, New York, NY
+            {siteConfig.contact.legalEntityName} • {siteConfig.contact.supportEmail} • {siteConfig.contact.addressLine1}, {siteConfig.contact.city}, {siteConfig.contact.country}
           </p>
         </section>
       </div>

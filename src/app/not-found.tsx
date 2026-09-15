@@ -53,10 +53,10 @@ export default function GlobalNotFound() {
 
         {/* Heading & Gemological Context */}
         <div className="space-y-3">
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-stone-900 tracking-tight">
+          <h1 className="font-serif text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-light text-stone-900 tracking-tight">
             Lot Not Found in Vault Registry
           </h1>
-          <p className="text-sm sm:text-base text-stone-600 max-w-lg mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm md:text-base text-stone-600 max-w-lg mx-auto leading-relaxed">
             The gemological parcel or page you requested does not exist in our foundry database. It may have been acquired by another collector or relocated.
           </p>
         </div>
@@ -64,7 +64,7 @@ export default function GlobalNotFound() {
         {/* Quick Vault Search Form */}
         <form
           onSubmit={handleSearch}
-          className="mx-auto max-w-md flex items-center gap-2 rounded-2xl border border-stone-200/90 bg-white p-1.5 shadow-sm focus-within:border-stone-400 focus-within:ring-2 focus-within:ring-stone-200 transition-all"
+          className="mx-auto max-w-md w-full flex items-center gap-2 rounded-2xl border border-stone-200/90 bg-white p-1.5 shadow-sm focus-within:border-stone-400 focus-within:ring-2 focus-within:ring-stone-200 transition-all"
         >
           <div className="pl-3 text-stone-400">
             <Search className="h-4 w-4" />
@@ -75,7 +75,7 @@ export default function GlobalNotFound() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search diamonds by SKU, shape, or carat..."
             aria-label="Search diamonds by SKU, shape, or carat"
-            className="flex-1 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none"
+            className="flex-1 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none min-w-0"
           />
           <Button
             type="submit"
@@ -88,23 +88,23 @@ export default function GlobalNotFound() {
         </form>
 
         {/* Primary Navigation Actions */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 pt-2 w-full max-w-md mx-auto">
           <Button
             type="button"
             variant="outline"
             size="md"
             onClick={handleGoBack}
-            className="text-xs sm:text-sm"
+            className="w-full sm:w-auto text-xs sm:text-sm justify-center"
           >
             <ArrowLeft className="h-4 w-4 mr-2 text-stone-500" />
             Previous Page
           </Button>
 
-          <Link href="/">
+          <Link href="/" className="w-full sm:w-auto">
             <Button
               variant="luxury"
               size="md"
-              className="text-xs sm:text-sm"
+              className="w-full text-xs sm:text-sm justify-center"
             >
               <Home className="h-4 w-4 mr-2" />
               Foundry Main Page

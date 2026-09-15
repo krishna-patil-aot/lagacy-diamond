@@ -47,7 +47,7 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-10">
       {/* Back to Catalog Breadcrumb */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <Link
           href="/diamonds"
           className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-stone-500 hover:text-stone-900 transition-colors"
@@ -64,10 +64,10 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
         {/* Left Gallery (7 Columns) */}
         <div className="lg:col-span-7 space-y-4">
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100/70 p-1 w-fit">
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-100/70 p-1 w-full sm:w-fit">
             <button
               onClick={() => setViewMode("gallery")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-center ${
                 viewMode === "gallery"
                   ? "bg-white text-stone-900 shadow-xs"
                   : "text-stone-600 hover:text-stone-900"
@@ -77,7 +77,7 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
             </button>
             <button
               onClick={() => setViewMode("360")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 viewMode === "360"
                   ? "bg-white text-stone-900 shadow-xs"
                   : "text-stone-600 hover:text-stone-900"

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IContactInquiry, IContactResponse } from "@/types/contact.types";
+import { createInquiry } from "@/lib/inquiry-repository";
+import { siteConfig } from "@/config/site.config";
 
 export async function POST(request: NextRequest): Promise<NextResponse<IContactResponse>> {
   try {
@@ -16,35 +18,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<IContactR
       );
     }
 
-    // In a production deployment, this would write to MongoDB Inquiries or dispatch email to support
-    console.log(
-      `\n[Legacy Diamond Concierge Inquiry Received]` +
-        `\nName: ${body.fullName}` +
-        `\nEmail: ${body.email}` +
-        `\nPhone: ${body.phone || "Not provided"}` +
-        `\nType: ${body.inquiryType}` +
-        `\nCarat: ${body.preferredCaratRange || "N/A"}` +
-        `\nBudget: ${body.budgetRange || "N/A"}` +
-        `\nMessage: ${body.message}\n`
-    );
-
-    const inquiryId = `INQ-${Date.now().toString().slice(-6)}`;
+    const savedInquiry = await createInquiry({
+      fullName: body.fullName,
+      email: body.email,
+      phone: body.phone,
+      inquiryType: body.inquiryType,
+      preferredCaratRange: body.preferredCaratRange,
+      budgetRange: body.budgetRange,
+      message: body.message,
+    });
 
     return NextResponse.json(
       {
         success: true,
         message:
-          "Thank you for contacting Legacy Diamond. Our Senior Gemological Concierge will review your request and connect with you within 4 business hours.",
-        inquiryId,
+          `Thank you for contacting ${siteConfig.brandName}. Your inquiry has been received and our Curator Admin will connect with you promptly.`,
+        inquiryId: savedInquiry.inquiryNumber,
       },
-      { status: 200 }
+      { status: 201 }
     );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Failed to process inquiry";
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to submit concierge inquiry. Please reach us directly at concierge@legacydiamond.luxury.",
+        message: `Failed to submit concierge inquiry. Please reach us directly at ${siteConfig.contact.conciergeEmail}.`,
         error: errorMsg,
       },
       { status: 500 }

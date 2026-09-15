@@ -70,7 +70,7 @@ export function DiamondSortBar({
         </div>
 
         {/* Count, On-Demand Filter Button & Sort Controls */}
-        <div className="flex items-center justify-between gap-2.5 sm:justify-end">
+        <div className="flex items-center gap-2 sm:gap-2.5 justify-between sm:justify-end w-full sm:w-auto">
           <span className="text-xs font-mono text-stone-500 hidden md:inline">
             <span className="text-stone-900 font-bold">{totalCount}</span> Diamonds
           </span>
@@ -80,7 +80,7 @@ export function DiamondSortBar({
             variant={isFilterOpen ? "default" : "outline"}
             size="sm"
             onClick={onToggleFilter}
-            className="flex items-center gap-1.5 text-xs font-medium h-9"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 text-xs font-medium h-9"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
             <span>Filters</span>
@@ -99,12 +99,12 @@ export function DiamondSortBar({
           </Button>
 
           {/* Shadcn UI Sort Dropdown */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex-1 sm:flex-initial flex items-center">
             <Select
               value={sortBy}
               onValueChange={(val) => setSortBy(val as DiamondSortOption)}
             >
-              <SelectTrigger className="w-[175px] h-9 text-xs border-stone-200 bg-white">
+              <SelectTrigger className="w-full sm:w-[175px] h-9 text-xs border-stone-200 bg-white">
                 <SelectValue placeholder="Sort Collection" />
               </SelectTrigger>
               <SelectContent align="end">

@@ -6,7 +6,11 @@ import {
   DiamondCut,
   DiamondShape,
 } from "@/types/diamond.types";
-import { DiamondSortOption, IDiamondFilterState } from "@/types/filter.types";
+import {
+  DiamondSortOption,
+  IDiamondFilterState,
+  DiamondPageSize,
+} from "@/types/filter.types";
 
 interface IFilterStoreState extends IDiamondFilterState {
   setSearchQuery: (query: string) => void;
@@ -20,6 +24,7 @@ interface IFilterStoreState extends IDiamondFilterState {
   setInStockOnly: (inStock: boolean) => void;
   setSortBy: (sort: DiamondSortOption) => void;
   setPage: (page: number) => void;
+  setLimit: (limit: DiamondPageSize | number) => void;
   resetFilters: () => void;
   activeFilterCount: () => number;
 }
@@ -38,7 +43,7 @@ const DEFAULT_FILTERS: IDiamondFilterState = {
   inStockOnly: false,
   sortBy: "featured",
   page: 1,
-  limit: 12,
+  limit: 4,
 };
 
 export const useFilterStore = create<IFilterStoreState>((set, get) => ({
@@ -95,6 +100,8 @@ export const useFilterStore = create<IFilterStoreState>((set, get) => ({
   setSortBy: (sortBy: DiamondSortOption) => set({ sortBy, page: 1 }),
 
   setPage: (page: number) => set({ page }),
+
+  setLimit: (limit: DiamondPageSize | number) => set({ limit, page: 1 }),
 
   resetFilters: () => {
     toast.info("All precision filters reset to default");

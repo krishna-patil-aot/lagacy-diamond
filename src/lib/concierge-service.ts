@@ -149,30 +149,32 @@ export async function executeConciergeInquiry(userMessage: string): Promise<IAIC
   };
 }
 
+import { siteConfig } from "@/config/site.config";
+
 function generateGemologistNarrative(
   query: string,
   criteria: IDiamondSearchCriteria,
   diamonds: IDiamond[]
 ): string {
   if (diamonds.length === 0) {
-    return `I searched our certified collection for ${criteria.shape || "diamonds"} matching your criteria, but couldn't find an exact match within this specific range. Would you like me to widen the carat or clarity range to show you our closest certified options?`;
+    return `I searched our ${siteConfig.brandName} certified vault for ${criteria.shape || "gemstones"} matching your criteria, but did not find an exact match within this specific calibration. Would you like me to widen the carat or clarity parameters to reveal our closest certified solitaires?`;
   }
 
   const stoneCount = diamonds.length;
   const bestMatch = diamonds[0];
 
   const highlights: string[] = [];
-  if (criteria.shape) highlights.push(`${criteria.shape} shape`);
+  if (criteria.shape) highlights.push(`${criteria.shape} cut`);
   if (criteria.maxPrice) highlights.push(`under $${criteria.maxPrice.toLocaleString()}`);
   if (criteria.minCarat) highlights.push(`approx. ${((criteria.minCarat + (criteria.maxCarat || criteria.minCarat)) / 2).toFixed(2)} ct`);
   if (criteria.clarity) highlights.push(`${criteria.clarity} clarity`);
   if (criteria.lab) highlights.push(`${criteria.lab} certified`);
 
-  const criteriaText = highlights.length > 0 ? highlights.join(", ") : "your criteria";
+  const criteriaText = highlights.length > 0 ? highlights.join(", ") : "your specifications";
 
-  return `Namaste! Based on your requirement for **${criteriaText}**, I found **${stoneCount} certified diamond${stoneCount > 1 ? "s" : ""}** from our collection. 
+  return `Welcome to ${siteConfig.brandName}. Based on your curation request for **${criteriaText}**, I have selected **${stoneCount} certified solitaire${stoneCount > 1 ? "s" : ""}** from our solar-cultivated vault. 
 
-Our top recommendation is **${bestMatch.name}** (${bestMatch.carat} Carat, ${bestMatch.cut} Cut, ${bestMatch.color} Colour, ${bestMatch.clarity} Clarity, ${bestMatch.lab} certified), available at **$${bestMatch.finalPrice.toLocaleString()}**. Each diamond comes with an authentic IGI or GIA certificate, ideal proportions, and brilliant sparkle. 
+Our premier recommendation is **${bestMatch.name}** (${bestMatch.carat} Carat, ${bestMatch.cut} Cut, ${bestMatch.color} Color, ${bestMatch.clarity} Clarity, ${bestMatch.lab} certified), available at **$${bestMatch.finalPrice.toLocaleString()}**. Each stone represents Type IIa optical perfection, accompanied by an authorized GIA/IGI dossier with zero earth displacement. 
 
-Click on the diamond cards below to view certificate details, cut proportions, and high-resolution videos.`;
+Select any gemstone below to inspect the accredited lab certificate, 360° optical facet inspection, and vault specifications.`;
 }

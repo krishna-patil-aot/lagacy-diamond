@@ -1,16 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Database, Sparkles } from "lucide-react";
+import { Plus, Database, Sparkles, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 
 interface AdminHeaderProps {
   onAddNew: () => void;
   onRefresh: () => void;
+  unreadMessagesCount?: number;
+  onOpenInquiries?: () => void;
 }
 
-export function AdminHeader({ onAddNew, onRefresh }: AdminHeaderProps) {
+import { siteConfig } from "@/config/site.config";
+
+export function AdminHeader({
+  onAddNew,
+  onRefresh,
+  unreadMessagesCount = 0,
+  onOpenInquiries,
+}: AdminHeaderProps) {
   const [isSeeding, setIsSeeding] = useState<boolean>(false);
   const [seedMessage, setSeedMessage] = useState<string | null>(null);
 
@@ -44,14 +53,14 @@ export function AdminHeader({ onAddNew, onRefresh }: AdminHeaderProps) {
             <Sparkles className="h-3.5 w-3.5" />
           </span>
           <span className="text-xs uppercase tracking-widest text-stone-600 font-mono font-medium">
-            Foundry Asset & Vault Management
+            Atelier Vault &amp; Asset Management
           </span>
         </div>
         <h1 className="mt-1 text-2xl sm:text-3xl font-serif font-light tracking-tight text-stone-900">
-          Legacy Diamond Foundry Vault Portal
+          {siteConfig.brandName} Vault Portal
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-stone-500">
-          Curate lab-grown diamond lots, calibrate live D2C foundry pricing, and approve bespoke client orders.
+          Curate solar-cultivated diamond lots, calibrate live atelier pricing, and oversee bespoke client orders.
         </p>
         {seedMessage && (
           <p className="mt-2 text-xs font-semibold text-emerald-700 animate-in fade-in">
@@ -60,27 +69,39 @@ export function AdminHeader({ onAddNew, onRefresh }: AdminHeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
+        {unreadMessagesCount > 0 && onOpenInquiries && (
+          <button
+            type="button"
+            onClick={onOpenInquiries}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-mono font-bold shadow-xs transition-all animate-pulse cursor-pointer"
+            title="View incoming client consultation messages"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span>{unreadMessagesCount} New Client Message{unreadMessagesCount > 1 ? "s" : ""}</span>
+          </button>
+        )}
+
         <Button
           variant="outline"
           size="sm"
           onClick={handleSeed}
           isLoading={isSeeding}
-          className="text-xs text-stone-700 hover:text-stone-900 border-stone-300"
+          className="flex-1 sm:flex-initial text-xs text-stone-700 hover:text-stone-900 border-stone-300 h-9 justify-center"
           title="Reset database with initial certified collection"
         >
           <Database className="h-3.5 w-3.5 mr-1.5 text-stone-500" />
-          Seed / Reset Vault
+          <span>Seed / Reset</span>
         </Button>
 
         <Button
           variant="luxury"
           size="md"
           onClick={onAddNew}
-          className="text-xs sm:text-sm"
+          className="flex-1 sm:flex-initial text-xs sm:text-sm h-9 justify-center"
         >
           <Plus className="h-4 w-4 mr-1.5" />
-          Add Diamond
+          <span>Add Diamond</span>
         </Button>
       </div>
     </div>

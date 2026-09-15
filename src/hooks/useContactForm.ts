@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { IContactInquiry, IContactResponse } from "@/types/contact.types";
+import { broadcastInquiryEvent, INQUIRY_EVENTS } from "@/lib/inquiry-events";
 
 const INITIAL_FORM: IContactInquiry = {
   fullName: "",
@@ -18,6 +19,7 @@ export function useContactForm() {
   const [formData, setFormData] = useState<IContactInquiry>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [createdInquiryId, setCreatedInquiryId] = useState<string | null>(null);
 
   const updateField = useCallback(
     <K extends keyof IContactInquiry>(field: K, value: IContactInquiry[K]) => {
@@ -36,7 +38,7 @@ export function useContactForm() {
       }
 
       setIsSubmitting(true);
-      toast.loading("Sending your message to our Diamond Experts...", { id: "contact-submit" });
+      toast.loading("Transmitting consultation request to DarkGem Concierge...", { id: "contact-submit" });
 
       try {
         const response = await fetch("/api/contact", {
@@ -52,8 +54,25 @@ export function useContactForm() {
         }
 
         setIsSuccess(true);
+        if (data.inquiryId) {
+          setCreatedInquiryId(data.inquiryId);
+          // Persist to client inquiry history in localStorage
+          try {
+            const raw = localStorage.getItem("darkgem_active_inquiries");
+            const existing: string[] = raw ? JSON.parse(raw) : [];
+            const updated = [data.inquiryId, ...existing.filter((item) => item !== data.inquiryId)];
+            localStorage.setItem("darkgem_active_inquiries", JSON.stringify(updated));
+          } catch {
+            // Ignore storage errors
+          }
+        }
+
         setFormData(INITIAL_FORM);
-        toast.success("Thank you! Our diamond expert will connect with you shortly.", {
+
+        // Broadcast event immediately so Admin Panel updates in real time without refreshing
+        broadcastInquiryEvent(INQUIRY_EVENTS.INQUIRY_CREATED, data.inquiryId, data.inquiryId);
+
+        toast.success("Consultation ticket opened! You can chat directly with our Lead Gemologist.", {
           id: "contact-submit",
           duration: 6000,
         });
@@ -69,6 +88,7 @@ export function useContactForm() {
 
   const resetSuccess = useCallback(() => {
     setIsSuccess(false);
+    setCreatedInquiryId(null);
   }, []);
 
   return {
@@ -77,6 +97,8 @@ export function useContactForm() {
     submitInquiry,
     isSubmitting,
     isSuccess,
+    createdInquiryId,
+    setCreatedInquiryId,
     resetSuccess,
   };
 }

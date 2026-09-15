@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { siteConfig } from "@/config/site.config";
 
 interface IFAQ {
   category: "AUTHENTICITY" | "PURCHASING" | "SHIPPING" | "CUSTOM";
@@ -29,7 +30,7 @@ const ALL_FAQS: IFAQ[] = [
     category: "AUTHENTICITY",
     question: "Do your diamonds come with official IGI or GIA certificates?",
     answer:
-      "Yes! Every single diamond from Legacy Diamond comes with an independent, authentic grading certificate from either IGI (International Gemological Institute) or GIA (Gemological Institute of America). The unique certificate number is also microscopically laser-inscribed on the diamond's girdle so you can verify it anytime on the official IGI or GIA report check portal.",
+      `Yes! Every single diamond from ${siteConfig.brandName} comes with an independent, authentic grading certificate from either IGI (International Gemological Institute) or GIA (Gemological Institute of America). The unique certificate number is also microscopically laser-inscribed on the diamond's girdle so you can verify it anytime on the official IGI or GIA report check portal.`,
   },
   {
     category: "AUTHENTICITY",

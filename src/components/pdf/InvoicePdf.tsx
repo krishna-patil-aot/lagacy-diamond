@@ -236,7 +236,7 @@ export function InvoicePdf({
   companyInfo,
 }: IInvoicePdfProps): React.ReactElement<DocumentProps> {
   return (
-    <Document title={`Invoice ${invoiceNumber} - Legacy Diamond Vault`}>
+    <Document title={`Invoice ${invoiceNumber} - ${companyInfo.name}`}>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
@@ -274,7 +274,7 @@ export function InvoicePdf({
           <View style={styles.addressCol}>
             <Text style={styles.sectionTitle}>Armored Transit Courier</Text>
             <Text style={styles.addressText}>Carrier: Armored High-Value Escrow Courier</Text>
-            <Text style={styles.addressText}>Origin: Diamond Foundry Vault 1</Text>
+            <Text style={styles.addressText}>Origin: {companyInfo.name} Primary Vault</Text>
             <Text style={styles.addressText}>Biometric Signature Required: Yes</Text>
             <Text style={styles.addressText}>
               Payment Channel: {order.paymentInfo?.method ? order.paymentInfo.method.replace("_", " ") : "SECURE PAYMENT"}

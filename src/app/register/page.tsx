@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { FormSelect } from "@/components/ui/FormSelect";
 import { GoogleSignInModal } from "@/components/common/GoogleSignInModal";
 import { Gem, Mail, Lock, User as UserIcon } from "lucide-react";
+import { siteConfig } from "@/config/site.config";
 
 export default function RegisterPage() {
   const {
@@ -29,8 +30,8 @@ export default function RegisterPage() {
   } = form;
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-3xl border border-stone-200/90 bg-white p-8 shadow-xl">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8 rounded-3xl border border-stone-200/90 bg-white p-5 sm:p-8 shadow-xl">
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200 text-amber-800">
@@ -109,7 +110,7 @@ export default function RegisterPage() {
             </label>
             <Input
               type="email"
-              placeholder="client@legacydiamond.com"
+              placeholder={`client@${siteConfig.domain}`}
               icon={<Mail className="h-4 w-4 text-stone-400" />}
               {...register("email")}
               error={errors.email?.message}
@@ -168,7 +169,7 @@ export default function RegisterPage() {
 
         {/* Switch to Login */}
         <div className="text-center text-xs text-stone-500">
-          <span>Already registered with Legacy Diamond? </span>
+          <span>Already registered with {siteConfig.brandName}? </span>
           <Link
             href="/login"
             className="font-medium text-stone-900 hover:underline"

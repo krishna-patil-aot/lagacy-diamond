@@ -113,31 +113,31 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
         </div>
 
         {/* The 4 Cs Specs Pill Matrix */}
-        <div className="my-2.5 grid grid-cols-4 gap-1 rounded-xl border border-stone-100 bg-stone-50/80 p-2 text-center text-xs">
-          <div>
-            <span className="block text-[9px] uppercase text-stone-400 font-mono">Carat</span>
-            <span className="font-semibold text-stone-800">{formatCarat(diamond.carat)}</span>
+        <div className="my-2.5 grid grid-cols-4 gap-1 rounded-xl border border-stone-100 bg-stone-50/80 p-1.5 sm:p-2 text-center text-xs">
+          <div className="min-w-0">
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Carat</span>
+            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">{formatCarat(diamond.carat)}</span>
           </div>
-          <div>
-            <span className="block text-[9px] uppercase text-stone-400 font-mono">Color</span>
-            <span className="font-semibold text-amber-900">{diamond.color}</span>
+          <div className="min-w-0">
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Color</span>
+            <span className="font-semibold text-amber-900 text-[11px] sm:text-xs truncate block">{diamond.color}</span>
           </div>
-          <div>
-            <span className="block text-[9px] uppercase text-stone-400 font-mono">Clarity</span>
-            <span className="font-semibold text-stone-800">{diamond.clarity}</span>
+          <div className="min-w-0">
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Clarity</span>
+            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">{diamond.clarity}</span>
           </div>
-          <div>
-            <span className="block text-[9px] uppercase text-stone-400 font-mono">Cut</span>
-            <span className="font-semibold text-stone-800">{diamond.cut.slice(0, 4)}</span>
+          <div className="min-w-0">
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Cut</span>
+            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">{diamond.cut.slice(0, 4)}</span>
           </div>
         </div>
 
         {/* Pricing & CTA */}
-        <div className="mt-auto flex items-end justify-between pt-2.5 border-t border-stone-100">
-          <div>
+        <div className="mt-auto flex items-end justify-between pt-2.5 border-t border-stone-100 gap-2">
+          <div className="min-w-0">
             {diamond.discountPercentage > 0 ? (
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-base sm:text-lg font-bold text-stone-900 font-mono">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-base sm:text-lg font-bold text-stone-900 font-mono tracking-tight">
                   {formatPrice(diamond.finalPrice)}
                 </span>
                 <span className="text-xs text-stone-400 line-through font-mono">
@@ -145,17 +145,17 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
                 </span>
               </div>
             ) : (
-              <span className="text-base sm:text-lg font-bold text-stone-900 font-mono">
+              <span className="text-base sm:text-lg font-bold text-stone-900 font-mono tracking-tight">
                 {formatPrice(diamond.finalPrice)}
               </span>
             )}
-            <span className="block text-[10px] text-stone-500">
+            <span className="block text-[10px] text-stone-500 truncate">
               Direct lab foundry custody
             </span>
           </div>
 
-          <Link href={`/diamonds/${diamond._id}`}>
-            <span className="text-xs font-semibold text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-700 transition-all">
+          <Link href={`/diamonds/${diamond._id}`} className="shrink-0">
+            <span className="text-xs font-semibold text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-700 transition-all py-1 px-1 -mr-1 inline-block">
               Inspect →
             </span>
           </Link>

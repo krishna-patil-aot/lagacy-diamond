@@ -19,7 +19,10 @@ import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CheckoutModal } from "@/components/checkout/CheckoutModal";
+import { NavbarNotificationBell } from "@/components/common/NavbarNotificationBell";
 import { useIsMounted } from "@/hooks/useIsMounted";
+
+import { siteConfig } from "@/config/site.config";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -42,7 +45,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-white/80 backdrop-blur-md transition-all">
       <div className="w-full flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Brand Identity: Legacy Diamond */}
+        {/* Brand Identity: DarkGem */}
         <Link
           href="/"
           className="flex items-center gap-2.5 shrink-0 select-none group"
@@ -50,12 +53,12 @@ export function Navbar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-900 text-stone-50 border border-stone-800 shadow-xs group-hover:scale-105 transition-transform duration-200">
             <Gem className="h-4.5 w-4.5 text-amber-200" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-serif text-base sm:text-lg tracking-[0.14em] font-bold text-stone-900 leading-none">
-              LEGACY DIAMOND
+          <div className="flex flex-col min-w-0">
+            <span className="font-serif text-sm sm:text-base lg:text-lg tracking-[0.12em] sm:tracking-[0.14em] font-bold text-stone-900 leading-none truncate">
+              {siteConfig.brandName.toUpperCase()}
             </span>
-            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.22em] text-stone-400 font-mono mt-0.5">
-              100% Certified Diamonds
+            <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-400 font-mono mt-0.5 truncate">
+              Haute Gemology · Geneva
             </span>
           </div>
         </Link>
@@ -151,6 +154,9 @@ export function Navbar() {
             )}
           </button>
 
+          {/* Concierge Inquiries Notifications */}
+          {activeAuth && <NavbarNotificationBell />}
+
           {/* User Auth Info */}
           {activeAuth && activeUser ? (
             <div className="flex items-center gap-2.5 pl-2.5 border-l border-stone-200">
@@ -207,6 +213,7 @@ export function Navbar() {
 
         {/* Mobile & Tablet Toggle Controls */}
         <div className="flex lg:hidden items-center gap-2">
+          {activeAuth && <NavbarNotificationBell />}
           <button
             onClick={openCheckout}
             className="relative p-2 text-stone-600 hover:text-stone-900"
@@ -237,7 +244,7 @@ export function Navbar() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-stone-200 bg-white px-6 py-5 space-y-4 animate-in slide-in-from-top duration-150 shadow-md">
+        <div className="lg:hidden border-b border-stone-200 bg-white px-4 sm:px-6 py-4 sm:py-5 space-y-4 animate-in slide-in-from-top duration-150 shadow-md pb-safe max-h-[calc(100vh-4rem)] overflow-y-auto">
           <nav className="flex flex-col space-y-2 text-sm">
             <Link
               href="/diamonds"

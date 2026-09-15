@@ -2,21 +2,21 @@
 
 import { useState, useCallback } from "react";
 import { IAIMessage, IAIChatResponse } from "@/types/ai.types";
+import { siteConfig } from "@/config/site.config";
 
 const INITIAL_GREETING: IAIMessage = {
   id: "initial-greeting",
   role: "assistant",
-  content:
-    "Namaste and welcome to Legacy Diamond! I am your AI Diamond Specialist. Tell me what you are looking for—whether you need a certified Round or Oval diamond for an engagement ring, guidance on the 4Cs, or the best stone for your budget.",
+  content: siteConfig.assistant.greeting,
   timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
 };
 
 export const QUICK_PROMPT_SUGGESTIONS: string[] = [
-  "1.5 ct Oval diamond under $5,000",
-  "Round brilliant with IGI / GIA Ideal cut",
-  "D-Colour VVS2 engagement diamond",
-  "Which shape looks largest for 1 Carat?",
-  "Difference between lab-grown and mined diamonds",
+  "2.0 ct Oval solitaire in F / VVS2",
+  "Round brilliant with GIA / IGI Ideal cut",
+  "D-Color VVS1 bespoke solitaire diamond",
+  "How does solar plasma crystallization work?",
+  "Type IIa diamond certification vs mined",
 ];
 
 export function useDiamondAssistant() {

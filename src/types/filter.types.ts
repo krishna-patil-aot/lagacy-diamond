@@ -14,6 +14,9 @@ export type DiamondSortOption =
   | "discount_desc"
   | "newest";
 
+export type DiamondPageSize = 4 | 8 | 12 | 16;
+export const DIAMOND_PAGE_SIZES: readonly DiamondPageSize[] = [4, 8, 12, 16] as const;
+
 export interface IDiamondFilterState {
   searchQuery: string;
   shapes: DiamondShape[];

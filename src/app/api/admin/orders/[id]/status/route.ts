@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateOrderStatusAdmin } from "@/lib/order-repository";
 import { verifyToken } from "@/lib/auth";
 import { OrderStatus } from "@/types/order.types";
-import { sendOrderDocumentsEmail, sendOrderCancelledEmail } from "@/lib/mailer";
+import {
+  sendOrderApprovedEmail,
+  sendOrderDocumentsEmail,
+  sendOrderCancelledEmail,
+} from "@/lib/mailer";
+import { siteConfig } from "@/config/site.config";
 
 export async function PATCH(
   request: NextRequest,
@@ -51,25 +56,25 @@ export async function PATCH(
       );
     }
 
-    // Email dispatch pipeline based on admin decision
-    // 1. When admin accepts & approves the order: dispatch official invoice & lab certificates
+    // Email dispatch pipeline based on luxury brand business rules:
+    // 1. When admin approves the order: send curator review & vault preparation notice WITHOUT invoice or certificates
     if (status === "APPROVED" && updated.shippingAddress?.email) {
       try {
-        await sendOrderDocumentsEmail(updated, {
-          subject: `Order #${updated.orderNumber || updated.id} Accepted & Approved - Official Invoice & Lab Certificates - Legacy Diamond`,
-          badgeText: "ORDER ACCEPTED & APPROVED • OFFICIAL INVOICE ISSUED",
-          statusTitle: `Order #${updated.orderNumber || updated.id} Approved by Curator`,
-          customMessage: `Your gemstone order <strong>#${updated.orderNumber || updated.id}</strong> has been reviewed and accepted by the vault curator. Attached to this email are your official <strong>Purchase & Tax Invoice</strong> and official <strong>Lab Authorized Certificate(s) of Authenticity & Grading</strong>.`,
-          fulfillmentStatus: "Curator Approved & Invoiced",
+        await sendOrderApprovedEmail({
+          to: updated.shippingAddress.email,
+          clientName: updated.shippingAddress.fullName || "Valued Client",
+          orderNumber: updated.orderNumber || updated.id,
+          totalAmount: updated.totalAmount || 0,
+          itemCount: (updated.items || []).length,
         });
       } catch (mailError) {
         console.error("[Admin Approval Mailer Error]:", mailError);
       }
     } else if (status === "DELIVERED" && updated.shippingAddress?.email) {
-      // 2. Final fulfillment: delivery receipt with documents
+      // 2. Final fulfillment: ONLY when status is hand-delivered and signed (DELIVERED) do we generate & attach invoice + lab certificates
       try {
         await sendOrderDocumentsEmail(updated, {
-          subject: `Order #${updated.orderNumber || updated.id} Delivered & Signed - Official Invoice & Lab Certificates - Legacy Diamond`,
+          subject: `Order #${updated.orderNumber || updated.id} Delivered & Signed - Official Invoice & Lab Certificates - ${siteConfig.brandName}`,
           badgeText: "ORDER HAND-DELIVERED & FULFILLED",
           statusTitle: `Order #${updated.orderNumber || updated.id} Delivered & Signed`,
           customMessage: `Your order <strong>#${updated.orderNumber || updated.id}</strong> has been successfully hand-delivered and verified under armed courier protocol. Your gemstone acquisition is now complete and fulfilled. Attached to this email is your final Purchase Invoice and Lab Authorized Certificates.`,

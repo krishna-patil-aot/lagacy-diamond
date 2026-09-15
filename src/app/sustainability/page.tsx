@@ -9,24 +9,25 @@ import {
   Droplets,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { siteConfig } from "@/config/site.config";
 
 export const metadata: Metadata = {
-  title: "Sustainability & Zero-Mining Ecological Manifesto | Legacy Diamond",
+  title: `Sustainability & Zero-Mining Ecological Manifesto | ${siteConfig.brandName}`,
   description:
-    "Explore our 100% solar-powered plasma reactors, zero earth displacement, and closed-loop water systems. The definitive ecological alternative to mined fine jewelry.",
+    `Explore our 100% solar-powered plasma reactors, zero earth displacement, and closed-loop water systems. The definitive ecological alternative to mined fine jewelry by ${siteConfig.brandName}.`,
   keywords: [
     "Sustainable Diamonds",
-    "Zero Mining Diamonds",
-    "Solar Powered Diamonds",
-    "Ethical Fine Jewelry",
-    "Lab Grown Diamond Sustainability",
-    "Eco Friendly Engagement Rings",
-    "Kimberley Process",
+    "Zero Earth Displacement",
+    "Solar Plasma Diamonds",
+    "Carbon Neutral Solitaires",
+    "Ethical Haute Joaillerie",
+    "Type IIa Eco Diamonds",
+    siteConfig.brandName,
   ],
   openGraph: {
-    title: "Sustainability & Zero-Mining Ecological Manifesto | Legacy Diamond",
+    title: `Sustainability & Zero-Mining Ecological Manifesto | ${siteConfig.brandName}`,
     description: "Explore our 100% solar-powered plasma reactors and zero earth displacement.",
-    url: "https://legacydiamond.luxury/sustainability",
+    url: `${siteConfig.appUrl}/sustainability`,
   },
 };
 
@@ -38,7 +39,7 @@ export default function SustainabilityPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-900/20 bg-emerald-50/80 px-4 py-1.5 text-xs font-mono font-medium text-emerald-900">
             <Leaf className="h-3.5 w-3.5 text-emerald-700" />
-            <span>ECO-FRIENDLY & 100% ETHICAL • ZERO MINING</span>
+            <span>ECO-FRIENDLY &amp; 100% ETHICAL • ZERO MINING</span>
           </div>
 
           <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-stone-900">
@@ -47,7 +48,7 @@ export default function SustainabilityPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mx-auto leading-relaxed">
-            Traditional diamond mining causes massive soil erosion, water pollution, and ecological damage. Legacy Diamond uses 100% clean solar energy to cultivate conflict-free diamonds with zero mining footprint.
+            Traditional diamond mining causes massive soil erosion, water pollution, and ecological damage. {siteConfig.brandName} uses 100% clean solar energy to cultivate conflict-free Type IIa diamonds with zero mining footprint.
           </p>
         </div>
       </section>
@@ -90,16 +91,16 @@ export default function SustainabilityPage() {
       {/* Comparative LCA Grid */}
       <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-stone-200 bg-white overflow-hidden shadow-xs">
-          <div className="p-6 sm:p-8 bg-stone-900 text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-6 sm:p-8 bg-stone-50 border-b border-stone-200 text-stone-900 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900">
                 1 Carat Environmental Impact
               </h2>
-              <p className="text-xs text-stone-400 mt-1">
-                Comparison: Mined Diamonds vs. Legacy Lab-Grown Diamonds
+              <p className="text-xs text-stone-500 mt-1">
+                Comparison: Mined Diamonds vs. {siteConfig.brandName} Cultivated Solitaires
               </p>
             </div>
-            <span className="text-xs font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full">
+            <span className="text-xs font-mono uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold">
               Third-Party Verified
             </span>
           </div>

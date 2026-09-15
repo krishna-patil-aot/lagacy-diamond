@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Compass } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { siteConfig } from "@/config/site.config";
 
 export const metadata: Metadata = {
-  title: "The Gemological 4Cs Masterclass & Diamond Guide | Legacy Diamond",
+  title: `The Gemological 4Cs Masterclass & Diamond Guide | ${siteConfig.brandName}`,
   description:
     "An authoritative masterclass on diamond grading: Cut, Color, Clarity, and Carat weight. Understand Type IIa crystal purity, proportions, fluorescence, and GIA & IGI laboratory standards.",
   keywords: [
+    ...siteConfig.seo.keywords,
     "Diamond 4Cs Guide",
     "Diamond Cut Grading",
     "Diamond Clarity Scale",
@@ -19,9 +21,10 @@ export const metadata: Metadata = {
     "Diamond Proportions",
   ],
   openGraph: {
-    title: "The Gemological 4Cs Masterclass | Legacy Diamond",
+    title: `The Gemological 4Cs Masterclass | ${siteConfig.brandName}`,
     description: "An authoritative masterclass on diamond grading: Cut, Color, Clarity, and Carat.",
-    url: "https://legacydiamond.luxury/gemology",
+    url: `${siteConfig.appUrl}/gemology`,
+    siteName: siteConfig.brandName,
   },
 };
 
@@ -143,7 +146,7 @@ export default function GemologyPage() {
           </div>
 
           <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-3xl">
-            Clarity measures microscopic natural characteristics (inclusions) evaluated under 10x magnification. All Legacy Diamonds are hand-selected from <strong>FL down to VS2</strong>, guaranteeing they appear 100% clean and flawless to the naked eye.
+            Clarity measures microscopic natural characteristics (inclusions) evaluated under 10x magnification. All {siteConfig.brandName} diamonds are hand-selected from <strong>FL down to VS2</strong>, guaranteeing they appear 100% clean and flawless to the naked eye.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
@@ -190,16 +193,16 @@ export default function GemologyPage() {
 
       {/* CTA Box */}
       <section className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-        <div className="rounded-3xl border border-stone-800 bg-stone-950 p-8 sm:p-12 text-stone-100 space-y-4 shadow-xl">
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+        <div className="rounded-3xl border border-stone-200/90 bg-gradient-to-b from-stone-50 via-white to-amber-50/30 p-8 sm:p-12 text-stone-900 space-y-4 shadow-sm">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
             Find Your Dream Diamond
           </h2>
-          <p className="text-xs sm:text-sm text-stone-400 max-w-lg mx-auto">
-            Use our interactive filter tool or ask our AI Diamond Assistant to find the best certified diamond matching your exact budget and 4Cs preferences.
+          <p className="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto">
+            Use our interactive filter tool or ask our AI Diamond Concierge to find the best certified diamond matching your exact budget and 4Cs preferences.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link href="/diamonds">
-              <Button variant="luxury" size="lg" className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold">
+              <Button variant="luxury" size="lg" className="bg-stone-900 hover:bg-stone-800 text-white font-medium">
                 Filter Certified Diamonds
               </Button>
             </Link>
@@ -207,7 +210,7 @@ export default function GemologyPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="text-stone-200 border-stone-700 bg-transparent hover:bg-stone-800 hover:text-white hover:border-stone-500 transition-colors"
+                className="text-stone-800 border-stone-300 bg-white hover:bg-stone-100 hover:text-stone-900 transition-colors"
               >
                 Talk to Diamond Expert
               </Button>
