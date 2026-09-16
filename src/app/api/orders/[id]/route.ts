@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderById, updateOrderStatusAdmin } from "@/lib/order-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { sendOrderCancelledEmail } from "@/lib/mailer";
 
 export async function GET(
@@ -9,11 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
     const isAdmin = verified?.role === "ADMIN";
 
     const order = await getOrderById(id, verified?.userId, isAdmin);
@@ -38,11 +34,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
 
     if (!verified) {
       return NextResponse.json(

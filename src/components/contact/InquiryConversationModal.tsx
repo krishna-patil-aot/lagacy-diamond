@@ -81,23 +81,23 @@ export function InquiryConversationModal({
     switch (activeInquiry.status) {
       case "NEW":
         return (
-          <Badge variant="gold" className="text-[10px] font-mono gap-1 py-0.5 px-2.5 bg-amber-100 text-amber-900 border-amber-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-            Curator Reviewing
+          <Badge variant="gold" className="text-[10px] font-medium gap-1.5 py-0.5 px-2.5 whitespace-nowrap shrink-0 bg-amber-100 text-amber-900 border-amber-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span>Curator Reviewing</span>
           </Badge>
         );
       case "IN_PROGRESS":
         return (
-          <Badge variant="outline" className="text-[10px] font-mono gap-1 py-0.5 px-2.5 border-amber-300 text-amber-900 bg-amber-50">
-            <Sparkles className="h-3 w-3 text-amber-600" />
-            Active Consultation
+          <Badge variant="outline" className="text-[10px] font-medium gap-1.5 py-0.5 px-2.5 whitespace-nowrap shrink-0 border-amber-300 text-amber-900 bg-amber-50">
+            <Sparkles className="h-3 w-3 text-amber-600 shrink-0" />
+            <span>Active Consultation</span>
           </Badge>
         );
       case "RESOLVED":
         return (
-          <Badge variant="success" className="text-[10px] font-mono gap-1 py-0.5 px-2.5 bg-emerald-50 text-emerald-800 border-emerald-300">
-            <ShieldCheck className="h-3 w-3 text-emerald-600" />
-            Completed
+          <Badge variant="success" className="text-[10px] font-medium gap-1.5 py-0.5 px-2.5 whitespace-nowrap shrink-0 bg-emerald-50 text-emerald-800 border-emerald-300">
+            <ShieldCheck className="h-3 w-3 text-emerald-600 shrink-0" />
+            <span>Completed</span>
           </Badge>
         );
     }

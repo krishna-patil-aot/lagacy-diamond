@@ -125,11 +125,17 @@ export default function WishlistPage() {
                         variant={inCart ? "secondary" : "luxury"}
                         size="sm"
                         onClick={() => addToCart(stone)}
-                        disabled={inCart}
+                        disabled={inCart || (stone.stockQuantity !== undefined && stone.stockQuantity <= 0)}
                         className="text-xs h-8 gap-1.5"
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
-                        <span>{inCart ? "In Vault" : "Reserve"}</span>
+                        <span>
+                          {inCart
+                            ? "In Vault"
+                            : stone.stockQuantity !== undefined && stone.stockQuantity <= 0
+                            ? "Sold Out"
+                            : "Reserve"}
+                        </span>
                       </Button>
 
                       <Button

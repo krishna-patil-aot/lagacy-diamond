@@ -45,7 +45,7 @@ export interface IUseUserOrdersReturn {
 
 export function useUserOrders(): IUseUserOrdersReturn {
   const { token, isAuthenticated, user } = useAuthStore();
-  const { rejectOrder } = useOrderStore();
+  const { orders: storeOrders, rejectOrder } = useOrderStore();
   const [dbOrders, setDbOrders] = useState<IOrder[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
@@ -69,13 +69,8 @@ export function useUserOrders(): IUseUserOrdersReturn {
 
   // Load orders silently without triggering a global loading spinner
   const silentFetchOrders = useCallback(async () => {
-    const activeToken = getEffectiveToken();
-    if (!activeToken && !isAuthenticated) {
-      setDbOrders([]);
-      return;
-    }
-
     try {
+      const activeToken = getEffectiveToken();
       const headers: Record<string, string> = {};
       if (activeToken) {
         headers["Authorization"] = `Bearer ${activeToken}`;
@@ -83,8 +78,13 @@ export function useUserOrders(): IUseUserOrdersReturn {
 
       const res = await fetch("/api/orders", {
         headers,
+        credentials: "same-origin",
         cache: "no-store",
       });
+
+      if (res.status === 401 && !isAuthenticated) {
+        return;
+      }
 
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
@@ -96,17 +96,11 @@ export function useUserOrders(): IUseUserOrdersReturn {
   }, [getEffectiveToken, isAuthenticated]);
 
   const fetchOrders = useCallback(async () => {
-    const activeToken = getEffectiveToken();
-    if (!activeToken && !isAuthenticated) {
-      setDbOrders([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
 
+      const activeToken = getEffectiveToken();
       const headers: Record<string, string> = {};
       if (activeToken) {
         headers["Authorization"] = `Bearer ${activeToken}`;
@@ -114,8 +108,15 @@ export function useUserOrders(): IUseUserOrdersReturn {
 
       const res = await fetch("/api/orders", {
         headers,
+        credentials: "same-origin",
         cache: "no-store",
       });
+
+      if (res.status === 401 && !isAuthenticated) {
+        setDbOrders([]);
+        setIsLoading(false);
+        return;
+      }
 
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
@@ -136,14 +137,8 @@ export function useUserOrders(): IUseUserOrdersReturn {
     let isCancelled = false;
 
     async function initialLoad() {
-      const activeToken = getEffectiveToken();
-      if (!activeToken && !isAuthenticated) {
-        setDbOrders([]);
-        setIsLoading(false);
-        return;
-      }
-
       try {
+        const activeToken = getEffectiveToken();
         const headers: Record<string, string> = {};
         if (activeToken) {
           headers["Authorization"] = `Bearer ${activeToken}`;
@@ -151,6 +146,7 @@ export function useUserOrders(): IUseUserOrdersReturn {
 
         const res = await fetch("/api/orders", {
           headers,
+          credentials: "same-origin",
           cache: "no-store",
         });
 
@@ -158,7 +154,7 @@ export function useUserOrders(): IUseUserOrdersReturn {
         if (!isCancelled) {
           if (json.success && Array.isArray(json.data)) {
             setDbOrders(json.data);
-          } else {
+          } else if (res.status !== 401) {
             setError(json.error || "Failed to load orders");
           }
         }
@@ -196,12 +192,32 @@ export function useUserOrders(): IUseUserOrdersReturn {
     };
   }, [getEffectiveToken, isAuthenticated, silentFetchOrders]);
 
-  // Authoritative user orders directly from MongoDB Database (no local storage ghost orders)
+  // Combined authoritative database orders + immediate optimistic checkout submissions
   const orders = useMemo(() => {
-    return [...dbOrders].sort(
+    const map = new Map<string, IOrder>();
+    for (const o of dbOrders) {
+      const key = (o.orderNumber || o.id || "").toUpperCase();
+      if (key) map.set(key, o);
+    }
+    for (const o of storeOrders) {
+      const key = (o.orderNumber || o.id || "").toUpperCase();
+      if (key && !map.has(key)) {
+        const matchesUser =
+          isAdmin ||
+          !user ||
+          (o.userId && o.userId === user.id) ||
+          (o.shippingAddress?.email &&
+            user.email &&
+            o.shippingAddress.email.toLowerCase() === user.email.toLowerCase());
+        if (matchesUser) {
+          map.set(key, o);
+        }
+      }
+    }
+    return Array.from(map.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-  }, [dbOrders]);
+  }, [dbOrders, storeOrders, isAdmin, user]);
 
   // Dynamically derive inspectOrder from active orders so modal reflects real-time status changes
   const inspectOrder = useMemo(() => {

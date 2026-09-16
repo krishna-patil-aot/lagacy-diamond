@@ -3,6 +3,8 @@ import { IDiamond } from "@/types/diamond.types";
 import { IAdminInventoryStats } from "@/types/admin.types";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { subscribeToDiamondEvents } from "@/lib/diamond-events";
+import { subscribeToOrderEvents } from "@/lib/order-events";
 
 export interface IUseAdminDiamondsReturn {
   diamonds: IDiamond[];
@@ -103,6 +105,46 @@ export function useAdminDiamonds(): IUseAdminDiamondsReturn {
       ignore = true;
     };
   }, []);
+
+  // Silent revalidate for live admin inventory updates
+  const silentRevalidate = useCallback(async () => {
+    try {
+      const res = await fetch("/api/diamonds?limit=100&sortBy=newest");
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setDiamonds(json.data);
+      }
+    } catch {
+      // Ignore background sync errors
+    }
+  }, []);
+
+  useEffect(() => {
+    const unsubDiamonds = subscribeToDiamondEvents(() => silentRevalidate());
+    const unsubOrders = subscribeToOrderEvents(() => silentRevalidate());
+
+    const handleFocus = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        silentRevalidate();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("visibilitychange", handleFocus);
+
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        silentRevalidate();
+      }
+    }, 3500);
+
+    return () => {
+      unsubDiamonds();
+      unsubOrders();
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("visibilitychange", handleFocus);
+      clearInterval(interval);
+    };
+  }, [silentRevalidate]);
 
   const filteredDiamonds = useMemo(() => {
     if (!searchQuery.trim()) return diamonds;

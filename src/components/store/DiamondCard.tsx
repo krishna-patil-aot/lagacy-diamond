@@ -43,8 +43,16 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
         {/* Soft Ambient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
 
-        {/* Top Badges (Discount & Certificate) */}
+        {/* Top Badges (Discount & Certificate & Stock) */}
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
+          {diamond.stockQuantity <= 0 && (
+            <Badge
+              variant="destructive"
+              className="font-semibold tracking-wide"
+            >
+              Sold Out
+            </Badge>
+          )}
           {diamond.discountPercentage > 0 && (
             <Badge variant="orange" className="font-semibold tracking-wide">
               {diamond.discountPercentage}% Direct Off
@@ -73,7 +81,9 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
             }`}
             aria-label="Toggle wishlist"
           >
-            <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`} />
+            <Heart
+              className={`h-3.5 w-3.5 ${isWishlisted ? "fill-current" : ""}`}
+            />
           </button>
 
           {onQuickView && (
@@ -115,20 +125,36 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
         {/* The 4 Cs Specs Pill Matrix */}
         <div className="my-2.5 grid grid-cols-4 gap-1 rounded-xl border border-stone-100 bg-stone-50/80 p-1.5 sm:p-2 text-center text-xs">
           <div className="min-w-0">
-            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Carat</span>
-            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">{formatCarat(diamond.carat)}</span>
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">
+              Carat
+            </span>
+            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">
+              {formatCarat(diamond.carat)}
+            </span>
           </div>
           <div className="min-w-0">
-            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Color</span>
-            <span className="font-semibold text-amber-900 text-[11px] sm:text-xs truncate block">{diamond.color}</span>
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">
+              Color
+            </span>
+            <span className="font-semibold text-amber-900 text-[11px] sm:text-xs truncate block">
+              {diamond.color}
+            </span>
           </div>
           <div className="min-w-0">
-            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Clarity</span>
-            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">{diamond.clarity}</span>
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">
+              Clarity
+            </span>
+            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">
+              {diamond.clarity}
+            </span>
           </div>
           <div className="min-w-0">
-            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">Cut</span>
-            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">{diamond.cut.slice(0, 4)}</span>
+            <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">
+              Cut
+            </span>
+            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">
+              {diamond.cut.slice(0, 4)}
+            </span>
           </div>
         </div>
 
@@ -156,7 +182,7 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
 
           <Link href={`/diamonds/${diamond._id}`} className="shrink-0">
             <span className="text-xs font-semibold text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-700 transition-all py-1 px-1 -mr-1 inline-block">
-              Inspect →
+              {diamond.stockQuantity <= 0 ? "Inspect / Alert →" : "Inspect →"}
             </span>
           </Link>
         </div>

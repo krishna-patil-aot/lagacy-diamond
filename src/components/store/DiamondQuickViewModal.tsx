@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { IDiamond } from "@/types/diamond.types";
@@ -22,6 +22,7 @@ export function DiamondQuickViewModal({
   isOpen,
   onClose,
 }: DiamondQuickViewModalProps) {
+  const [qty, setQty] = useState<number>(1);
   const { addToCart, isInCart } = useCartStore();
 
   if (!diamond) return null;
@@ -129,22 +130,53 @@ export function DiamondQuickViewModal({
           </div>
 
           {/* Action CTAs */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-2.5 pt-1">
+            {diamond.stockQuantity > 0 && (
+              <div className="flex items-center justify-between py-1.5 px-3 rounded-xl border border-stone-200 bg-stone-50/70">
+                <span className="text-xs font-medium text-stone-700">Quantity</span>
+                <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setQty((q: number) => Math.max(1, q - 1))}
+                    disabled={qty <= 1}
+                    className="px-2.5 py-1 text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors text-xs font-mono"
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <span className="px-2.5 py-1 font-mono text-xs font-semibold text-stone-800 min-w-[20px] text-center select-none">
+                    {qty}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQty((q: number) => Math.min(diamond.stockQuantity, q + 1))}
+                    disabled={qty >= diamond.stockQuantity}
+                    className="px-2.5 py-1 text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors text-xs font-mono"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+
             <Button
               variant="luxury"
               className="w-full justify-center text-xs h-10"
-              onClick={() => addToCart(diamond)}
-              disabled={inCart}
+              onClick={() => addToCart(diamond, qty)}
+              disabled={inCart || diamond.stockQuantity <= 0}
             >
               {inCart ? (
                 <>
                   <Check className="h-3.5 w-3.5 mr-1.5" />
                   Reserved in Private Vault
                 </>
+              ) : diamond.stockQuantity <= 0 ? (
+                "Sold Out"
               ) : (
                 <>
                   <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
-                  Reserve Direct from Lab
+                  Add {qty > 1 ? `${qty} Specimens` : "to Cart"} • {formatPrice(diamond.finalPrice * qty)}
                 </>
               )}
             </Button>

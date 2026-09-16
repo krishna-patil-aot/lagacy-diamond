@@ -103,3 +103,25 @@ export async function createUser(data: {
   memoryUsers.push(newUser);
   return sanitizeUser(newUser);
 }
+
+export async function updateUserPassword(
+  email: string,
+  newPasswordHash: string
+): Promise<boolean> {
+  const normalized = email.toLowerCase().trim();
+  const mongoose = await connectToDatabase();
+
+  if (mongoose) {
+    const res = await UserModel.updateOne(
+      { email: normalized },
+      { $set: { passwordHash: newPasswordHash } }
+    );
+    return res.matchedCount > 0;
+  }
+
+  const found = memoryUsers.find((u) => u.email === normalized);
+  if (!found) return false;
+  found.passwordHash = newPasswordHash;
+  return true;
+}
+

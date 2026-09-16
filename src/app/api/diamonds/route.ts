@@ -6,8 +6,8 @@ import {
   DiamondCut,
   DiamondShape,
 } from "@/types/diamond.types";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { DiamondSortOption } from "@/types/filter.types";
-import { verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,17 +69,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
+    const decoded = getAuthenticatedUserFromRequest(request);
+    if (!decoded) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Missing authentication token" },
         { status: 401 }
       );
     }
 
-    const token = authHeader.split(" ")[1];
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== "ADMIN") {
+    if (decoded.role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Forbidden: Admin privileges required" },
         { status: 403 }

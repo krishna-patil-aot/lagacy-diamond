@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -26,20 +26,18 @@ import { siteConfig } from "@/config/site.config";
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout, initialize } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const { cart, wishlist, isCheckoutOpen, openCheckout, closeCheckout } =
     useCartStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const isMounted = useIsMounted();
 
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-
-  const activeAuth = isMounted && isAuthenticated;
-  const activeUser = isMounted ? user : null;
+  const activeAuth = isAuthenticated;
+  const activeUser = user;
   const isAdmin = activeAuth && activeUser?.role === "ADMIN";
-  const cartCount = isMounted ? cart.length : 0;
+  const cartCount = isMounted
+    ? cart.reduce((sum, item) => sum + (item.cartQuantity || 1), 0)
+    : 0;
   const wishlistCount = isMounted ? wishlist.length : 0;
 
   return (

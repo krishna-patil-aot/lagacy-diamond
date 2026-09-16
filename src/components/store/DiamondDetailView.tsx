@@ -11,6 +11,8 @@ import { useCartStore } from "@/store/useCartStore";
 import { useProductPdf } from "@/hooks/useProductPdf";
 import { useCertificateViewer } from "@/hooks/useCertificateViewer";
 import { CertificateViewerModal } from "./CertificateViewerModal";
+import { StockNotificationModal } from "./stock-notification-modal";
+import { useStockNotification } from "@/hooks/use-stock-notification";
 import {
   ShieldCheck,
   Award,
@@ -22,6 +24,10 @@ import {
   Sparkles,
   Download,
   Loader2,
+  Bell,
+  AlertCircle,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { Diamond360Viewer } from "./Diamond360Viewer";
 
@@ -32,17 +38,33 @@ interface DiamondDetailViewProps {
 export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<"gallery" | "360">("gallery");
+  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const { addToCart, isInCart, toggleWishlist, isInWishlist } = useCartStore();
   const { downloadSpecPdf, isDownloadingSpec } = useProductPdf();
-  const { viewerState, openCertificate, closeCertificate } = useCertificateViewer();
+  const { viewerState, openCertificate, closeCertificate } =
+    useCertificateViewer();
+  const {
+    isOpen,
+    diamond: targetDiamond,
+    isSubmitting,
+    isSubscribed,
+    defaultEmail,
+    defaultName,
+    openNotificationModal,
+    closeNotificationModal,
+    submitNotification,
+  } = useStockNotification();
 
+  const isOutOfStock = diamond.stockQuantity <= 0;
   const isCart = isInCart(diamond._id);
   const isWish = isInWishlist(diamond._id);
 
   const images =
     diamond.images && diamond.images.length > 0
       ? diamond.images
-      : ["https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80"];
+      : [
+          "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80",
+        ];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-10">
@@ -106,7 +128,10 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
                 {/* Badges */}
                 <div className="absolute top-4 left-4 flex gap-2">
                   {diamond.discountPercentage > 0 && (
-                    <Badge variant="orange" className="text-xs px-3 py-1 font-bold">
+                    <Badge
+                      variant="orange"
+                      className="text-xs px-3 py-1 font-bold"
+                    >
                       {diamond.discountPercentage}% Direct Off
                     </Badge>
                   )}
@@ -137,7 +162,12 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
                           : "border-stone-200 opacity-60 hover:opacity-100"
                       }`}
                     >
-                      <Image src={img} alt={`View ${idx}`} fill className="object-cover" />
+                      <Image
+                        src={img}
+                        alt={`View ${idx}`}
+                        fill
+                        className="object-cover"
+                      />
                     </button>
                   ))}
                 </div>
@@ -173,13 +203,21 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
 
           {/* Price & Savings Presentation */}
           <div className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs space-y-2">
+            {isOutOfStock && (
+              <div className="pb-1">
+                <Badge variant="destructive" className="text-xs font-mono">
+                  Out of Stock • Unavailable
+                </Badge>
+              </div>
+            )}
             <div className="flex items-baseline justify-between">
               <span className="text-[11px] font-mono uppercase text-stone-400">
                 Direct Foundry Price
               </span>
               {diamond.discountPercentage > 0 && (
                 <span className="text-xs text-amber-800 font-mono font-medium">
-                  Direct Savings {formatPrice(diamond.price - diamond.finalPrice)}
+                  Direct Savings{" "}
+                  {formatPrice(diamond.price - diamond.finalPrice)}
                 </span>
               )}
             </div>
@@ -196,7 +234,8 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
             </div>
 
             <p className="text-xs text-stone-500 pt-1">
-              Direct-to-consumer pricing. Includes fully insured armored transit and 30-day foundry inspection privilege.
+              Direct-to-consumer pricing. Includes fully insured armored transit
+              and 30-day foundry inspection privilege.
             </p>
           </div>
 
@@ -208,20 +247,36 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-xl border border-stone-100 bg-stone-50/80 p-2.5">
-                <span className="block text-[10px] text-stone-400 uppercase font-mono">Carat Weight</span>
-                <span className="text-sm font-bold text-stone-900 font-mono">{formatCarat(diamond.carat)}</span>
+                <span className="block text-[10px] text-stone-400 uppercase font-mono">
+                  Carat Weight
+                </span>
+                <span className="text-sm font-bold text-stone-900 font-mono">
+                  {formatCarat(diamond.carat)}
+                </span>
               </div>
               <div className="rounded-xl border border-stone-100 bg-stone-50/80 p-2.5">
-                <span className="block text-[10px] text-stone-400 uppercase font-mono">Color Grade</span>
-                <span className="text-sm font-bold text-amber-900 font-mono">{diamond.color} Grade</span>
+                <span className="block text-[10px] text-stone-400 uppercase font-mono">
+                  Color Grade
+                </span>
+                <span className="text-sm font-bold text-amber-900 font-mono">
+                  {diamond.color} Grade
+                </span>
               </div>
               <div className="rounded-xl border border-stone-100 bg-stone-50/80 p-2.5">
-                <span className="block text-[10px] text-stone-400 uppercase font-mono">Clarity</span>
-                <span className="text-sm font-bold text-stone-900 font-mono">{diamond.clarity}</span>
+                <span className="block text-[10px] text-stone-400 uppercase font-mono">
+                  Clarity
+                </span>
+                <span className="text-sm font-bold text-stone-900 font-mono">
+                  {diamond.clarity}
+                </span>
               </div>
               <div className="rounded-xl border border-stone-100 bg-stone-50/80 p-2.5">
-                <span className="block text-[10px] text-stone-400 uppercase font-mono">Cut Grade</span>
-                <span className="text-sm font-bold text-stone-900 font-mono">{diamond.cut}</span>
+                <span className="block text-[10px] text-stone-400 uppercase font-mono">
+                  Cut Grade
+                </span>
+                <span className="text-sm font-bold text-stone-900 font-mono">
+                  {diamond.cut}
+                </span>
               </div>
             </div>
           </div>
@@ -235,49 +290,140 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
               <div className="flex justify-between py-1.5">
                 <span className="text-stone-500">Measurements (L × W × D)</span>
                 <span className="font-mono text-stone-800">
-                  {diamond.dimensions.length} × {diamond.dimensions.width} × {diamond.dimensions.depth} mm
+                  {diamond.dimensions.length} × {diamond.dimensions.width} ×{" "}
+                  {diamond.dimensions.depth} mm
                 </span>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-stone-500">Table Percentage</span>
-                <span className="font-mono text-stone-800">{diamond.tablePercentage}%</span>
+                <span className="font-mono text-stone-800">
+                  {diamond.tablePercentage}%
+                </span>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-stone-500">Depth Percentage</span>
-                <span className="font-mono text-stone-800">{diamond.depthPercentage}%</span>
+                <span className="font-mono text-stone-800">
+                  {diamond.depthPercentage}%
+                </span>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-stone-500">Polish / Symmetry</span>
-                <span className="text-stone-800">{diamond.polish} / {diamond.symmetry}</span>
+                <span className="text-stone-800">
+                  {diamond.polish} / {diamond.symmetry}
+                </span>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-stone-500">Current Stock</span>
-                <span className="font-mono text-stone-800">{diamond.stockQuantity} in foundry</span>
+                {isOutOfStock ? (
+                  <span className="font-mono text-rose-600 font-semibold text-xs">
+                    0 in vault (Sold Out)
+                  </span>
+                ) : (
+                  <span className="font-mono text-stone-800">
+                    {diamond.stockQuantity} in foundry
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           {/* Action CTAs */}
           <div className="space-y-2.5 pt-1">
-            <Button
-              variant="luxury"
-              size="lg"
-              className="w-full justify-center text-xs sm:text-sm h-11 bg-stone-900 hover:bg-stone-800 text-white font-medium"
-              onClick={() => addToCart(diamond)}
-              disabled={isCart}
-            >
-              {isCart ? (
-                <>
-                  <Check className="h-4 w-4 mr-2 text-emerald-400" />
-                  Added to Your Cart
-                </>
-              ) : (
-                <>
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  Add to Cart
-                </>
-              )}
-            </Button>
+            {isOutOfStock ? (
+              <>
+                <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3 text-xs text-amber-900 flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
+                  <div>
+                    <span className="font-semibold">
+                      Currently Unavailable:
+                    </span>{" "}
+                    This gemstone lot is out of stock in our vault registry. You
+                    can request an automated email alert the moment it returns
+                    to stock.
+                  </div>
+                </div>
+
+                <Button
+                  variant="luxury"
+                  size="lg"
+                  className="w-full justify-center text-xs sm:text-sm h-11 bg-amber-500 hover:bg-amber-400 text-stone-950 font-semibold shadow-md shadow-amber-500/20 cursor-pointer"
+                  onClick={() => openNotificationModal(diamond)}
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  Notify Me When Available
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Quantity Selection Bar */}
+                <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-2.5">
+                  <div>
+                    <span className="text-xs font-semibold text-stone-900 block">
+                      Select Quantity
+                    </span>
+                    <span className="text-[11px] font-mono text-stone-500">
+                      {diamond.stockQuantity}{" "}
+                      {diamond.stockQuantity === 1 ? "specimen" : "specimens"}{" "}
+                      available in vault
+                    </span>
+                  </div>
+
+                  <div className="flex items-center border border-stone-300 rounded-xl overflow-hidden bg-white shadow-xs">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedQuantity((q) => Math.max(1, q - 1))
+                      }
+                      disabled={selectedQuantity <= 1}
+                      className="p-2 text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="px-3 py-1 font-mono text-xs sm:text-sm font-bold text-stone-900 min-w-[32px] text-center select-none">
+                      {selectedQuantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedQuantity((q) =>
+                          Math.min(diamond.stockQuantity, q + 1),
+                        )
+                      }
+                      disabled={selectedQuantity >= diamond.stockQuantity}
+                      className="p-2 text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  variant="luxury"
+                  size="lg"
+                  className="w-full justify-center text-xs sm:text-sm h-11 bg-stone-900 hover:bg-stone-800 text-white font-medium"
+                  onClick={() => addToCart(diamond, selectedQuantity)}
+                  disabled={isCart}
+                >
+                  {isCart ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2 text-emerald-400" />
+                      Added to Your Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Add{" "}
+                      {selectedQuantity > 1
+                        ? `${selectedQuantity} Lots`
+                        : "to Cart"}{" "}
+                      • {formatPrice(diamond.finalPrice * selectedQuantity)}
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
 
             <Button
               variant="outline"
@@ -285,7 +431,9 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
               className="w-full justify-center text-xs h-10"
               onClick={() => toggleWishlist(diamond)}
             >
-              <Heart className={`h-3.5 w-3.5 mr-1.5 ${isWish ? "fill-current text-rose-500" : ""}`} />
+              <Heart
+                className={`h-3.5 w-3.5 mr-1.5 ${isWish ? "fill-current text-rose-500" : ""}`}
+              />
               {isWish ? "Saved in Wishlist" : "Add to Wishlist"}
             </Button>
           </div>
@@ -352,6 +500,18 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
         open={viewerState.open}
         onClose={closeCertificate}
         diamond={viewerState.diamond}
+      />
+
+      {/* Back-in-Stock Notification Modal */}
+      <StockNotificationModal
+        isOpen={isOpen}
+        diamond={targetDiamond || diamond}
+        defaultEmail={defaultEmail}
+        defaultName={defaultName}
+        isSubmitting={isSubmitting}
+        isSubscribed={isSubscribed}
+        onClose={closeNotificationModal}
+        onSubmit={submitNotification}
       />
     </div>
   );

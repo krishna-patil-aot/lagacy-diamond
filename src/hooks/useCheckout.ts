@@ -10,6 +10,7 @@ import { useOrderStore } from "@/store/useOrderStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ICouponRule, IOrder } from "@/types/order.types";
 import { broadcastOrderEvent, ORDER_EVENTS } from "@/lib/order-events";
+import { broadcastDiamondEvent, DIAMOND_EVENTS } from "@/lib/diamond-events";
 import { toast } from "sonner";
 
 export type CheckoutStep =
@@ -76,7 +77,10 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
   });
 
   const subtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.finalPrice, 0);
+    return cart.reduce(
+      (sum, item) => sum + item.finalPrice * (item.cartQuantity || 1),
+      0
+    );
   }, [cart]);
 
   const couponSavings = useMemo(() => {
@@ -188,6 +192,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers,
+        credentials: "same-origin",
         body: JSON.stringify(orderPayload),
       });
 
@@ -195,9 +200,14 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       if (json.success && json.data) {
         const createdOrder: IOrder = json.data;
         addOrder(createdOrder);
-        setSubmittedOrderId(
-          createdOrder.id || createdOrder.orderNumber || orderId,
+        const resolvedId = createdOrder.id || createdOrder.orderNumber || orderId;
+        setSubmittedOrderId(resolvedId);
+        broadcastOrderEvent(
+          ORDER_EVENTS.ORDER_PLACED,
+          resolvedId,
+          createdOrder.orderNumber || orderId
         );
+        broadcastDiamondEvent(DIAMOND_EVENTS.STOCK_CHANGED);
       } else {
         console.error("[Checkout Server Error]:", json.error);
         const fallbackOrder: IOrder = {
@@ -209,6 +219,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
         addOrder(fallbackOrder);
         setSubmittedOrderId(orderId);
         broadcastOrderEvent(ORDER_EVENTS.ORDER_PLACED, orderId, orderId);
+        broadcastDiamondEvent(DIAMOND_EVENTS.STOCK_CHANGED);
       }
     } catch (err) {
       console.error("[Checkout Network Error]:", err);
@@ -221,6 +232,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       addOrder(fallbackOrder);
       setSubmittedOrderId(orderId);
       broadcastOrderEvent(ORDER_EVENTS.ORDER_PLACED, orderId, orderId);
+      broadcastDiamondEvent(DIAMOND_EVENTS.STOCK_CHANGED);
     } finally {
       clearCart();
       setIsProcessing(false);

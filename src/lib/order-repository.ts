@@ -1,6 +1,7 @@
 import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
 import { UserModel } from "@/models/User";
+import { DiamondModel } from "@/models/Diamond";
 import { IOrder, OrderStatus, IOrderTimelineEvent } from "@/types/order.types";
 import {
   IDiamond,
@@ -82,6 +83,7 @@ export function sanitizeOrderItem(item: unknown, idx = 0): IDiamond {
       : [],
     description: String(r.description || ""),
     stockQuantity: typeof r.stockQuantity === "number" ? r.stockQuantity : 1,
+    cartQuantity: typeof r.cartQuantity === "number" && r.cartQuantity > 0 ? r.cartQuantity : 1,
     featured: Boolean(r.featured),
     createdAt: String(r.createdAt || new Date().toISOString()),
     updatedAt: String(r.updatedAt || new Date().toISOString()),
@@ -238,6 +240,19 @@ export async function createOrder(
       }
     }
 
+    // 1. Stock Pre-Check: Ensure every ordered specimen has sufficient stock
+    for (const item of sanitizedItems) {
+      if (item._id && mongoose.Types.ObjectId.isValid(item._id)) {
+        const dbDiamond = await DiamondModel.findById(item._id).lean();
+        const reqQty = item.cartQuantity || 1;
+        if (!dbDiamond || dbDiamond.stockQuantity < reqQty) {
+          throw new Error(
+            `Specimen "${item.name}" (${item.sku}) has insufficient stock (Requested: ${reqQty}, Available: ${dbDiamond?.stockQuantity || 0}).`
+          );
+        }
+      }
+    }
+
     const newDoc = await OrderModel.create({
       orderNumber,
       userId: safeUserId,
@@ -251,6 +266,16 @@ export async function createOrder(
       trackingInfo: initialTracking,
       timeline: initialTimeline,
     });
+
+    // 2. Atomic Stock Decrement: Reduce stock in database by requested item quantity
+    for (const item of sanitizedItems) {
+      if (item._id && mongoose.Types.ObjectId.isValid(item._id)) {
+        const qtyToDeduct = item.cartQuantity || 1;
+        await DiamondModel.findByIdAndUpdate(item._id, {
+          $inc: { stockQuantity: -qtyToDeduct },
+        });
+      }
+    }
 
     return sanitizeOrderDoc(newDoc.toObject());
   }
@@ -289,9 +314,14 @@ export async function getUserOrders(
     const orConditions: Array<Record<string, unknown>> = [];
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
       orConditions.push({ userId: new mongoose.Types.ObjectId(userId) });
+      orConditions.push({ userId: String(userId) });
     }
     if (userEmail) {
-      orConditions.push({ "shippingAddress.email": userEmail.toLowerCase() });
+      const cleanEmail = userEmail.trim().toLowerCase();
+      orConditions.push({ "shippingAddress.email": cleanEmail });
+      orConditions.push({
+        "shippingAddress.email": new RegExp(`^${cleanEmail}$`, "i"),
+      });
     }
 
     if (orConditions.length === 0) {
@@ -428,10 +458,42 @@ export async function updateOrderStatusAdmin(
     }
     if (!doc) return null;
 
+    const previousStatus = doc.status;
     doc.status = newStatus;
     if (newStatus === "APPROVED") {
       doc.approvedAt = timestamp;
     }
+
+    // If order was cancelled, restore diamond stock quantities in vault
+    if (newStatus === "CANCELLED" && previousStatus !== "CANCELLED") {
+      for (const item of doc.items || []) {
+        const dId = item._id || (item as unknown as { id: string }).id;
+        if (dId && mongoose.Types.ObjectId.isValid(String(dId))) {
+          const qtyToRestore = item.cartQuantity || 1;
+          const updated = await DiamondModel.findByIdAndUpdate(
+            dId,
+            { $inc: { stockQuantity: qtyToRestore } },
+            { new: true }
+          ).lean();
+
+          if (updated && updated.stockQuantity > 0) {
+            try {
+              const { dispatchStockAlertsForDiamond } = await import(
+                "@/lib/stock-notification-repository"
+              );
+              const { getDiamondById } = await import("@/lib/diamond-repository");
+              const fullDiamond = await getDiamondById(String(updated._id));
+              if (fullDiamond) {
+                await dispatchStockAlertsForDiamond(String(fullDiamond._id), fullDiamond);
+              }
+            } catch (e) {
+              console.error("[Restock Alert Error on Order Cancel]:", e);
+            }
+          }
+        }
+      }
+    }
+
     if (options?.carrier || options?.trackingNumber) {
       doc.trackingInfo = {
         carrier: options.carrier || doc.trackingInfo?.carrier || "Brink's Global Armored Services",

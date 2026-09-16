@@ -60,7 +60,8 @@ export function AdminHeader({
           {siteConfig.brandName} Vault Portal
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-stone-500">
-          Curate solar-cultivated diamond lots, calibrate live atelier pricing, and oversee bespoke client orders.
+          Curate solar-cultivated diamond lots, calibrate live atelier pricing,
+          and oversee bespoke client orders.
         </p>
         {seedMessage && (
           <p className="mt-2 text-xs font-semibold text-emerald-700 animate-in fade-in">
@@ -78,7 +79,10 @@ export function AdminHeader({
             title="View incoming client consultation messages"
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            <span>{unreadMessagesCount} New Client Message{unreadMessagesCount > 1 ? "s" : ""}</span>
+            <span>
+              {unreadMessagesCount} New Client Message
+              {unreadMessagesCount > 1 ? "s" : ""}
+            </span>
           </button>
         )}
 

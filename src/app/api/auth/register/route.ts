@@ -6,7 +6,8 @@ import { UserRole } from "@/types/auth.types";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password, role } = body;
+    const { name, email, password } = body;
+
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -31,15 +32,26 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
-    const assignedRole: UserRole = role === "ADMIN" ? "ADMIN" : "CUSTOMER";
+    const assignedRole: UserRole = "CUSTOMER";
 
     const user = await createUser({
       name,
-      email,
+      email: email.toLowerCase().trim(),
       passwordHash,
       role: assignedRole,
       authProvider: "credentials",
     });
+
+    try {
+      const { sendRegistrationSuccessEmail } = await import("@/lib/mailer");
+      await sendRegistrationSuccessEmail({
+        to: user.email,
+        clientName: user.name,
+      });
+    } catch (emailErr) {
+      console.error("[Register Route Welcome Email Error]:", emailErr);
+    }
+
 
     const token = signToken({
       userId: user.id,
@@ -48,7 +60,7 @@ export async function POST(request: NextRequest) {
       name: user.name,
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         data: {
@@ -58,6 +70,16 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+
+    response.cookies.set("diamond_session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Registration failed";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

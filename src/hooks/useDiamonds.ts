@@ -3,6 +3,7 @@ import { IDiamond } from "@/types/diamond.types";
 import { IFilterMeta } from "@/types/filter.types";
 import { useFilterStore } from "@/store/useFilterStore";
 import { useDebounce } from "./useDebounce";
+import { subscribeToDiamondEvents } from "@/lib/diamond-events";
 
 export interface IUseDiamondsReturn {
   diamonds: IDiamond[];
@@ -167,6 +168,87 @@ export function useDiamonds(): IUseDiamondsReturn {
     page,
     limit,
   ]);
+
+  // Silent background revalidation without toggling isLoading spinner
+  const silentRevalidate = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (shapes.length > 0) shapes.forEach((s) => params.append("shape", s));
+      if (colors.length > 0) colors.forEach((c) => params.append("color", c));
+      if (cuts.length > 0) cuts.forEach((c) => params.append("cut", c));
+      if (clarities.length > 0) clarities.forEach((c) => params.append("clarity", c));
+
+      params.set("minPrice", String(debouncedMinPrice));
+      params.set("maxPrice", String(debouncedMaxPrice));
+      params.set("minCarat", String(debouncedMinCarat));
+      params.set("maxCarat", String(debouncedMaxCarat));
+
+      if (minDiscount > 0) params.set("minDiscount", String(minDiscount));
+      if (inStockOnly) params.set("inStockOnly", "true");
+
+      params.set("sortBy", sortBy);
+      params.set("page", String(page));
+      params.set("limit", String(limit));
+
+      const res = await fetch(`/api/diamonds?${params.toString()}`);
+      const json = await res.json();
+
+      if (res.ok && json.success) {
+        setDiamonds(json.data);
+        setMeta(json.meta);
+      }
+    } catch {
+      // Silent revalidation ignores transient network drops
+    }
+  }, [
+    debouncedSearch,
+    shapes,
+    colors,
+    cuts,
+    clarities,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+    debouncedMinCarat,
+    debouncedMaxCarat,
+    minDiscount,
+    inStockOnly,
+    sortBy,
+    page,
+    limit,
+  ]);
+
+  // Real-time synchronization bus + focus + heartbeat
+  useEffect(() => {
+    // 1. Subscribe to real-time diamond events from other tabs/admin
+    const unsubscribeDiamondEvents = subscribeToDiamondEvents(() => {
+      silentRevalidate();
+    });
+
+    // 2. Window focus & visibility revalidation
+    const handleFocus = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        silentRevalidate();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("visibilitychange", handleFocus);
+
+    // 3. Heartbeat poll every 3.5s for multi-device/multi-session background updates
+    const heartbeat = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        silentRevalidate();
+      }
+    }, 3500);
+
+    return () => {
+      unsubscribeDiamondEvents();
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("visibilitychange", handleFocus);
+      clearInterval(heartbeat);
+    };
+  }, [silentRevalidate]);
 
   return {
     diamonds,

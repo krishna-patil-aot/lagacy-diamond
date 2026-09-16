@@ -61,35 +61,35 @@ export function AdminSoldProductsTable() {
     switch (status) {
       case "APPROVED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 text-[10px] font-mono font-semibold">
-            <Clock className="h-3 w-3" />
-            Approved for Dispatch
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0">
+            <Clock className="h-3 w-3 shrink-0" />
+            <span>Approved for Dispatch</span>
           </span>
         );
       case "DISPATCHED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-0.5 text-[10px] font-mono font-semibold">
-            <Truck className="h-3 w-3" />
-            Armored Dispatched
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0">
+            <Truck className="h-3 w-3 shrink-0" />
+            <span>Armored Dispatched</span>
           </span>
         );
       case "IN_TRANSIT":
       case "OUT_FOR_DELIVERY":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 text-[10px] font-mono font-semibold">
-            <Truck className="h-3 w-3 animate-pulse" />
-            In Armed Transit
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0">
+            <Truck className="h-3 w-3 animate-pulse shrink-0" />
+            <span>In Armed Transit</span>
           </span>
         );
       case "DELIVERED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-mono font-semibold">
-            <CheckCircle2 className="h-3 w-3" />
-            Delivered & Signed
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0">
+            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
+            <span>Delivered & Signed</span>
           </span>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-[11px] whitespace-nowrap shrink-0">{status}</Badge>;
     }
   };
 
@@ -238,20 +238,127 @@ export function AdminSoldProductsTable() {
         </div>
       </div>
 
-      {/* 4. Shadcn UI Table */}
+      {/* 4. Main Content: Mobile & Tablet Cards + Desktop Table */}
       <div className="rounded-xl border border-stone-200 overflow-hidden bg-white shadow-xs">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="min-w-[200px]">Gemstone Lot</TableHead>
-              <TableHead className="min-w-[150px]">4Cs Specifications</TableHead>
-              <TableHead className="min-w-[170px]">VIP Client / Buyer</TableHead>
-              <TableHead className="w-[140px]">Settled Price</TableHead>
-              <TableHead className="w-[130px]">Order Ref & Date</TableHead>
-              <TableHead className="w-[150px] text-right">Fulfillment Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        {/* Mobile & Tablet Card View (visible on screen widths < lg) */}
+        <div className="block lg:hidden p-3 sm:p-4 bg-stone-50/40">
+          {paginatedSoldProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-stone-200/80 text-center space-y-2">
+              <Gem className="h-8 w-8 text-stone-300" />
+              <p className="text-xs sm:text-sm font-medium text-stone-600">
+                No sold products found matching your search and filter criteria.
+              </p>
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs text-stone-500 underline"
+                >
+                  Clear Search Query
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {paginatedSoldProducts.map((item, idx) => (
+                <div
+                  key={`${item.orderId}-${item.diamondId}-${idx}`}
+                  className="flex flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-xs hover:border-amber-400/80 transition-all space-y-3"
+                >
+                  {/* Card Header: Order Reference & Status */}
+                  <div className="flex items-start justify-between gap-2 border-b border-stone-100 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-stone-900">
+                        Order #{item.orderNumber}
+                      </span>
+                      <div
+                        className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500 mt-0.5"
+                        suppressHydrationWarning
+                      >
+                        <Clock className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span>
+                          {new Date(item.soldDate).toLocaleDateString([], {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0">{getStatusBadge(item.orderStatus)}</div>
+                  </div>
+
+                  {/* Gemstone Lot Preview */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-stone-200 bg-stone-900 flex-shrink-0 shadow-2xs">
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-stone-900 text-xs truncate">
+                        {item.name}
+                      </div>
+                      <div className="text-[11px] font-mono text-amber-900">
+                        {item.carat} ct • {item.shape} • {item.color}/{item.clarity}
+                      </div>
+                      <div className="text-[10px] font-mono text-stone-500 mt-0.5">
+                        {item.lab} #{item.certificateNumber} • SKU: {item.sku}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* VIP Client & Price Grid */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-xs">
+                    <div>
+                      <span className="text-[10px] font-mono text-stone-400 uppercase block">VIP Client</span>
+                      <div className="font-semibold text-stone-900 truncate mt-0.5">
+                        {item.buyerName}
+                      </div>
+                      <div className="text-[10px] text-stone-500 truncate">
+                        {item.buyerCity}, {item.buyerCountry}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-mono text-stone-400 uppercase block">Realized Price</span>
+                      <div className="text-sm font-bold text-emerald-700 font-mono">
+                        {formatPrice(item.soldPrice)}
+                      </div>
+                      {item.originalPrice > item.soldPrice && (
+                        <div className="text-[10px] text-stone-400 line-through font-mono">
+                          {formatPrice(item.originalPrice)}
+                        </div>
+                      )}
+                      <div className="text-[10px] text-stone-500 uppercase mt-0.5 font-mono">
+                        {item.paymentMethod.replace("_", " ")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View (visible on screen widths >= lg) */}
+        <div className="hidden lg:block overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[200px]">Gemstone Lot</TableHead>
+                <TableHead className="min-w-[150px]">4Cs Specifications</TableHead>
+                <TableHead className="min-w-[170px]">VIP Client / Buyer</TableHead>
+                <TableHead className="w-[140px] whitespace-nowrap">Settled Price</TableHead>
+                <TableHead className="w-[140px] whitespace-nowrap">Order Ref & Date</TableHead>
+                <TableHead className="min-w-[170px] text-right whitespace-nowrap">Fulfillment Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {paginatedSoldProducts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-44 text-center">
@@ -357,7 +464,7 @@ export function AdminSoldProductsTable() {
                   </TableCell>
 
                   {/* Fulfillment Status */}
-                  <TableCell className="align-middle text-right">
+                  <TableCell className="align-middle text-right whitespace-nowrap">
                     {getStatusBadge(item.orderStatus)}
                   </TableCell>
                 </TableRow>
@@ -366,6 +473,7 @@ export function AdminSoldProductsTable() {
           </TableBody>
         </Table>
       </div>
+    </div>
 
       {/* 5. Pagination Controls Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-stone-600">

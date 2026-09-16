@@ -4,53 +4,27 @@ import React from "react";
 import Link from "next/link";
 import { useAdminDiamonds } from "@/hooks/useAdminDiamonds";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useDiamondStore } from "@/store/diamond.store";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminStatsGrid } from "@/components/admin/AdminStatsGrid";
-import { AdminDiamondTable } from "@/components/admin/AdminDiamondTable";
-import { AdminDiamondFormModal } from "@/components/admin/AdminDiamondFormModal";
-import { AdminDeleteDialog } from "@/components/admin/AdminDeleteDialog";
+import { DiamondManagementIndex } from "@/app/admin/diamonds/components/index";
 import { AdminOrderApprovalList } from "@/components/admin/AdminOrderApprovalList";
 import { AdminSoldProductsTable } from "@/components/admin/AdminSoldProductsTable";
 import { AdminInquiriesTable } from "@/components/admin/AdminInquiriesTable";
 import { useAdminInquiries } from "@/hooks/useAdminInquiries";
-import { useOrderStore } from "@/store/useOrderStore";
+import { useAdminOrders } from "@/hooks/useAdminOrders";
 import { useInquiryStore } from "@/store/useInquiryStore";
 import { Button } from "@/components/ui/Button";
 import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent, MessageSquare } from "lucide-react";
 
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const { orders } = useOrderStore();
+  const { pendingCount: pendingOrdersCount } = useAdminOrders();
   const { stats: inquiryStats } = useAdminInquiries();
   const { unreadCount: unreadInquiriesCount } = useInquiryStore();
+  const { openCreateModal } = useDiamondStore();
   const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "INQUIRIES">("INVENTORY");
-  const pendingOrdersCount = orders.filter((o) => o.status === "PENDING_APPROVAL").length;
-  const {
-    paginatedDiamonds,
-    currentPage,
-    setCurrentPage,
-    pageSize,
-    setPageSize,
-    totalPages,
-    totalFilteredCount,
-    stats,
-    error,
-    searchQuery,
-    setSearchQuery,
-    selectedDiamond,
-    isAddModalOpen,
-    setIsAddModalOpen,
-    isEditModalOpen,
-    setIsEditModalOpen,
-    isDeleteConfirmOpen,
-    setIsDeleteConfirmOpen,
-    diamondToDelete,
-    isDeleting,
-    handleDeleteDiamond,
-    openEditModal,
-    openDeleteModal,
-    refetch,
-  } = useAdminDiamonds();
+  const { stats, error, refetch } = useAdminDiamonds();
 
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
 
@@ -86,7 +60,7 @@ export default function AdminPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       {/* 1. Admin Header (Actions, Seeder, Add New) */}
       <AdminHeader
-        onAddNew={() => setIsAddModalOpen(true)}
+        onAddNew={openCreateModal}
         onRefresh={refetch}
         unreadMessagesCount={unreadInquiriesCount}
         onOpenInquiries={() => setAdminTab("INQUIRIES")}
@@ -113,9 +87,9 @@ export default function AdminPage() {
                 : "border-transparent text-stone-500 hover:text-stone-900"
             }`}
           >
-            <Gem className="h-4 w-4" />
+            <Gem className="h-4 w-4 shrink-0" />
             <span>Gemstone Inventory Lots</span>
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-700 font-mono">
+            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-700 font-mono whitespace-nowrap shrink-0">
               {stats.totalDiamonds}
             </span>
           </button>
@@ -128,10 +102,10 @@ export default function AdminPage() {
                 : "border-transparent text-stone-500 hover:text-stone-900"
             }`}
           >
-            <ShoppingBag className="h-4 w-4" />
+            <ShoppingBag className="h-4 w-4 shrink-0" />
             <span>Client Vault Orders & Approvals</span>
             {pendingOrdersCount > 0 && (
-              <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 text-[11px] font-mono font-bold animate-pulse">
+              <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 text-[11px] font-mono font-bold animate-pulse whitespace-nowrap shrink-0">
                 {pendingOrdersCount} New
               </span>
             )}
@@ -145,7 +119,7 @@ export default function AdminPage() {
                 : "border-transparent text-stone-500 hover:text-stone-900"
             }`}
           >
-            <BadgePercent className="h-4 w-4" />
+            <BadgePercent className="h-4 w-4 shrink-0" />
             <span>Sold Gemstones & Realized Sales</span>
           </button>
 
@@ -157,10 +131,10 @@ export default function AdminPage() {
                 : "border-transparent text-stone-500 hover:text-stone-900"
             }`}
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4 shrink-0" />
             <span>Customer Messages & Inquiries</span>
             {(unreadInquiriesCount > 0 || inquiryStats.newCount > 0) && (
-              <span className="rounded-full bg-amber-500 text-white font-mono font-bold px-2 py-0.5 text-[11px] animate-pulse shadow-xs">
+              <span className="rounded-full bg-amber-500 text-white font-mono font-bold px-2 py-0.5 text-[11px] animate-pulse shadow-xs whitespace-nowrap shrink-0">
                 {unreadInquiriesCount > 0 ? unreadInquiriesCount : inquiryStats.newCount} New
               </span>
             )}
@@ -168,52 +142,14 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {adminTab === "INVENTORY" && (
-        <AdminDiamondTable
-          diamonds={paginatedDiamonds}
-          totalCount={totalFilteredCount}
-          onEdit={openEditModal}
-          onDelete={openDeleteModal}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          totalPages={totalPages}
-        />
-      )}
+      {adminTab === "INVENTORY" && <DiamondManagementIndex />}
 
       {adminTab === "ORDERS" && <AdminOrderApprovalList />}
 
       {adminTab === "SOLD" && <AdminSoldProductsTable />}
 
       {adminTab === "INQUIRIES" && <AdminInquiriesTable />}
-
-      {/* Add Diamond Modal */}
-      <AdminDiamondFormModal
-        diamond={null}
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSuccess={refetch}
-      />
-
-      {/* Edit Diamond Modal */}
-      <AdminDiamondFormModal
-        diamond={selectedDiamond}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSuccess={refetch}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <AdminDeleteDialog
-        diamond={diamondToDelete}
-        isOpen={isDeleteConfirmOpen}
-        isDeleting={isDeleting}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-        onConfirm={handleDeleteDiamond}
-      />
     </div>
   );
 }
+

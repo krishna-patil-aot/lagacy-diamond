@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderById } from "@/lib/order-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { sendOrderDocumentsEmail } from "@/lib/mailer";
 import { ISendOrderDocumentsResponse } from "@/types/order.types";
 
@@ -10,11 +10,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
     const isAdmin = verified?.role === "ADMIN";
 
     const order = await getOrderById(id, verified?.userId, isAdmin);

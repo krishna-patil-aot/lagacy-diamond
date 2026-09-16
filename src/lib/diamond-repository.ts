@@ -330,7 +330,8 @@ export async function updateDiamond(id: string, data: Partial<IDiamond>): Promis
     try {
       const updated = await DiamondModel.findByIdAndUpdate(id, updatePayload, { new: true }).lean();
       if (!updated) return null;
-      return {
+
+      const sanitizedResult: IDiamond = {
         _id: String(updated._id),
         name: updated.name,
         sku: updated.sku,
@@ -357,6 +358,20 @@ export async function updateDiamond(id: string, data: Partial<IDiamond>): Promis
         createdAt: updated.createdAt ? new Date(updated.createdAt).toISOString() : new Date().toISOString(),
         updatedAt: updated.updatedAt ? new Date(updated.updatedAt).toISOString() : new Date().toISOString(),
       };
+
+      // If specimen now has available stock (>0), trigger alerts for waiting subscribers
+      if (updated.stockQuantity > 0) {
+        try {
+          const { dispatchStockAlertsForDiamond } = await import(
+            "@/lib/stock-notification-repository"
+          );
+          await dispatchStockAlertsForDiamond(String(updated._id), sanitizedResult);
+        } catch (dispatchErr) {
+          console.error("[Diamond Update Stock Alert Dispatch Error]:", dispatchErr);
+        }
+      }
+
+      return sanitizedResult;
     } catch {
       // Fallback to memory
     }

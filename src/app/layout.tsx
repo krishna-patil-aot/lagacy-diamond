@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Plus_Jakarta_Sans, Space_Mono } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  Plus_Jakarta_Sans,
+  Space_Mono,
+} from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/common/Navbar";
 import { Footer } from "@/components/common/Footer";
@@ -46,7 +50,9 @@ export const metadata: Metadata = {
   },
   description: siteConfig.seo.description,
   keywords: siteConfig.seo.keywords,
-  authors: [{ name: siteConfig.contact.legalEntityName, url: siteConfig.appUrl }],
+  authors: [
+    { name: siteConfig.contact.legalEntityName, url: siteConfig.appUrl },
+  ],
   creator: siteConfig.brandName,
   publisher: siteConfig.contact.legalEntityName,
   formatDetection: {
@@ -117,11 +123,16 @@ const jsonLdSchema = {
   ],
 };
 
-export default function RootLayout({
+import { getSessionUserAction } from "@/actions/auth.action";
+import { AuthProvider } from "@/components/common/AuthProvider";
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const sessionUser = await getSessionUserAction();
+
   return (
     <html
       lang="en"
@@ -136,12 +147,19 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
         />
-        <ScrollToTopButton />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <DiamondConciergeTrigger />
-        <Toaster richColors theme="light" position="bottom-right" closeButton />
+        <AuthProvider initialUser={sessionUser}>
+          <ScrollToTopButton />
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <DiamondConciergeTrigger />
+          <Toaster
+            richColors
+            theme="light"
+            position="bottom-right"
+            closeButton
+          />
+        </AuthProvider>
       </body>
     </html>
   );

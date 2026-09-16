@@ -32,6 +32,30 @@ export function verifyToken(token: string): IJwtPayload | null {
   }
 }
 
+export interface IResetTokenPayload {
+  email: string;
+  purpose: "RESET_PASSWORD";
+}
+
+export function signResetToken(email: string): string {
+  return jwt.sign({ email, purpose: "RESET_PASSWORD" }, JWT_SECRET, {
+    expiresIn: "15m",
+  });
+}
+
+export function verifyResetToken(token: string): IResetTokenPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as IResetTokenPayload;
+    if (decoded.purpose === "RESET_PASSWORD" && decoded.email) {
+      return decoded;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+
 export function sanitizeUser(user: {
   _id?: string | { toString(): string };
   id?: string;
@@ -52,3 +76,25 @@ export function sanitizeUser(user: {
     createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString(),
   };
 }
+
+export function extractTokenFromRequest(request: {
+  cookies: { get(name: string): { value?: string } | undefined };
+  headers: { get(name: string): string | null };
+}): string | null {
+  return (
+    request.cookies.get("diamond_session")?.value ||
+    request.cookies.get("diamond_auth_token")?.value ||
+    request.headers.get("authorization")?.replace("Bearer ", "") ||
+    null
+  );
+}
+
+export function getAuthenticatedUserFromRequest(request: {
+  cookies: { get(name: string): { value?: string } | undefined };
+  headers: { get(name: string): string | null };
+}): IJwtPayload | null {
+  const token = extractTokenFromRequest(request);
+  if (!token) return null;
+  return verifyToken(token);
+}
+

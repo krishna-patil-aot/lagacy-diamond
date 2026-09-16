@@ -23,7 +23,10 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("[&_tr]:border-b border-stone-200 bg-stone-50/80 text-[11px] font-mono uppercase tracking-wider text-stone-600", className)}
+    className={cn(
+      "[&_tr]:border-b border-stone-200 bg-stone-50/80 text-[11px] font-mono uppercase tracking-wider text-stone-600",
+      className,
+    )}
     {...props}
   />
 ));
@@ -35,7 +38,10 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0 divide-y divide-stone-100", className)}
+    className={cn(
+      "[&_tr:last-child]:border-0 divide-y divide-stone-100",
+      className,
+    )}
     {...props}
   />
 ));
@@ -49,7 +55,7 @@ const TableFooter = React.forwardRef<
     ref={ref}
     className={cn(
       "border-t border-stone-200 bg-stone-50/50 font-medium [&>tr]:last:border-b-0",
-      className
+      className,
     )}
     {...props}
   />
@@ -64,7 +70,7 @@ const TableRow = React.forwardRef<
     ref={ref}
     className={cn(
       "border-b border-stone-100 transition-colors hover:bg-stone-50/70 data-[state=selected]:bg-stone-100",
-      className
+      className,
     )}
     {...props}
   />
@@ -78,8 +84,8 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-11 px-3.5 text-left align-middle font-medium text-stone-500 [&:has([role=checkbox])]:pr-0",
-      className
+      "h-11 px-3.5 text-left align-middle font-medium text-stone-500 [&:has([role=checkbox])]:pr-0 whitespace-nowrap",
+      className,
     )}
     {...props}
   />
@@ -92,7 +98,10 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("p-3.5 align-middle [&:has([role=checkbox])]:pr-0 text-stone-700", className)}
+    className={cn(
+      "p-3.5 align-middle [&:has([role=checkbox])]:pr-0 text-stone-700",
+      className,
+    )}
     {...props}
   />
 ));

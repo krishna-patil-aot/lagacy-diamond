@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const found = await findUserByEmail(email);
+    const normalizedEmail = email.toLowerCase().trim();
+    const found = await findUserByEmail(normalizedEmail);
     if (!found || !found.passwordHash) {
       return NextResponse.json(
         { success: false, error: "Invalid email or password credentials." },
@@ -22,18 +23,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isValid = await comparePassword(password, found.passwordHash);
-    // Allow fallback for pre-seeded dev passwords if bcrypt salt changes
-    const isDevPass =
-      (email === "admin@diamond.luxury" && password === "admin123") ||
-      (email === "client@diamond.luxury" && password === "client123");
+    if (found.user.role === "ADMIN" && normalizedEmail !== "engrkrishnapatil@gmail.com") {
+      return NextResponse.json(
+        { success: false, error: "Admin Vault is restricted to authorized master curator." },
+        { status: 403 }
+      );
+    }
 
-    if (!isValid && !isDevPass) {
+    const isValid = await comparePassword(password, found.passwordHash);
+    if (!isValid) {
       return NextResponse.json(
         { success: false, error: "Invalid email or password credentials." },
         { status: 401 }
       );
     }
+
 
     const token = signToken({
       userId: found.user.id,
@@ -42,13 +46,23 @@ export async function POST(request: NextRequest) {
       name: found.user.name,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         user: found.user,
         token,
       },
     });
+
+    response.cookies.set("diamond_session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Authentication failed";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

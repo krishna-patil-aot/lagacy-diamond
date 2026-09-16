@@ -1,8 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
 }
 
@@ -16,15 +15,17 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             "focus-visible:outline-none focus-visible:border-amber-600 focus-visible:ring-1 focus-visible:ring-amber-600",
             "disabled:cursor-not-allowed disabled:opacity-50 resize-y",
             error && "border-rose-400 focus-visible:ring-rose-400",
-            className
+            className,
           )}
           ref={ref}
           {...props}
         />
-        {error && <p className="mt-1 text-xs text-rose-500 font-medium">{error}</p>}
+        {error && (
+          <p className="mt-1 text-xs text-rose-500 font-medium">{error}</p>
+        )}
       </div>
     );
-  }
+  },
 );
 
 Textarea.displayName = "Textarea";

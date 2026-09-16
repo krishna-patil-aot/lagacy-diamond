@@ -95,9 +95,9 @@ export function AdminInquiriesTable() {
         return (
           <Badge
             variant="gold"
-            className="text-[11px] font-mono inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300"
+            className="text-[11px] font-medium inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap shrink-0 bg-amber-100 text-amber-900 border-amber-300"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
             <span>New Lead</span>
           </Badge>
         );
@@ -105,7 +105,7 @@ export function AdminInquiriesTable() {
         return (
           <Badge
             variant="outline"
-            className="text-[11px] font-mono inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap bg-sky-50 text-sky-800 border-sky-300"
+            className="text-[11px] font-medium inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap shrink-0 bg-sky-50 text-sky-800 border-sky-300"
           >
             <Clock className="h-3 w-3 text-sky-600 shrink-0" />
             <span>In Progress</span>
@@ -115,7 +115,7 @@ export function AdminInquiriesTable() {
         return (
           <Badge
             variant="success"
-            className="text-[11px] font-mono inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300"
+            className="text-[11px] font-medium inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap shrink-0 bg-emerald-50 text-emerald-800 border-emerald-300"
           >
             <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
             <span>Resolved</span>
@@ -276,28 +276,192 @@ export function AdminInquiriesTable() {
         </div>
       </div>
 
-      {/* 3. Inquiries Table */}
+      {/* 3. Main Content: Mobile & Tablet Cards + Desktop Table */}
       <div className="bg-white rounded-xl border border-stone-200 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile & Tablet Card View (visible on screen widths < lg) */}
+        <div className="block lg:hidden p-3 sm:p-4 bg-stone-50/40">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-stone-200/80 text-center space-y-2">
+              <RefreshCw className="h-6 w-6 animate-spin text-amber-600" />
+              <span className="font-mono text-xs text-stone-500">
+                Loading customer inquiries...
+              </span>
+            </div>
+          ) : paginatedInquiries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-stone-200/80 text-center space-y-2">
+              <MessageSquare className="h-8 w-8 text-stone-300" />
+              <div className="font-medium text-stone-700 text-sm">
+                No Inquiries Found
+              </div>
+              <p className="text-xs text-stone-500">
+                {searchQuery
+                  ? "No customer inquiries matched your search criteria."
+                  : "No customer contact messages received yet."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {paginatedInquiries.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleOpenInspect(item)}
+                  className="flex flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-xs hover:border-amber-400/80 transition-all space-y-3 cursor-pointer group"
+                >
+                  {/* Card Header: Inquiry #, Date & Status */}
+                  <div className="flex items-start justify-between gap-2 border-b border-stone-100 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-stone-900 group-hover:text-amber-800 transition-colors">
+                        #{item.inquiryNumber}
+                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500 mt-0.5">
+                        <Calendar className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span>
+                          {new Date(item.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      {getStatusBadge(item.status)}
+                      {item.adminReply && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-800">
+                          <ShieldCheck className="h-3 w-3 text-amber-600 shrink-0" />
+                          <span>Replied</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Client Details */}
+                  <div className="rounded-lg bg-stone-50/80 p-2.5 border border-stone-100 space-y-1 text-xs">
+                    <div className="font-semibold text-stone-900 flex items-center gap-1.5">
+                      <User className="h-3 w-3 text-stone-400 shrink-0" />
+                      <span className="truncate">{item.fullName}</span>
+                    </div>
+                    <div className="text-[11px] text-stone-600 flex items-center gap-1.5 truncate">
+                      <Mail className="h-3 w-3 text-stone-400 shrink-0" />
+                      <span className="truncate">{item.email}</span>
+                    </div>
+                    {item.phone && (
+                      <div className="text-[11px] text-stone-600 flex items-center gap-1.5">
+                        <Phone className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span>{item.phone}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Inquiry Type & Details */}
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-stone-800">
+                        {formatInquiryType(item.inquiryType)}
+                      </span>
+                      {item.budgetRange && (
+                        <span className="font-mono text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-xs border border-emerald-200">
+                          Budget: {item.budgetRange}
+                        </span>
+                      )}
+                    </div>
+
+                    {item.preferredCaratRange && (
+                      <span className="font-mono text-[10px] text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded-xs inline-block">
+                        Carat: {item.preferredCaratRange}
+                      </span>
+                    )}
+
+                    {/* Message Excerpt */}
+                    <p className="line-clamp-2 text-stone-600 text-[11px] leading-relaxed bg-stone-50/50 p-2 rounded-lg border border-stone-100 italic">
+                      &ldquo;{item.message}&rdquo;
+                    </p>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div
+                    className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-1.5 flex-1">
+                      <Button
+                        type="button"
+                        variant="luxury"
+                        size="sm"
+                        onClick={() => handleOpenInspect(item)}
+                        className="flex-1 h-7 text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shadow-2xs"
+                      >
+                        <Send className="h-3 w-3 shrink-0" />
+                        <span>{item.adminReply ? "Edit Reply" : "Reply"}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenInspect(item)}
+                        className="h-7 px-2.5 text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <Eye className="h-3 w-3 shrink-0" />
+                        <span>View</span>
+                      </Button>
+                    </div>
+
+                    {item.status === "NEW" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isUpdating}
+                        onClick={() => handleStatusChange(item.id, "IN_PROGRESS")}
+                        className="h-7 px-2.5 text-xs font-medium text-sky-800 bg-sky-50 border-sky-300 hover:bg-sky-100 inline-flex items-center justify-center whitespace-nowrap"
+                      >
+                        <span>In Progress</span>
+                      </Button>
+                    )}
+
+                    {item.status === "IN_PROGRESS" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isUpdating}
+                        onClick={() => handleStatusChange(item.id, "RESOLVED")}
+                        className="h-7 px-2.5 text-xs font-medium text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <CheckCircle2 className="h-3 w-3 shrink-0" />
+                        <span>Resolve</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View (visible on screen widths >= lg) */}
+        <div className="hidden lg:block overflow-x-auto">
           <Table className="w-full text-left text-xs">
             <TableHeader className="bg-stone-50/80 border-b border-stone-200">
               <TableRow>
-                <TableHead className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider text-stone-600">
+                <TableHead className="py-3 px-4 text-xs font-semibold text-stone-700 whitespace-nowrap">
                   Reference & Date
                 </TableHead>
-                <TableHead className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider text-stone-600">
+                <TableHead className="py-3 px-4 text-xs font-semibold text-stone-700 whitespace-nowrap">
                   Client Details
                 </TableHead>
-                <TableHead className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider text-stone-600">
+                <TableHead className="py-3 px-4 text-xs font-semibold text-stone-700 whitespace-nowrap">
                   Inquiry Type & Budget
                 </TableHead>
-                <TableHead className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider text-stone-600">
+                <TableHead className="py-3 px-4 text-xs font-semibold text-stone-700">
                   Message Excerpt
                 </TableHead>
-                <TableHead className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider text-stone-600">
+                <TableHead className="py-3 px-4 text-xs font-semibold text-stone-700 whitespace-nowrap">
                   Status
                 </TableHead>
-                <TableHead className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider text-stone-600 text-right">
+                <TableHead className="py-3 px-4 text-xs font-semibold text-stone-700 text-right whitespace-nowrap">
                   Actions
                 </TableHead>
               </TableRow>
@@ -405,7 +569,7 @@ export function AdminInquiriesTable() {
                     </TableCell>
 
                     {/* Status */}
-                    <TableCell className="py-3.5 px-4 align-middle">
+                    <TableCell className="py-3.5 px-4 align-middle whitespace-nowrap">
                       <div className="space-y-1">
                         {getStatusBadge(item.status)}
                         {item.adminReply && (
@@ -419,7 +583,7 @@ export function AdminInquiriesTable() {
 
                     {/* Actions */}
                     <TableCell
-                      className="py-3.5 px-4 align-middle text-right"
+                      className="py-3.5 px-4 align-middle text-right whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-1.5">
@@ -429,10 +593,10 @@ export function AdminInquiriesTable() {
                           variant="luxury"
                           size="sm"
                           onClick={() => handleOpenInspect(item)}
-                          className="h-7 px-2.5 text-[11px] font-mono gap-1.5 shadow-2xs"
+                          className="h-7 px-2.5 text-xs font-medium gap-1.5 shadow-2xs whitespace-nowrap"
                           title="Reply to Client"
                         >
-                          <Send className="h-3 w-3" />
+                          <Send className="h-3 w-3 shrink-0" />
                           <span>
                             {item.adminReply ? "Edit Reply" : "Reply"}
                           </span>
@@ -444,10 +608,10 @@ export function AdminInquiriesTable() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenInspect(item)}
-                          className="h-7 px-2 text-[11px] font-mono gap-1"
+                          className="h-7 px-2.5 text-xs font-medium gap-1 whitespace-nowrap"
                           title="View Full Message"
                         >
-                          <Eye className="h-3 w-3" />
+                          <Eye className="h-3 w-3 shrink-0" />
                           <span>View</span>
                         </Button>
 
@@ -461,7 +625,7 @@ export function AdminInquiriesTable() {
                             onClick={() =>
                               handleStatusChange(item.id, "IN_PROGRESS")
                             }
-                            className="h-7 px-2 text-[11px] font-mono text-sky-800 bg-sky-50 border-sky-300 hover:bg-sky-100 gap-1"
+                            className="h-7 px-2.5 text-xs font-medium text-sky-800 bg-sky-50 border-sky-300 hover:bg-sky-100 whitespace-nowrap"
                             title="Mark In Progress"
                           >
                             <span>In Progress</span>
@@ -477,10 +641,10 @@ export function AdminInquiriesTable() {
                             onClick={() =>
                               handleStatusChange(item.id, "RESOLVED")
                             }
-                            className="h-7 px-2 text-[11px] font-mono text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 gap-1"
+                            className="h-7 px-2.5 text-xs font-medium text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 gap-1 whitespace-nowrap"
                             title="Mark as Resolved"
                           >
-                            <CheckCircle2 className="h-3 w-3" />
+                            <CheckCircle2 className="h-3 w-3 shrink-0" />
                             <span>Resolve</span>
                           </Button>
                         )}

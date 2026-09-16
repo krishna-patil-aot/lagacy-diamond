@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllOrdersAdmin } from "@/lib/order-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { OrderStatus } from "@/types/order.types";
 
 export async function GET(request: NextRequest) {
   try {
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
 
     if (!verified || verified.role !== "ADMIN") {
       return NextResponse.json(

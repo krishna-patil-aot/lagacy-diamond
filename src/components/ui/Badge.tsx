@@ -32,9 +32,9 @@ export function Badge({
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs transition-colors",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs transition-colors whitespace-nowrap shrink-0",
         variants[variant],
-        className
+        className,
       )}
       {...props}
     />

@@ -1,57 +1,65 @@
 import { create } from "zustand";
 import { IAuthState, IUser } from "@/types/auth.types";
+import { logoutAction, getSessionUserAction } from "@/actions/auth.action";
 import { toast } from "sonner";
 
 interface IAuthStore extends IAuthState {
-  login: (user: IUser, token: string) => void;
-  logout: () => void;
-  initialize: () => void;
+  setUser: (user: IUser | null) => void;
+  login: (user: IUser, token?: string) => void;
+  logout: () => Promise<void>;
+  initialize: () => Promise<void>;
 }
 
 export const useAuthStore = create<IAuthStore>((set) => ({
   user: null,
   token: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
 
-  login: (user: IUser, token: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("diamond_auth_token", token);
-      localStorage.setItem("diamond_auth_user", JSON.stringify(user));
-      document.cookie = `diamond_auth_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
-    }
-    set({ user, token, isAuthenticated: true, isLoading: false });
+  setUser: (user: IUser | null) => {
+    set({
+      user,
+      isAuthenticated: Boolean(user),
+      isLoading: false,
+    });
+  },
+
+  login: (user: IUser) => {
+    set({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+    });
     toast.success(`Welcome, ${user.name}!`, {
       description: `Authenticated as ${user.role === "ADMIN" ? "Curator / Admin" : "Private Collector"}`,
     });
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await logoutAction();
+    } catch {
+      // Ignored if network failure during logout
+    }
+
+    // Clean up any remaining legacy localStorage items
     if (typeof window !== "undefined") {
       localStorage.removeItem("diamond_auth_token");
       localStorage.removeItem("diamond_auth_user");
-      document.cookie = "diamond_auth_token=; path=/; max-age=0; SameSite=Lax";
     }
+
     set({ user: null, token: null, isAuthenticated: false, isLoading: false });
     toast.info("Signed out of Vault session");
   },
 
-  initialize: () => {
-    if (typeof window === "undefined") {
-      set({ isLoading: false });
-      return;
-    }
-
+  initialize: async () => {
     try {
-      const token = localStorage.getItem("diamond_auth_token");
-      const userJson = localStorage.getItem("diamond_auth_user");
-
-      if (token && userJson) {
-        const user = JSON.parse(userJson) as IUser;
-        set({ user, token, isAuthenticated: true, isLoading: false });
-      } else {
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
-      }
+      const user = await getSessionUserAction();
+      set({
+        user,
+        isAuthenticated: Boolean(user),
+        isLoading: false,
+      });
     } catch {
       set({ user: null, token: null, isAuthenticated: false, isLoading: false });
     }

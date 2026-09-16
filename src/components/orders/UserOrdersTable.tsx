@@ -60,14 +60,14 @@ export function UserOrdersTable({
         );
       case "APPROVED":
         return (
-          <Badge variant="success" className="text-[11px] font-mono inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap">
+          <Badge variant="success" className="text-[11px] font-medium inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap shrink-0">
             <ShieldCheck className="h-3 w-3 shrink-0" />
             <span>Vault Sealed</span>
           </Badge>
         );
       case "DISPATCHED":
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-0.5 text-[11px] font-mono font-medium whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0">
             <Truck className="h-3 w-3 shrink-0" />
             <span>Dispatched</span>
           </span>
@@ -75,27 +75,27 @@ export function UserOrdersTable({
       case "IN_TRANSIT":
       case "OUT_FOR_DELIVERY":
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 text-[11px] font-mono font-medium animate-pulse whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 text-[11px] font-medium animate-pulse whitespace-nowrap shrink-0">
             <Truck className="h-3 w-3 shrink-0" />
             <span>In Armed Transit</span>
           </span>
         );
       case "DELIVERED":
         return (
-          <Badge variant="success" className="text-[11px] font-mono inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap">
+          <Badge variant="success" className="text-[11px] font-medium inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap shrink-0">
             <ShieldCheck className="h-3 w-3 shrink-0" />
             <span>Delivered & Signed</span>
           </Badge>
         );
       case "CANCELLED":
         return (
-          <Badge variant="destructive" className="text-[11px] font-mono inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap">
+          <Badge variant="destructive" className="text-[11px] font-medium inline-flex items-center gap-1.5 px-2.5 py-0.5 whitespace-nowrap shrink-0">
             <X className="h-3 w-3 shrink-0" />
             <span>Cancelled</span>
           </Badge>
         );
       default:
-        return <Badge variant="outline" className="text-[11px] font-mono">{status}</Badge>;
+        return <Badge variant="outline" className="text-[11px] font-medium whitespace-nowrap shrink-0">{status}</Badge>;
     }
   };
 
@@ -173,15 +173,163 @@ export function UserOrdersTable({
 
   return (
     <div className="rounded-xl border border-stone-200 overflow-hidden bg-white shadow-xs">
-      <div className="overflow-x-auto">
+      {/* Mobile & Tablet Card View (visible on screen widths < lg) */}
+      <div className="block lg:hidden p-3 sm:p-4 bg-stone-50/40">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {orders.map((order) => {
+            const primaryItem = order.items[0];
+            const remainingCount = order.items.length - 1;
+            const trackingCode =
+              order.trackingInfo?.trackingNumber ||
+              `BRK-${order.orderNumber || order.id}`;
+
+            return (
+              <div
+                key={order.id}
+                onClick={() => onInspectOrder(order)}
+                className="flex flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-xs hover:border-amber-400/80 hover:shadow-sm transition-all cursor-pointer group"
+              >
+                <div className="space-y-3">
+                  {/* Card Header: Order # & Status */}
+                  <div className="flex items-start justify-between gap-2 border-b border-stone-100 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-stone-900 group-hover:text-amber-800 transition-colors">
+                        #{order.orderNumber || order.id}
+                      </span>
+                      <div
+                        className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500 mt-0.5"
+                        suppressHydrationWarning
+                      >
+                        <Clock className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span>
+                          {new Date(order.createdAt).toLocaleDateString([], {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          {new Date(order.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0">{getStatusBadge(order.status)}</div>
+                  </div>
+
+                  {/* Gemstone Lot Preview */}
+                  {primaryItem && (
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-stone-100 border border-stone-200 shrink-0 shadow-2xs">
+                        <Image
+                          src={primaryItem.images[0] || ""}
+                          alt={primaryItem.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-stone-900 text-xs truncate">
+                          {primaryItem.name}
+                        </div>
+                        <div className="text-[11px] font-mono text-amber-900">
+                          {primaryItem.carat} ct • {primaryItem.shape} • {primaryItem.color}/{primaryItem.clarity}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200">
+                            <Award className="h-2.5 w-2.5 text-amber-600 shrink-0" />
+                            <span>{primaryItem.lab || "GIA"} #{primaryItem.certificateNumber}</span>
+                          </span>
+                          {remainingCount > 0 && (
+                            <span className="inline-flex items-center text-[10px] font-mono text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-medium">
+                              +{remainingCount} more lot{remainingCount > 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Settlement & Logistics Information Grid */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-xs">
+                    <div>
+                      <span className="text-[10px] font-mono text-stone-400 uppercase block">Settlement</span>
+                      <span className="font-mono font-bold text-stone-900 text-sm">
+                        {formatPrice(order.totalAmount)}
+                      </span>
+                      <div className="mt-1">{getPaymentBadge(order.paymentInfo?.method || "CREDIT_CARD")}</div>
+                      {order.couponDiscount > 0 && (
+                        <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                          Saved: -{formatPrice(order.couponDiscount)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono text-stone-400 uppercase block">Logistics Ref</span>
+                      <div className="text-[11px] font-mono text-stone-700 font-semibold truncate mt-0.5">
+                        {trackingCode}
+                      </div>
+                      <div className="text-[10px] text-stone-500 flex items-center gap-1 mt-1 truncate">
+                        <Truck className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span className="truncate">{order.trackingInfo?.carrier || "Brink's Armored"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div
+                  className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-stone-100"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    type="button"
+                    variant="luxury"
+                    size="sm"
+                    onClick={() => onInspectOrder(order)}
+                    className="flex-1 h-8 text-xs font-medium shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                  >
+                    <Eye className="h-3.5 w-3.5 shrink-0" />
+                    <span>Track & Details</span>
+                  </Button>
+
+                  {order.status === "PENDING_APPROVAL" && onCancelOrder && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={isCancelling}
+                      onClick={() => onCancelOrder(order.id)}
+                      className="h-8 text-xs px-2.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-medium inline-flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
+                    >
+                      {isCancelling ? (
+                        <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                      ) : (
+                        <X className="h-3 w-3 shrink-0" />
+                      )}
+                      <span>Cancel</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop Table View (visible on screen widths >= lg) */}
+      <div className="hidden lg:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-stone-50/80 border-b border-stone-200">
-              <TableHead className="w-[160px] font-mono text-xs py-3.5 px-4">Order Reference</TableHead>
-              <TableHead className="min-w-[270px] text-xs py-3.5 px-4">Gemstone Lot(s)</TableHead>
-              <TableHead className="w-[150px] text-xs py-3.5 px-4">Settlement</TableHead>
-              <TableHead className="min-w-[200px] text-xs py-3.5 px-4">Tracking & Status</TableHead>
-              <TableHead className="w-[170px] text-right text-xs py-3.5 px-4">Actions</TableHead>
+              <TableHead className="w-[160px] font-mono text-xs py-3.5 px-4 whitespace-nowrap">Order Reference</TableHead>
+              <TableHead className="min-w-[270px] text-xs py-3.5 px-4 whitespace-nowrap">Gemstone Lot(s)</TableHead>
+              <TableHead className="w-[150px] text-xs py-3.5 px-4 whitespace-nowrap">Settlement</TableHead>
+              <TableHead className="min-w-[200px] text-xs py-3.5 px-4 whitespace-nowrap">Tracking & Status</TableHead>
+              <TableHead className="w-[170px] text-right text-xs py-3.5 px-4 whitespace-nowrap">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

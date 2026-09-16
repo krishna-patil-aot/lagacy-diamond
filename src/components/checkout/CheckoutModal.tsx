@@ -32,7 +32,7 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
-  const { cart, removeFromCart } = useCartStore();
+  const { cart, removeFromCart, updateCartQuantity } = useCartStore();
   const { user } = useAuthStore();
 
   const {
@@ -158,8 +158,47 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-200/80">
-                    <span className="text-sm sm:text-base font-bold font-mono text-stone-900">
-                      {formatPrice(diamond.finalPrice)}
+                    {/* Quantity Stepper in Cart */}
+                    <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateCartQuantity(
+                            diamond._id,
+                            (diamond.cartQuantity || 1) - 1
+                          )
+                        }
+                        disabled={(diamond.cartQuantity || 1) <= 1}
+                        className="px-2 py-1 text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors text-xs font-mono"
+                        aria-label="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      <span className="px-2 py-0.5 font-mono text-xs font-semibold text-stone-800 min-w-[20px] text-center select-none">
+                        {diamond.cartQuantity || 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateCartQuantity(
+                            diamond._id,
+                            (diamond.cartQuantity || 1) + 1
+                          )
+                        }
+                        disabled={
+                          (diamond.cartQuantity || 1) >= diamond.stockQuantity
+                        }
+                        className="px-2 py-1 text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors text-xs font-mono"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <span className="text-sm sm:text-base font-bold font-mono text-stone-900 min-w-[75px] text-right">
+                      {formatPrice(
+                        diamond.finalPrice * (diamond.cartQuantity || 1)
+                      )}
                     </span>
                     <Button
                       type="button"

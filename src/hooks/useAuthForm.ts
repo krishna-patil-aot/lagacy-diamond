@@ -10,17 +10,15 @@ import {
   LoginFormData,
   RegisterFormData,
 } from "@/lib/validations/auth.schema";
+import { loginAction, registerAction } from "@/actions/auth.action";
+import { apiHandler } from "@/utils/api-handler";
 import { useAuthStore } from "@/store/useAuthStore";
-import { UserRole } from "@/types/auth.types";
 
 export interface IUseLoginFormReturn {
   form: UseFormReturn<LoginFormData>;
   isSubmitting: boolean;
   error: string | null;
   submitLogin: (data: LoginFormData) => Promise<void>;
-  handleGoogleLogin: (email?: string, name?: string, role?: UserRole) => Promise<void>;
-  isGoogleModalOpen: boolean;
-  setIsGoogleModalOpen: (open: boolean) => void;
 }
 
 export function useLoginForm(): IUseLoginFormReturn {
@@ -28,7 +26,6 @@ export function useLoginForm(): IUseLoginFormReturn {
   const { login } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -42,83 +39,24 @@ export function useLoginForm(): IUseLoginFormReturn {
     setIsSubmitting(true);
     setError(null);
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+    const result = await apiHandler(() => loginAction(data), {
+      showErrorToast: true,
+      errorMessage: "Authentication failed",
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Login failed");
-      }
-
-      login(json.data.user, json.data.token);
-
-      if (json.data.user.role === "ADMIN") {
+    if (result.success && result.data) {
+      login(result.data);
+      if (result.data.role === "ADMIN") {
         router.push("/admin");
       } else {
         router.push("/diamonds");
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Authentication failed";
-      setError(msg);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleLogin = async (
-    email?: string,
-    name?: string,
-    role: UserRole = "CUSTOMER"
-  ) => {
-    if (!email || !name) {
-      setIsGoogleModalOpen(true);
-      return;
+      router.refresh();
+    } else if (result.error) {
+      setError(result.error.message);
     }
 
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const encodedName = encodeURIComponent(name.trim());
-      const avatarUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=0F172A&color=F8FAFC&bold=true`;
-
-      const payload = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        googleId: `goog-${Date.now()}`,
-        avatarUrl,
-        role,
-      };
-
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Google Sign-In failed");
-      }
-
-      login(json.data.user, json.data.token);
-      setIsGoogleModalOpen(false);
-
-      if (json.data.user.role === "ADMIN") {
-        router.push("/admin");
-      } else {
-        router.push("/diamonds");
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Google Sign-In failed";
-      setError(msg);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setIsSubmitting(false);
   };
 
   return {
@@ -126,9 +64,6 @@ export function useLoginForm(): IUseLoginFormReturn {
     isSubmitting,
     error,
     submitLogin,
-    handleGoogleLogin,
-    isGoogleModalOpen,
-    setIsGoogleModalOpen,
   };
 }
 
@@ -137,9 +72,6 @@ export interface IUseRegisterFormReturn {
   isSubmitting: boolean;
   error: string | null;
   submitRegister: (data: RegisterFormData) => Promise<void>;
-  handleGoogleLogin: (email?: string, name?: string, role?: UserRole) => Promise<void>;
-  isGoogleModalOpen: boolean;
-  setIsGoogleModalOpen: (open: boolean) => void;
 }
 
 export function useRegisterForm(): IUseRegisterFormReturn {
@@ -147,7 +79,6 @@ export function useRegisterForm(): IUseRegisterFormReturn {
   const { login } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -164,88 +95,46 @@ export function useRegisterForm(): IUseRegisterFormReturn {
     setIsSubmitting(true);
     setError(null);
 
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          role: data.role,
-        }),
+    const result = await apiHandler(() => registerAction(data), {
+      showErrorToast: false,
+    });
+
+    if (result.success && result.data) {
+      login(result.data);
+      const { toast } = await import("sonner");
+      toast.success("Membership Established", {
+        description: `Welcome to DarkGems, ${result.data.name}. A confirmation email has been dispatched.`,
       });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Registration failed");
-      }
-
-      login(json.data.user, json.data.token);
-
-      if (json.data.user.role === "ADMIN") {
+      if (result.data.role === "ADMIN") {
         router.push("/admin");
       } else {
         router.push("/diamonds");
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Registration failed";
-      setError(msg);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleLogin = async (
-    email?: string,
-    name?: string,
-    role: UserRole = "CUSTOMER"
-  ) => {
-    if (!email || !name) {
-      setIsGoogleModalOpen(true);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const encodedName = encodeURIComponent(name.trim());
-      const avatarUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=0F172A&color=F8FAFC&bold=true`;
-
-      const payload = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        googleId: `goog-${Date.now()}`,
-        avatarUrl,
-        role,
-      };
-
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Google Sign-In failed");
-      }
-
-      login(json.data.user, json.data.token);
-      setIsGoogleModalOpen(false);
-
-      if (json.data.user.role === "ADMIN") {
-        router.push("/admin");
+      router.refresh();
+    } else if (result.error) {
+      const errorMsg = result.error.message || "Registration failed";
+      setError(errorMsg);
+      const { toast } = await import("sonner");
+      if (
+        errorMsg.toLowerCase().includes("already exists") ||
+        errorMsg.toLowerCase().includes("already present") ||
+        errorMsg.toLowerCase().includes("already registered")
+      ) {
+        toast.error("Account Already Exists", {
+          description: "An account with this email is already registered. Please sign in instead.",
+        });
+        form.setError("email", {
+          type: "manual",
+          message: "An account with this email is already registered.",
+        });
       } else {
-        router.push("/diamonds");
+        toast.error("Registration Failed", {
+          description: errorMsg,
+        });
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Google Sign-In failed";
-      setError(msg);
-    } finally {
-      setIsSubmitting(false);
     }
+
+    setIsSubmitting(false);
   };
 
   return {
@@ -253,8 +142,5 @@ export function useRegisterForm(): IUseRegisterFormReturn {
     isSubmitting,
     error,
     submitRegister,
-    handleGoogleLogin,
-    isGoogleModalOpen,
-    setIsGoogleModalOpen,
   };
 }

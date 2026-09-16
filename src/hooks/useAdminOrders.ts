@@ -38,7 +38,7 @@ import { subscribeToOrderEvents, broadcastOrderEvent, ORDER_EVENTS } from "@/lib
 
 export function useAdminOrders(): IUseAdminOrdersReturn {
   const { token, user } = useAuthStore();
-  const { approveOrder, rejectOrder, updateOrderStatus } = useOrderStore();
+  const { orders: storeOrders, approveOrder, rejectOrder, updateOrderStatus } = useOrderStore();
   const [dbOrders, setDbOrders] = useState<IOrder[]>([]);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -66,14 +66,16 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   }, [token, user]);
 
   const fetchOrders = useCallback(async () => {
-    const { activeToken, activeUser } = getEffectiveAuth();
-    if (!activeToken || activeUser?.role !== "ADMIN") return;
-
     try {
+      const { activeToken } = getEffectiveAuth();
+      const headers: Record<string, string> = {};
+      if (activeToken) {
+        headers["Authorization"] = `Bearer ${activeToken}`;
+      }
+
       const res = await fetch("/api/admin/orders", {
-        headers: {
-          Authorization: `Bearer ${activeToken}`,
-        },
+        headers,
+        credentials: "same-origin",
         cache: "no-store",
       });
       const json = await res.json();
@@ -89,13 +91,16 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
     let isSubscribed = true;
 
     async function loadAdminOrders() {
-      const { activeToken, activeUser } = getEffectiveAuth();
-      if (!activeToken || activeUser?.role !== "ADMIN") return;
       try {
+        const { activeToken } = getEffectiveAuth();
+        const headers: Record<string, string> = {};
+        if (activeToken) {
+          headers["Authorization"] = `Bearer ${activeToken}`;
+        }
+
         const res = await fetch("/api/admin/orders", {
-          headers: {
-            Authorization: `Bearer ${activeToken}`,
-          },
+          headers,
+          credentials: "same-origin",
           cache: "no-store",
         });
         const json = await res.json();
@@ -128,12 +133,23 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
     };
   }, [getEffectiveAuth]);
 
-  // Authoritative admin orders directly from MongoDB Database (no local storage ghost orders)
+  // Authoritative admin orders directly from MongoDB Database merged with optimistic submissions
   const orders = useMemo(() => {
-    return [...dbOrders].sort(
+    const map = new Map<string, IOrder>();
+    for (const o of dbOrders) {
+      const key = (o.orderNumber || o.id || "").toUpperCase();
+      if (key) map.set(key, o);
+    }
+    for (const o of storeOrders) {
+      const key = (o.orderNumber || o.id || "").toUpperCase();
+      if (key && !map.has(key)) {
+        map.set(key, o);
+      }
+    }
+    return Array.from(map.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-  }, [dbOrders]);
+  }, [dbOrders, storeOrders]);
 
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -212,21 +228,39 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   const handleAdvanceStatus = async (orderId: string, nextStatus: OrderStatus, note?: string) => {
     setIsUpdating(true);
     try {
-      if (token) {
-        await fetch(`/api/admin/orders/${orderId}/status`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: nextStatus, note }),
-        });
+      const { activeToken } = getEffectiveAuth();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (activeToken) {
+        headers["Authorization"] = `Bearer ${activeToken}`;
       }
 
-      // Update local state immediately
-      setDbOrders((prev) =>
-        prev.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, status: nextStatus } : o))
-      );
+      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers,
+        credentials: "same-origin",
+        body: JSON.stringify({ status: nextStatus, note }),
+      });
+      const json = await res.json();
+
+      if (json.success && json.data) {
+        const updatedOrder: IOrder = json.data;
+        setDbOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.orderNumber === orderId ? updatedOrder : o
+          )
+        );
+      } else {
+        // Update local state immediately as fallback
+        setDbOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.orderNumber === orderId
+              ? { ...o, status: nextStatus }
+              : o
+          )
+        );
+      }
 
       // Update zustand store
       updateOrderStatus(orderId, nextStatus, { note });
@@ -261,41 +295,55 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
     const note = "Vault sealed and handed to armed courier convoy";
 
     try {
-      if (token) {
-        await fetch(`/api/admin/orders/${orderId}/status`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: "DISPATCHED",
-            carrier: resolvedCarrier,
-            trackingNumber: resolvedTracking,
-            note,
-          }),
-        });
+      const { activeToken } = getEffectiveAuth();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (activeToken) {
+        headers["Authorization"] = `Bearer ${activeToken}`;
       }
 
-      setDbOrders((prev) =>
-        prev.map((o) =>
-          o.id === orderId || o.orderNumber === orderId
-            ? {
-                ...o,
-                status: "DISPATCHED",
-                trackingInfo: {
-                  ...(o.trackingInfo || {
-                    vaultOrigin: "Geneva Central Foundry Vault",
-                    transitType: "ARMORED_GROUND",
-                    biometricSignatureRequired: true,
-                  }),
-                  carrier: resolvedCarrier,
-                  trackingNumber: resolvedTracking,
-                },
-              }
-            : o
-        )
-      );
+      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers,
+        credentials: "same-origin",
+        body: JSON.stringify({
+          status: "DISPATCHED",
+          carrier: resolvedCarrier,
+          trackingNumber: resolvedTracking,
+          note,
+        }),
+      });
+      const json = await res.json();
+
+      if (json.success && json.data) {
+        const updatedOrder: IOrder = json.data;
+        setDbOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.orderNumber === orderId ? updatedOrder : o
+          )
+        );
+      } else {
+        setDbOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.orderNumber === orderId
+              ? {
+                  ...o,
+                  status: "DISPATCHED",
+                  trackingInfo: {
+                    ...(o.trackingInfo || {
+                      vaultOrigin: "Geneva Central Foundry Vault",
+                      transitType: "ARMORED_GROUND",
+                      biometricSignatureRequired: true,
+                    }),
+                    carrier: resolvedCarrier,
+                    trackingNumber: resolvedTracking,
+                  },
+                }
+              : o
+          )
+        );
+      }
 
       updateOrderStatus(orderId, "DISPATCHED", {
         carrier: resolvedCarrier,

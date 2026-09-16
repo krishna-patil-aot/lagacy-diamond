@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, getUserOrders } from "@/lib/order-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { sendOrderReceiptPendingEmail } from "@/lib/mailer";
 
 export async function POST(request: NextRequest) {
   try {
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
     const body = await request.json();
 
     if (!body.items || body.items.length === 0) {
@@ -63,11 +59,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
 
     if (!verified) {
       return NextResponse.json(
@@ -76,11 +68,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // A client's "My Orders" endpoint must strictly return only their own orders
+    const isAdmin = verified.role === "ADMIN";
     const orders = await getUserOrders(
       verified.userId,
       verified.email,
-      false
+      isAdmin
     );
     return NextResponse.json({ success: true, data: orders });
   } catch (err) {

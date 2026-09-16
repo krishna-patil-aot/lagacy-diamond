@@ -22,6 +22,7 @@ export interface FormSelectProps {
   value?: string;
   defaultValue?: string;
   onValueChange?: (val: string) => void;
+  onChange?: (val: string) => void;
   options: FormSelectOption[];
   disabled?: boolean;
   className?: string;
@@ -34,10 +35,13 @@ export function FormSelect({
   value,
   defaultValue,
   onValueChange,
+  onChange,
   options,
   disabled,
   className,
 }: FormSelectProps) {
+  const handleChange = onValueChange || onChange;
+
   return (
     <div className="w-full">
       {label && (
@@ -48,7 +52,7 @@ export function FormSelect({
       <Select
         value={value}
         defaultValue={defaultValue}
-        onValueChange={onValueChange}
+        onValueChange={handleChange}
         disabled={disabled}
       >
         <SelectTrigger className={cn(error && "border-rose-400", className)}>

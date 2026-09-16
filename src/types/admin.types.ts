@@ -82,3 +82,45 @@ export interface ISoldProductsStats {
   totalCaratsSold: number;
   avgOrderValue: number;
 }
+
+export type DynamicFieldType =
+  | "text"
+  | "number"
+  | "email"
+  | "textarea"
+  | "select"
+  | "switch"
+  | "image-list";
+
+export interface ISelectOption {
+  label: string;
+  value: string;
+}
+
+export interface IDynamicFieldConfig {
+  name: string;
+  label: string;
+  type: DynamicFieldType;
+  placeholder?: string;
+  description?: string;
+  required?: boolean;
+  options?: ISelectOption[];
+  step?: number;
+  min?: number;
+  max?: number;
+  colSpan?: 1 | 2;
+  disabled?: boolean;
+}
+
+export interface IStoreModalState<T> {
+  isOpen: boolean;
+  mode: "create" | "edit";
+  selectedItem: T | null;
+}
+
+export interface IStoreDeleteDialogState {
+  isOpen: boolean;
+  id: string | null;
+  name: string;
+  loading: boolean;
+}

@@ -107,43 +107,48 @@ export function AdminOrderApprovalList() {
     switch (status) {
       case "PENDING_APPROVAL":
         return (
-          <Badge variant="gold" className="text-[11px] gap-1 font-mono">
-            <Clock className="h-3 w-3" /> Awaiting Review
+          <Badge variant="gold" className="text-[11px] gap-1.5 font-medium whitespace-nowrap shrink-0">
+            <Clock className="h-3 w-3 shrink-0" />
+            <span>Awaiting Review</span>
           </Badge>
         );
       case "APPROVED":
         return (
-          <Badge variant="success" className="text-[11px] gap-1 font-mono">
-            <ShieldCheck className="h-3 w-3" /> Approved
+          <Badge variant="success" className="text-[11px] gap-1.5 font-medium whitespace-nowrap shrink-0">
+            <ShieldCheck className="h-3 w-3 shrink-0" />
+            <span>Approved</span>
           </Badge>
         );
       case "DISPATCHED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 text-[11px] font-mono font-medium">
-            <Truck className="h-3 w-3" /> Dispatched
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0">
+            <Truck className="h-3 w-3 shrink-0" />
+            <span>Dispatched</span>
           </span>
         );
       case "IN_TRANSIT":
       case "OUT_FOR_DELIVERY":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 text-[11px] font-mono font-medium animate-pulse">
-            <Truck className="h-3 w-3" /> In Transit
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 text-[11px] font-medium animate-pulse whitespace-nowrap shrink-0">
+            <Truck className="h-3 w-3 shrink-0" />
+            <span>In Transit</span>
           </span>
         );
       case "DELIVERED":
         return (
-          <Badge variant="success" className="text-[11px] gap-1 font-mono">
-            <ShieldCheck className="h-3 w-3" /> Delivered
+          <Badge variant="success" className="text-[11px] gap-1.5 font-medium whitespace-nowrap shrink-0">
+            <ShieldCheck className="h-3 w-3 shrink-0" />
+            <span>Delivered & Signed</span>
           </Badge>
         );
       case "CANCELLED":
         return (
-          <Badge variant="destructive" className="text-[11px] font-mono">
-            Voided
+          <Badge variant="destructive" className="text-[11px] font-medium whitespace-nowrap shrink-0">
+            <span>Voided</span>
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-[11px] whitespace-nowrap shrink-0">{status}</Badge>;
     }
   };
 
@@ -287,20 +292,252 @@ export function AdminOrderApprovalList() {
         </div>
       </div>
 
-      {/* Shadcn Table */}
+      {/* Main Content: Mobile & Tablet Cards + Desktop Table */}
       <div className="rounded-xl border border-stone-200 overflow-hidden bg-white shadow-xs">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-stone-50/80 border-b border-stone-200">
-              <TableHead className="w-[150px] font-mono text-xs py-3.5 px-4">Order Reference</TableHead>
-              <TableHead className="min-w-[190px] text-xs py-3.5 px-4">Client Details</TableHead>
-              <TableHead className="min-w-[210px] text-xs py-3.5 px-4">Gemstone Lots</TableHead>
-              <TableHead className="w-[140px] text-xs py-3.5 px-4">Settlement</TableHead>
-              <TableHead className="w-[150px] text-xs py-3.5 px-4">Fulfillment Status</TableHead>
-              <TableHead className="w-[210px] text-right text-xs py-3.5 px-4">Curator Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        {/* Mobile & Tablet Card View (visible on screen widths < lg) */}
+        <div className="block lg:hidden p-3 sm:p-4 bg-stone-50/40">
+          {paginatedOrders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl border border-stone-200/80 text-center space-y-2">
+              <ShoppingBag className="h-8 w-8 text-stone-300" />
+              <p className="text-xs sm:text-sm font-medium text-stone-600">
+                No client orders found matching your search and filter criteria.
+              </p>
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs text-stone-500 underline"
+                >
+                  Clear Search Query
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {paginatedOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex flex-col justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-xs hover:border-amber-400/80 transition-all space-y-3"
+                >
+                  {/* Card Header: Order Reference & Status */}
+                  <div className="flex items-start justify-between gap-2 border-b border-stone-100 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-stone-900">
+                        #{order.orderNumber || order.id}
+                      </span>
+                      <div
+                        className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500 mt-0.5"
+                        suppressHydrationWarning
+                      >
+                        <Clock className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span>
+                          {new Date(order.createdAt).toLocaleDateString([], {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          {new Date(order.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0">{getStatusBadge(order.status)}</div>
+                  </div>
+
+                  {/* Client Details Section */}
+                  <div className="rounded-lg bg-stone-50/80 p-2.5 border border-stone-100 space-y-1 text-xs">
+                    <div className="font-semibold text-stone-900 truncate">
+                      {order.shippingAddress?.fullName || "Private Client"}
+                    </div>
+                    <div className="text-[11px] text-stone-600 flex items-center gap-1.5 truncate">
+                      <Mail className="h-3 w-3 text-stone-400 shrink-0" />
+                      <span className="truncate">{order.shippingAddress?.email}</span>
+                    </div>
+                    {order.shippingAddress?.phone && (
+                      <div className="text-[11px] text-stone-600 flex items-center gap-1.5">
+                        <Phone className="h-3 w-3 text-stone-400 shrink-0" />
+                        <span>{order.shippingAddress.phone}</span>
+                      </div>
+                    )}
+                    <div className="text-[10px] text-stone-500 flex items-center gap-1.5 truncate">
+                      <MapPin className="h-3 w-3 text-amber-600 shrink-0" />
+                      <span className="truncate">
+                        {order.shippingAddress?.city}, {order.shippingAddress?.state || order.shippingAddress?.country}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Gemstone Lots Summary */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-semibold block">
+                      Gemstone Lots ({order.items.length})
+                    </span>
+                    {order.items.slice(0, 2).map((item) => (
+                      <div key={item._id} className="flex items-center gap-2.5">
+                        <div className="relative h-10 w-10 rounded-lg overflow-hidden border border-stone-200 bg-stone-50 shrink-0 shadow-2xs">
+                          <Image
+                            src={item.images[0] || ""}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold text-stone-900 truncate">
+                            {item.name}
+                          </div>
+                          <div className="text-[10px] font-mono text-stone-500">
+                            {item.carat} ct • {item.shape} • {item.lab} #{item.certificateNumber}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {order.items.length > 2 && (
+                      <span className="text-[10px] font-mono text-amber-800 italic block pl-1">
+                        +{order.items.length - 2} more gemstone lot(s)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Settlement Summary */}
+                  <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs font-mono">
+                    <div>
+                      <span className="text-[10px] text-stone-400 uppercase block">Total Settled</span>
+                      <span className="text-sm font-bold text-stone-900">
+                        {formatPrice(order.totalAmount)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-stone-400 uppercase block">Method</span>
+                      <span className="text-xs text-stone-700 font-semibold">
+                        {order.paymentInfo?.method?.replace("_", " ") || "Credit Card"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Curator Actions Footer */}
+                  <div className="pt-2 border-t border-stone-100 space-y-2">
+                    {order.status === "PENDING_APPROVAL" && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="luxury"
+                          size="sm"
+                          className="flex-1 h-8 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
+                          disabled={isUpdating}
+                          onClick={() => handleApproveOrder(order.id)}
+                        >
+                          <Check className="h-3.5 w-3.5 shrink-0" />
+                          <span>Accept & Approve</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2.5 text-xs font-medium text-rose-700 border-rose-300 bg-rose-50 hover:bg-rose-100 inline-flex items-center justify-center gap-1 shrink-0 whitespace-nowrap"
+                          disabled={isUpdating}
+                          onClick={() => handleRejectOrder(order.id)}
+                        >
+                          <X className="h-3.5 w-3.5 shrink-0" />
+                          <span>Reject</span>
+                        </Button>
+                      </div>
+                    )}
+
+                    {order.status === "APPROVED" && (
+                      <Button
+                        variant="luxury"
+                        size="sm"
+                        className="w-full h-8 text-xs font-medium bg-purple-700 hover:bg-purple-800 text-white inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
+                        disabled={isUpdating}
+                        onClick={() => handleDispatchOrder(order.id)}
+                      >
+                        <Truck className="h-3.5 w-3.5 shrink-0" />
+                        <span>Dispatch via Armored Carrier</span>
+                      </Button>
+                    )}
+
+                    {(order.status === "DISPATCHED" ||
+                      order.status === "IN_TRANSIT" ||
+                      order.status === "OUT_FOR_DELIVERY") && (
+                      <Button
+                        variant="luxury"
+                        size="sm"
+                        className="w-full h-8 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
+                        disabled={isUpdating}
+                        onClick={() =>
+                          handleAdvanceStatus(
+                            order.id,
+                            "DELIVERED",
+                            "Client identity verified and biometric delivery confirmed"
+                          )
+                        }
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                        <span>Confirm Handover Delivery</span>
+                      </Button>
+                    )}
+
+                    <div className="space-y-1.5 pt-1">
+                      {order.status === "DELIVERED" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendOrderDocuments(order)}
+                          disabled={isSending(order.id)}
+                          className="w-full h-8 text-xs font-medium text-stone-700 border-stone-200 bg-white hover:bg-stone-50 inline-flex items-center justify-center gap-2 whitespace-nowrap shadow-2xs"
+                        >
+                          {isSending(order.id) ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 shrink-0" />
+                              <span>Sending Documents...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                              <span>Email Invoice & Certs</span>
+                            </>
+                          )}
+                        </Button>
+                      )}
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setInspectOrder(order)}
+                        className="w-full h-8 text-xs text-stone-600 hover:text-stone-900 font-medium inline-flex items-center justify-center gap-1.5 hover:bg-stone-100 whitespace-nowrap"
+                      >
+                        <Eye className="h-3.5 w-3.5 shrink-0" />
+                        <span>View Full Dossier</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View (visible on screen widths >= lg) */}
+        <div className="hidden lg:block overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-stone-50/80 border-b border-stone-200">
+                <TableHead className="w-[150px] font-mono text-xs py-3.5 px-4 whitespace-nowrap">Order Reference</TableHead>
+                <TableHead className="min-w-[190px] text-xs py-3.5 px-4 whitespace-nowrap">Client Details</TableHead>
+                <TableHead className="min-w-[210px] text-xs py-3.5 px-4 whitespace-nowrap">Gemstone Lots</TableHead>
+                <TableHead className="w-[140px] text-xs py-3.5 px-4 whitespace-nowrap">Settlement</TableHead>
+                <TableHead className="min-w-[160px] text-xs py-3.5 px-4 whitespace-nowrap">Fulfillment Status</TableHead>
+                <TableHead className="w-[210px] text-right text-xs py-3.5 px-4 whitespace-nowrap">Curator Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {paginatedOrders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-44 text-center">
@@ -418,7 +655,7 @@ export function AdminOrderApprovalList() {
                   </TableCell>
 
                   {/* 5. Status Badge */}
-                  <TableCell className="align-middle py-3.5 px-4">
+                  <TableCell className="align-middle py-3.5 px-4 whitespace-nowrap">
                     <div className="inline-flex items-center">
                       {getStatusBadge(order.status)}
                     </div>
@@ -545,7 +782,7 @@ export function AdminOrderApprovalList() {
                           size="sm"
                           onClick={() => sendOrderDocuments(order)}
                           disabled={isSending(order.id)}
-                          className="h-6 px-2 text-[11px] font-mono text-stone-700 hover:text-stone-900 border-stone-200 bg-white hover:bg-stone-50 shadow-2xs inline-flex items-center gap-1 whitespace-nowrap"
+                          className="h-6 px-2 text-[11px] font-medium text-stone-700 hover:text-stone-900 border-stone-200 bg-white hover:bg-stone-50 shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                           title={`Dispatch official invoice and certificates to ${order.shippingAddress?.email || "customer"}`}
                         >
                           {isSending(order.id) ? (
@@ -568,7 +805,7 @@ export function AdminOrderApprovalList() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setInspectOrder(order)}
-                        className="h-6 px-2 text-[11px] text-stone-600 hover:text-stone-900 font-mono hover:bg-stone-100 mt-0.5 inline-flex items-center gap-1 whitespace-nowrap"
+                        className="h-6 px-2 text-[11px] text-stone-600 hover:text-stone-900 font-medium hover:bg-stone-100 mt-0.5 inline-flex items-center justify-center gap-1 whitespace-nowrap"
                       >
                         <Eye className="h-3 w-3 shrink-0" />
                         <span>View Details</span>
@@ -581,6 +818,7 @@ export function AdminOrderApprovalList() {
           </TableBody>
         </Table>
       </div>
+    </div>
 
       {/* Pagination Controls Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-stone-600">

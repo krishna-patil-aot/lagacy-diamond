@@ -33,13 +33,23 @@ export async function POST(request: NextRequest) {
         name: newUser.name,
       });
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         data: {
           user: newUser,
           token,
         },
       });
+
+      response.cookies.set("diamond_session", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+
+      return response;
     }
 
     const token = signToken({
@@ -49,13 +59,23 @@ export async function POST(request: NextRequest) {
       name: userRecord.user.name,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         user: userRecord.user,
         token,
       },
     });
+
+    response.cookies.set("diamond_session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Google sign-in failed";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

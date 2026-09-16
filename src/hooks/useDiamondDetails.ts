@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { IDiamond } from "@/types/diamond.types";
+import { subscribeToDiamondEvents, DIAMOND_EVENTS } from "@/lib/diamond-events";
 
 export interface IUseDiamondDetailsReturn {
   diamond: IDiamond | null;
@@ -77,6 +78,60 @@ export function useDiamondDetails(id: string): IUseDiamondDetailsReturn {
       ignore = true;
     };
   }, [id]);
+
+  // Silent background revalidation on real-time stock/specimen change
+  const silentRevalidate = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/diamonds/${id}`);
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setDiamond(json.data);
+      }
+    } catch {
+      // Ignore background sync errors
+    }
+  }, [id]);
+
+  // Real-time synchronization bus + focus + heartbeat
+  useEffect(() => {
+    if (!id) return;
+
+    // 1. Subscribe to real-time events for this diamond or inventory changes
+    const unsubscribe = subscribeToDiamondEvents((payload) => {
+      if (
+        !payload ||
+        !payload.diamondId ||
+        payload.diamondId === id ||
+        payload.type === DIAMOND_EVENTS.STOCK_CHANGED
+      ) {
+        silentRevalidate();
+      }
+    });
+
+    // 2. Focus / visibility revalidation
+    const handleFocus = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        silentRevalidate();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("visibilitychange", handleFocus);
+
+    // 3. Heartbeat (every 3s when visible)
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        silentRevalidate();
+      }
+    }, 3000);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("visibilitychange", handleFocus);
+      clearInterval(interval);
+    };
+  }, [id, silentRevalidate]);
 
   return {
     diamond,
