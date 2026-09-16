@@ -349,18 +349,23 @@ export async function logoutAction(): Promise<boolean> {
  * Resolve Authenticated Session User on Server
  */
 export async function getSessionUserAction(): Promise<IUser | null> {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get(SESSION_COOKIE_NAME)?.value ||
-    cookieStore.get("diamond_auth_token")?.value;
+  try {
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get(SESSION_COOKIE_NAME)?.value ||
+      cookieStore.get("diamond_auth_token")?.value;
 
-  if (!token) return null;
+    if (!token) return null;
 
-  const payload = verifyToken(token);
-  if (!payload) return null;
+    const payload = verifyToken(token);
+    if (!payload) return null;
 
-  const found = await findUserByEmail(payload.email);
-  if (!found) return null;
+    const found = await findUserByEmail(payload.email);
+    if (!found) return null;
 
-  return sanitizeUser(found.user);
+    return sanitizeUser(found.user);
+  } catch (error) {
+    console.error("[getSessionUserAction] Failed to resolve session:", error instanceof Error ? error.message : error);
+    return null;
+  }
 }

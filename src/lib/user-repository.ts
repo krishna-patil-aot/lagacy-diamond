@@ -23,26 +23,30 @@ export async function findUserByEmail(email: string): Promise<{ user: IUser; pas
   const mongoose = await connectToDatabase();
 
   if (mongoose) {
-    const doc = await UserModel.findOne({ email: normalized }).lean();
-    if (!doc) return null;
+    try {
+      const doc = await UserModel.findOne({ email: normalized }).lean();
+      if (!doc) return null;
 
-    const rawDoc = doc as typeof doc & { password?: string; role?: string };
-    const normalizedRole: UserRole =
-      String(rawDoc.role || "").toUpperCase() === "ADMIN" ? "ADMIN" : "CUSTOMER";
-    const resolvedPasswordHash = rawDoc.passwordHash || rawDoc.password;
+      const rawDoc = doc as typeof doc & { password?: string; role?: string };
+      const normalizedRole: UserRole =
+        String(rawDoc.role || "").toUpperCase() === "ADMIN" ? "ADMIN" : "CUSTOMER";
+      const resolvedPasswordHash = rawDoc.passwordHash || rawDoc.password;
 
-    return {
-      user: sanitizeUser({
-        id: String(doc._id),
-        name: doc.name,
-        email: doc.email,
-        role: normalizedRole,
-        avatarUrl: doc.avatarUrl,
-        authProvider: doc.authProvider,
-        createdAt: doc.createdAt,
-      }),
-      passwordHash: resolvedPasswordHash,
-    };
+      return {
+        user: sanitizeUser({
+          id: String(doc._id),
+          name: doc.name,
+          email: doc.email,
+          role: normalizedRole,
+          avatarUrl: doc.avatarUrl,
+          authProvider: doc.authProvider,
+          createdAt: doc.createdAt,
+        }),
+        passwordHash: resolvedPasswordHash,
+      };
+    } catch (error) {
+      console.error("[findUserByEmail] DB query failed, falling back:", error instanceof Error ? error.message : error);
+    }
   }
 
   const found = memoryUsers.find((u) => u.email === normalized);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,7 @@ export function useLoginForm(): IUseLoginFormReturn {
   const { login } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -46,12 +47,11 @@ export function useLoginForm(): IUseLoginFormReturn {
 
     if (result.success && result.data) {
       login(result.data);
-      if (result.data.role === "ADMIN") {
-        router.push("/admin");
-      } else {
-        router.push("/diamonds");
-      }
-      router.refresh();
+      const destination = result.data.role === "ADMIN" ? "/admin" : "/diamonds";
+      startTransition(() => {
+        router.push(destination);
+        router.refresh();
+      });
     } else if (result.error) {
       setError(result.error.message);
     }
@@ -79,6 +79,7 @@ export function useRegisterForm(): IUseRegisterFormReturn {
   const { login } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -105,12 +106,11 @@ export function useRegisterForm(): IUseRegisterFormReturn {
       toast.success("Membership Established", {
         description: `Welcome to DarkGems, ${result.data.name}. A confirmation email has been dispatched.`,
       });
-      if (result.data.role === "ADMIN") {
-        router.push("/admin");
-      } else {
-        router.push("/diamonds");
-      }
-      router.refresh();
+      const destination = result.data.role === "ADMIN" ? "/admin" : "/diamonds";
+      startTransition(() => {
+        router.push(destination);
+        router.refresh();
+      });
     } else if (result.error) {
       const errorMsg = result.error.message || "Registration failed";
       setError(errorMsg);

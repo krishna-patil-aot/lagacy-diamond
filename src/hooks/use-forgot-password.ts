@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +45,7 @@ export interface IUseForgotPasswordReturn {
 export function useForgotPassword(): IUseForgotPasswordReturn {
   const router = useRouter();
   const { login } = useAuthStore();
+  const [, startTransition] = useTransition();
 
   const [step, setStep] = useState<ForgotPasswordStep>("REQUEST_OTP");
   const [email, setEmail] = useState<string>("");
@@ -186,12 +187,11 @@ export function useForgotPassword(): IUseForgotPasswordReturn {
       toast.success("Authentication Confirmed", {
         description: `Welcome back, ${result.data.name}`,
       });
-      if (result.data.role === "ADMIN") {
-        router.push("/admin");
-      } else {
-        router.push("/diamonds");
-      }
-      router.refresh();
+      const destination = result.data.role === "ADMIN" ? "/admin" : "/diamonds";
+      startTransition(() => {
+        router.push(destination);
+        router.refresh();
+      });
     } else if (result.error) {
       setError(result.error.message);
     }
