@@ -23,11 +23,14 @@ function getBaseUrl(): string {
   if (process.env.NODE_ENV === "development") {
     return `http://localhost:${port}`;
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
   }
   return `http://localhost:${port}`;
 }
@@ -72,6 +75,13 @@ axiosInstance.interceptors.request.use(
       config.baseURL = getBaseUrl();
     }
 
+    const bypassSecret =
+      process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
+      process.env.VERCEL_PROTECTION_BYPASS;
+    if (bypassSecret && !config.headers["x-vercel-protection-bypass"]) {
+      config.headers["x-vercel-protection-bypass"] = bypassSecret;
+    }
+
     const token = await getAuthToken();
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -93,14 +103,23 @@ axiosInstance.interceptors.response.use(
 
 export function formatAxiosError(error: AxiosError): FormattedApiError {
   const responseData = error.response?.data as
-    | { error?: string; message?: string; errors?: Record<string, string[]> }
+    | {
+        error?: string;
+        message?: string | { message?: string; code?: string };
+        errors?: Record<string, string[]>;
+      }
     | undefined;
 
-  const message =
-    responseData?.error ||
-    responseData?.message ||
-    error.message ||
-    "An unexpected error occurred.";
+  let message = "An unexpected error occurred.";
+  if (typeof responseData?.error === "string") {
+    message = responseData.error;
+  } else if (typeof responseData?.message === "string") {
+    message = responseData.message;
+  } else if (responseData?.message && typeof responseData.message === "object") {
+    message = responseData.message.message || JSON.stringify(responseData.message);
+  } else if (error.message) {
+    message = error.message;
+  }
 
   const statusCode = error.response?.status || 500;
   const errors = responseData?.errors;

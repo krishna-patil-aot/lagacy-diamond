@@ -31,9 +31,63 @@ interface ApiDeleteResponse {
   message?: string;
 }
 
+import { DiamondSortOption } from "@/types/filter.types";
+
+function normalizeSortOption(sort?: string): DiamondSortOption {
+  switch (sort) {
+    case "price-asc":
+    case "price_asc":
+      return "price_asc";
+    case "price-desc":
+    case "price_desc":
+      return "price_desc";
+    case "carat-asc":
+    case "carat_asc":
+      return "carat_asc";
+    case "carat-desc":
+    case "carat_desc":
+      return "carat_desc";
+    case "discount_desc":
+      return "discount_desc";
+    case "newest":
+      return "newest";
+    default:
+      return "featured";
+  }
+}
+
 export async function fetchDiamondsAction(
   query: IDiamondFilterQuery = {}
 ): Promise<IDiamondApiResponse> {
+  try {
+    const { getDiamonds } = await import("@/lib/diamond-repository");
+    const result = await getDiamonds({
+      page: query.page || 1,
+      limit: query.limit || 10,
+      searchQuery: query.search || "",
+      sortBy: normalizeSortOption(query.sortBy),
+      shapes: query.shapes,
+      colors: query.colors,
+      cuts: query.cuts,
+      clarities: query.clarities,
+      minPrice: query.minPrice,
+      maxPrice: query.maxPrice,
+      minCarat: query.minCarat,
+      maxCarat: query.maxCarat,
+      inStockOnly: query.inStockOnly,
+    });
+
+    return {
+      items: result.diamonds,
+      total: result.meta.totalCount,
+      pageCount: result.meta.totalPages,
+      page: result.meta.currentPage,
+      limit: query.limit || 10,
+    };
+  } catch (repoErr) {
+    console.error("[fetchDiamondsAction Repository Error, falling back to apiCall]:", repoErr);
+  }
+
   const queryParams: Record<string, QueryValue> = {
     page: query.page || 1,
     limit: query.limit || 10,
@@ -87,7 +141,7 @@ export async function fetchDiamondsAction(
 export async function createDiamondAction(
   values: DiamondFormValues
 ): Promise<IDiamond> {
-  const payload = {
+  const payload: Omit<IDiamond, "_id" | "createdAt" | "updatedAt" | "finalPrice"> = {
     name: values.name,
     sku: values.sku,
     shape: values.shape,
@@ -117,7 +171,7 @@ export async function createDiamondAction(
 
   try {
     const { createDiamond } = await import("@/lib/diamond-repository");
-    const created = await createDiamond(payload as unknown as Omit<IDiamond, "_id">);
+    const created = await createDiamond(payload);
     if (created) {
       return created;
     }
@@ -138,9 +192,33 @@ export async function updateDiamondAction(
   id: string,
   values: Partial<DiamondFormValues>
 ): Promise<IDiamond> {
-  const payload: Record<string, string | number | boolean | string[] | object> = {
-    ...values,
-  };
+  const payload: Partial<IDiamond> = {};
+
+  if (values.name !== undefined) payload.name = values.name;
+  if (values.sku !== undefined) payload.sku = values.sku;
+  if (values.shape !== undefined) payload.shape = values.shape;
+  if (values.carat !== undefined) payload.carat = Number(values.carat);
+  if (values.color !== undefined) payload.color = values.color;
+  if (values.clarity !== undefined) payload.clarity = values.clarity;
+  if (values.cut !== undefined) payload.cut = values.cut;
+  if (values.price !== undefined) payload.price = Number(values.price);
+  if (values.discountPercentage !== undefined)
+    payload.discountPercentage = Number(values.discountPercentage);
+  if (values.lab !== undefined) payload.lab = values.lab;
+  if (values.certificateNumber !== undefined)
+    payload.certificateNumber = values.certificateNumber;
+  if (values.tablePercentage !== undefined)
+    payload.tablePercentage = Number(values.tablePercentage);
+  if (values.depthPercentage !== undefined)
+    payload.depthPercentage = Number(values.depthPercentage);
+  if (values.polish !== undefined) payload.polish = values.polish;
+  if (values.symmetry !== undefined) payload.symmetry = values.symmetry;
+  if (values.fluorescence !== undefined) payload.fluorescence = values.fluorescence;
+  if (values.images !== undefined) payload.images = values.images;
+  if (values.description !== undefined) payload.description = values.description;
+  if (values.stockQuantity !== undefined)
+    payload.stockQuantity = Number(values.stockQuantity);
+  if (values.featured !== undefined) payload.featured = Boolean(values.featured);
 
   if (
     values.length !== undefined &&
@@ -156,7 +234,7 @@ export async function updateDiamondAction(
 
   try {
     const { updateDiamond } = await import("@/lib/diamond-repository");
-    const updated = await updateDiamond(id, payload as Partial<IDiamond>);
+    const updated = await updateDiamond(id, payload);
     if (updated) {
       return updated;
     }
