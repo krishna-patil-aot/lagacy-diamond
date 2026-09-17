@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
+import React from "react";
 import { UseFormReturn, FieldValues, Path, PathValue, Controller } from "react-hook-form";
 import { IDynamicFieldConfig } from "@/types/admin.types";
 import { Input } from "@/components/ui/Input";
@@ -9,8 +8,7 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { FormSelect } from "@/components/ui/FormSelect";
 import { Switch } from "@/components/ui/Switch";
-import { Button } from "@/components/ui/Button";
-import { Plus, Trash2, Image as ImageIcon } from "lucide-react";
+import { ImageUploader } from "./image-uploader";
 
 export interface DynamicFormProps<T extends FieldValues> {
   fields: IDynamicFieldConfig[];
@@ -27,76 +25,22 @@ function ImageListField<T extends FieldValues>({
   field: IDynamicFieldConfig;
   form: UseFormReturn<T>;
 }) {
-  const [newUrl, setNewUrl] = useState<string>("");
   const pathName = field.name as Path<T>;
   const images = (form.watch(pathName) as string[]) || [];
 
-  const handleAdd = () => {
-    if (!newUrl.trim()) return;
-    const updated = [...images, newUrl.trim()];
-    form.setValue(pathName, updated as PathValue<T, Path<T>>, { shouldValidate: true });
-    setNewUrl("");
-  };
-
-  const handleRemove = (index: number) => {
-    const updated = images.filter((_, idx) => idx !== index);
-    form.setValue(pathName, updated as PathValue<T, Path<T>>, { shouldValidate: true });
+  const handleImagesChange = (updated: string[]) => {
+    form.setValue(pathName, updated as PathValue<T, Path<T>>, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        <Input
-          placeholder="Paste high-res gemstone image URL (https://...)"
-          value={newUrl}
-          onChange={(e) => setNewUrl(e.target.value)}
-          className="text-xs h-9 bg-white"
-        />
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={handleAdd}
-          className="shrink-0 h-9 text-xs"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          <span>Add URL</span>
-        </Button>
-      </div>
-
-      {images.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1">
-          {images.map((url, idx) => (
-            <div
-              key={idx}
-              className="group relative aspect-square rounded-xl overflow-hidden border border-stone-200 bg-stone-100"
-            >
-              <Image
-                src={url}
-                alt={`Image preview ${idx + 1}`}
-                fill
-                sizes="(max-width: 640px) 33vw, 25vw"
-                className="object-cover"
-                unoptimized
-              />
-              <button
-                type="button"
-                onClick={() => handleRemove(idx)}
-                className="absolute right-1 top-1 rounded-lg bg-stone-900/80 p-1 text-white hover:bg-rose-600 transition-colors opacity-80 group-hover:opacity-100"
-                aria-label="Remove image"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed border-stone-200 p-4 text-center text-xs text-stone-400 flex items-center justify-center gap-2">
-          <ImageIcon className="h-4 w-4 text-stone-300" />
-          <span>No image URLs attached yet</span>
-        </div>
-      )}
-    </div>
+    <ImageUploader
+      images={images}
+      onChange={handleImagesChange}
+      disabled={field.disabled}
+    />
   );
 }
 

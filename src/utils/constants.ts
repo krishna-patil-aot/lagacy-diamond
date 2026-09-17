@@ -272,7 +272,7 @@ export const DIAMOND_FORM_FIELDS: IDynamicFieldConfig[] = [
     name: "images",
     label: "High-Resolution Atelier Gemstone Images",
     type: "image-list",
-    description: "Add one or more CDN or direct URLs for high-resolution images.",
+    description: "Upload high-res images directly to Cloudinary CDN or attach direct image URLs.",
     required: true,
     colSpan: 2,
   },
