@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { markInquiryAsReadByClient, markInquiryAsReadByAdmin } from "@/lib/inquiry-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
@@ -8,11 +8,7 @@ export async function PATCH(
 ): Promise<NextResponse<{ success: boolean; error?: string }>> {
   try {
     const { id } = await params;
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
 
     if (verified?.role === "ADMIN") {
       const updated = await markInquiryAsReadByAdmin(id);

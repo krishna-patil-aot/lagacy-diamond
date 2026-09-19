@@ -153,6 +153,8 @@ export function sanitizeOrderDoc(doc: {
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : undefined,
     approvedAt: doc.approvedAt,
+    createdByAdmin: (doc as Record<string, unknown>).createdByAdmin as boolean | undefined,
+    adminNotes: (doc as Record<string, unknown>).adminNotes as string | undefined,
   };
 }
 
@@ -170,6 +172,17 @@ export async function createOrder(
       location: "Geneva Central Foundry Vault",
       timestamp: new Date().toISOString(),
     },
+    ...(orderInput.status === "APPROVED"
+      ? [
+          {
+            status: "APPROVED" as const,
+            title: "Authorized by Vault Curator",
+            description: orderInput.adminNotes || "Pre-authorized VIP acquisition registered by Lead Gemologist.",
+            location: "Geneva Central Foundry Vault",
+            timestamp: new Date().toISOString(),
+          },
+        ]
+      : []),
   ];
 
   const initialTracking = {
@@ -262,7 +275,10 @@ export async function createOrder(
       subtotal: orderInput.subtotal,
       couponDiscount: orderInput.couponDiscount || 0,
       totalAmount: orderInput.totalAmount,
-      status: "PENDING_APPROVAL",
+      status: orderInput.status || "PENDING_APPROVAL",
+      approvedAt: orderInput.status === "APPROVED" ? (orderInput.approvedAt || new Date().toISOString()) : undefined,
+      createdByAdmin: Boolean(orderInput.createdByAdmin),
+      adminNotes: orderInput.adminNotes || "",
       trackingInfo: initialTracking,
       timeline: initialTimeline,
     });
@@ -277,7 +293,14 @@ export async function createOrder(
       }
     }
 
-    return sanitizeOrderDoc(newDoc.toObject());
+    const sanitized = sanitizeOrderDoc(newDoc.toObject());
+    if (orderInput.createdByAdmin !== undefined) {
+      sanitized.createdByAdmin = orderInput.createdByAdmin;
+    }
+    if (orderInput.adminNotes !== undefined) {
+      sanitized.adminNotes = orderInput.adminNotes;
+    }
+    return sanitized;
   }
 
   // Fallback to memory
@@ -289,7 +312,10 @@ export async function createOrder(
     items: sanitizedItems,
     shippingAddress: sanitizedAddress,
     paymentInfo: sanitizedPayment,
-    status: "PENDING_APPROVAL",
+    status: orderInput.status || "PENDING_APPROVAL",
+    approvedAt: orderInput.status === "APPROVED" ? (orderInput.approvedAt || new Date().toISOString()) : undefined,
+    createdByAdmin: Boolean(orderInput.createdByAdmin),
+    adminNotes: orderInput.adminNotes || "",
     trackingInfo: initialTracking,
     timeline: initialTimeline,
     createdAt: new Date().toISOString(),

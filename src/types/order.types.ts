@@ -22,8 +22,10 @@ export interface IShippingAddress {
   country: string;
 }
 
+export type PaymentMethod = "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW";
+
 export interface IPaymentInfo {
-  method: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW";
+  method: PaymentMethod;
   couponCode?: string;
   couponDiscountPercentage: number;
 }
@@ -62,6 +64,8 @@ export interface IOrder {
   createdAt: string;
   updatedAt?: string;
   approvedAt?: string;
+  createdByAdmin?: boolean;
+  adminNotes?: string;
 }
 
 export interface ICouponRule {

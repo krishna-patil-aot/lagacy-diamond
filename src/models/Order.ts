@@ -154,6 +154,8 @@ const OrderSchema = new Schema<IOrderDocument>(
     trackingInfo: { type: TrackingInfoSchema },
     timeline: { type: [TimelineEventSchema], default: [] },
     approvedAt: { type: String },
+    createdByAdmin: { type: Boolean, default: false },
+    adminNotes: { type: String, default: "" },
   },
   {
     timestamps: true,

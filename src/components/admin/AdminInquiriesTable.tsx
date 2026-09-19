@@ -48,7 +48,10 @@ import {
   Send,
   Sparkles,
   ShieldCheck,
+  Diamond,
 } from "lucide-react";
+import { AdminCreateOrderModal } from "@/components/admin/AdminCreateOrderModal";
+import { IInquiryPrefill } from "@/hooks/useAdminCreateOrder";
 
 export function AdminInquiriesTable() {
   const {
@@ -75,6 +78,7 @@ export function AdminInquiriesTable() {
     getEmailLink,
   } = useAdminInquiries();
 
+  const [commissionInquiry, setCommissionInquiry] = useState<IInquiryPrefill | null>(null);
   const [notesDraft, setNotesDraft] = useState<string>("");
   const [replyDraft, setReplyDraft] = useState<string>("");
 
@@ -356,12 +360,12 @@ export function AdminInquiriesTable() {
 
                   {/* Inquiry Type & Details */}
                   <div className="space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
                       <span className="font-medium text-stone-800">
                         {formatInquiryType(item.inquiryType)}
                       </span>
                       {item.budgetRange && (
-                        <span className="font-mono text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-xs border border-emerald-200">
+                        <span className="font-mono text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-xs border border-emerald-200 shrink-0">
                           Budget: {item.budgetRange}
                         </span>
                       )}
@@ -381,10 +385,10 @@ export function AdminInquiriesTable() {
 
                   {/* Card Actions */}
                   <div
-                    className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100"
+                    className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-100"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-1.5 flex-1">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-[130px]">
                       <Button
                         type="button"
                         variant="luxury"
@@ -415,7 +419,7 @@ export function AdminInquiriesTable() {
                         size="sm"
                         disabled={isUpdating}
                         onClick={() => handleStatusChange(item.id, "IN_PROGRESS")}
-                        className="h-7 px-2.5 text-xs font-medium text-sky-800 bg-sky-50 border-sky-300 hover:bg-sky-100 inline-flex items-center justify-center whitespace-nowrap"
+                        className="h-7 px-2.5 text-xs font-medium text-sky-800 bg-sky-50 border-sky-300 hover:bg-sky-100 inline-flex items-center justify-center whitespace-nowrap shrink-0"
                       >
                         <span>In Progress</span>
                       </Button>
@@ -428,7 +432,7 @@ export function AdminInquiriesTable() {
                         size="sm"
                         disabled={isUpdating}
                         onClick={() => handleStatusChange(item.id, "RESOLVED")}
-                        className="h-7 px-2.5 text-xs font-medium text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                        className="h-7 px-2.5 text-xs font-medium text-emerald-800 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0"
                       >
                         <CheckCircle2 className="h-3 w-3 shrink-0" />
                         <span>Resolve</span>
@@ -615,6 +619,27 @@ export function AdminInquiriesTable() {
                           <span>View</span>
                         </Button>
 
+                        {/* 2b. Quick Commission Order */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCommissionInquiry({
+                              id: item.id,
+                              inquiryNumber: item.inquiryNumber,
+                              fullName: item.fullName,
+                              email: item.email,
+                              phone: item.phone,
+                            });
+                          }}
+                          className="h-7 px-2 text-xs font-medium gap-1 text-amber-800 bg-amber-50/60 border-amber-300 hover:bg-amber-100 whitespace-nowrap"
+                          title="Commission VIP Order for this Client"
+                        >
+                          <Diamond className="h-3 w-3 shrink-0 text-amber-700" />
+                          <span>Order</span>
+                        </Button>
+
                         {/* 3. Status Toggle Quick Action */}
                         {item.status === "NEW" && (
                           <Button
@@ -762,9 +787,9 @@ export function AdminInquiriesTable() {
           onOpenChange={(open) => !open && setInspectInquiry(null)}
         >
           <DialogContent className="max-w-xl w-[calc(100%-1.5rem)] max-h-[88dvh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-white border border-stone-200 shadow-xl rounded-2xl">
-            <DialogHeader className="border-b border-stone-100 pb-3 sm:pb-4 pr-6 sm:pr-8">
+            <DialogHeader className="border-b border-stone-100 pb-3 sm:pb-4 pr-10 sm:pr-12">
               <div className="flex flex-wrap items-center gap-2">
-                <DialogTitle className="font-serif text-lg sm:text-xl font-bold text-stone-900">
+                <DialogTitle className="font-serif text-base sm:text-xl font-bold text-stone-900 truncate">
                   Inquiry #{inspectInquiry.inquiryNumber}
                 </DialogTitle>
                 {getStatusBadge(inspectInquiry.status)}
@@ -818,6 +843,26 @@ export function AdminInquiriesTable() {
                       <ExternalLink className="h-2.5 w-2.5 text-emerald-500" />
                     </a>
                   )}
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="luxury"
+                    onClick={() => {
+                      setCommissionInquiry({
+                        id: inspectInquiry.id,
+                        inquiryNumber: inspectInquiry.inquiryNumber,
+                        fullName: inspectInquiry.fullName,
+                        email: inspectInquiry.email,
+                        phone: inspectInquiry.phone,
+                      });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 h-auto rounded-md text-[11px] font-medium shadow-2xs whitespace-nowrap"
+                    title="Commission an official vault order for this client"
+                  >
+                    <Diamond className="h-3 w-3 shrink-0" />
+                    <span>Commission Client Order</span>
+                  </Button>
                 </div>
               </div>
 
@@ -1035,6 +1080,14 @@ export function AdminInquiriesTable() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* 6. Admin Create Client Order Modal */}
+      <AdminCreateOrderModal
+        isOpen={Boolean(commissionInquiry)}
+        onClose={() => setCommissionInquiry(null)}
+        prefillInquiry={commissionInquiry}
+        onOrderCreated={() => refetch()}
+      />
     </div>
   );
 }

@@ -4,16 +4,12 @@ import {
   getAllUnreadInquiriesAdmin,
   getInquiriesByTicketNumbers,
 } from "@/lib/inquiry-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { IClientNotificationsResponse } from "@/types/inquiry.types";
 
 export async function GET(request: NextRequest): Promise<NextResponse<IClientNotificationsResponse>> {
   try {
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
     const { searchParams } = new URL(request.url);
     const guestTicketsParam = searchParams.get("tickets");
 

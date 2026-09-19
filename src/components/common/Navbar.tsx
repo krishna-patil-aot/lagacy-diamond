@@ -42,13 +42,13 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-white/80 backdrop-blur-md transition-all">
-      <div className="w-full flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="w-full flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8">
         {/* Brand Identity: DarkGem */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 shrink-0 select-none group"
+          className="flex items-center gap-2 sm:gap-2.5 shrink-0 select-none group min-w-0"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-900 text-stone-50 border border-stone-800 shadow-xs group-hover:scale-105 transition-transform duration-200">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-900 text-stone-50 border border-stone-800 shadow-xs group-hover:scale-105 transition-transform duration-200 shrink-0">
             <Gem className="h-4.5 w-4.5 text-amber-200" />
           </div>
           <div className="flex flex-col min-w-0">
@@ -242,57 +242,93 @@ export function Navbar() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-stone-200 bg-white px-4 sm:px-6 py-4 sm:py-5 space-y-4 animate-in slide-in-from-top duration-150 shadow-md pb-safe max-h-[calc(100vh-4rem)] overflow-y-auto">
-          <nav className="flex flex-col space-y-2 text-sm">
+        <div className="lg:hidden border-b border-stone-200 bg-white px-3 sm:px-6 py-4 space-y-4 animate-in slide-in-from-top duration-150 shadow-lg pb-safe max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <nav className="flex flex-col space-y-1 text-sm">
             <Link
               href="/diamonds"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 text-stone-700 hover:text-stone-900 font-medium"
+              className={`px-3 py-2 rounded-xl transition-colors font-medium flex items-center justify-between ${
+                pathname === "/diamonds"
+                  ? "bg-stone-900 text-white shadow-xs"
+                  : "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+              }`}
             >
-              All Diamonds
+              <span className="flex items-center gap-2.5">
+                <Gem className="h-4 w-4" />
+                <span>All Diamonds</span>
+              </span>
             </Link>
 
             <Link
               href="/about"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 text-stone-700 hover:text-stone-900 font-medium"
+              className={`px-3 py-2 rounded-xl transition-colors font-medium flex items-center justify-between ${
+                pathname === "/about"
+                  ? "bg-stone-900 text-white shadow-xs"
+                  : "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+              }`}
             >
-              About Us
+              <span>About Us</span>
             </Link>
+
             <Link
               href="/wishlist"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 text-stone-700 hover:text-stone-900 font-medium flex items-center justify-between"
+              className={`px-3 py-2 rounded-xl transition-colors font-medium flex items-center justify-between ${
+                pathname === "/wishlist"
+                  ? "bg-stone-900 text-white shadow-xs"
+                  : "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+              }`}
             >
-              <span>Wishlist</span>
+              <span className="flex items-center gap-2.5">
+                <Heart className="h-4 w-4" />
+                <span>Saved Wishlist</span>
+              </span>
               {wishlistCount > 0 && (
-                <Badge variant="outline">{wishlistCount}</Badge>
+                <Badge variant={pathname === "/wishlist" ? "gold" : "outline"} className="text-xs">
+                  {wishlistCount}
+                </Badge>
               )}
             </Link>
+
             <Link
               href="/contact"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 text-stone-700 hover:text-stone-900 font-medium"
+              className={`px-3 py-2 rounded-xl transition-colors font-medium flex items-center justify-between ${
+                pathname === "/contact"
+                  ? "bg-stone-900 text-white shadow-xs"
+                  : "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+              }`}
             >
-              Contact & Help
+              <span>Contact & Help</span>
             </Link>
+
             {activeAuth && !isAdmin && (
               <Link
                 href="/orders"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-1.5 text-stone-700 hover:text-stone-900 font-medium flex items-center gap-2"
+                className={`px-3 py-2 rounded-xl transition-colors font-medium flex items-center gap-2.5 ${
+                  pathname.startsWith("/orders")
+                    ? "bg-stone-900 text-white shadow-xs"
+                    : "text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                }`}
               >
-                <Package className="h-4 w-4 text-stone-600" />
+                <Package className="h-4 w-4" />
                 <span>My Orders & Tracking</span>
               </Link>
             )}
+
             {isAdmin && (
               <Link
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-1.5 text-stone-700 hover:text-stone-900 font-medium flex items-center gap-2"
+                className={`px-3 py-2 rounded-xl transition-colors font-medium flex items-center gap-2.5 ${
+                  pathname.startsWith("/admin")
+                    ? "bg-amber-100 text-amber-950 border border-amber-300 font-semibold"
+                    : "text-amber-900 hover:bg-amber-50"
+                }`}
               >
-                <Shield className="h-4 w-4 text-stone-600" />
+                <Shield className="h-4 w-4 text-amber-700" />
                 <span>Curator Admin Portal</span>
               </Link>
             )}
@@ -300,24 +336,24 @@ export function Navbar() {
 
           <div className="pt-3 border-t border-stone-100">
             {activeAuth && activeUser ? (
-              <div className="space-y-2">
+              <div className="rounded-xl bg-stone-50 border border-stone-200/80 p-3 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-stone-900 text-xs">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <div className="font-semibold text-stone-900 text-xs truncate">
                       {activeUser.name}
                     </div>
-                    <div className="text-[11px] text-stone-500">
+                    <div className="text-[11px] text-stone-500 truncate">
                       {activeUser.email}
                     </div>
                   </div>
-                  <Badge variant={isAdmin ? "gold" : "outline"}>
+                  <Badge variant={isAdmin ? "gold" : "outline"} className="shrink-0 text-[10px]">
                     {activeUser.role}
                   </Badge>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-center text-xs"
+                  className="w-full justify-center text-xs h-8 bg-white"
                   onClick={() => {
                     logout();
                     setMobileMenuOpen(false);
@@ -330,12 +366,12 @@ export function Navbar() {
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full h-9 text-xs">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="luxury" size="sm" className="w-full">
+                  <Button variant="luxury" size="sm" className="w-full h-9 text-xs">
                     Register
                   </Button>
                 </Link>

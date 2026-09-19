@@ -51,8 +51,10 @@ import {
   Mail,
   RefreshCw,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { useOrderDocumentsEmail } from "@/hooks/useOrderDocumentsEmail";
+import { AdminCreateOrderModal } from "@/components/admin/AdminCreateOrderModal";
 
 export function AdminOrderApprovalList() {
   const {
@@ -81,6 +83,7 @@ export function AdminOrderApprovalList() {
     isUpdating,
   } = useAdminOrders();
 
+  const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState<boolean>(false);
   const [inspectOrderId, setInspectOrderId] = useState<string | null>(null);
   const inspectOrder = useMemo(() => {
     if (!inspectOrderId) return null;
@@ -172,7 +175,17 @@ export function AdminOrderApprovalList() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-stone-500 self-start sm:self-center shrink-0">
+        <div className="flex items-center gap-2 text-xs font-mono text-stone-500 self-start sm:self-center shrink-0 flex-wrap">
+          <Button
+            type="button"
+            variant="luxury"
+            size="sm"
+            onClick={() => setIsCreateOrderModalOpen(true)}
+            className="h-8 text-xs font-medium gap-1.5 shadow-2xs whitespace-nowrap"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>+ Create Client Order</span>
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -1042,6 +1055,13 @@ export function AdminOrderApprovalList() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* 6. Admin Create Client Order Modal */}
+      <AdminCreateOrderModal
+        isOpen={isCreateOrderModalOpen}
+        onClose={() => setIsCreateOrderModalOpen(false)}
+        onOrderCreated={() => refetch()}
+      />
     </div>
   );
 }

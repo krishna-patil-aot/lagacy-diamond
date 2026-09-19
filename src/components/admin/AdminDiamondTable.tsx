@@ -148,8 +148,143 @@ export function AdminDiamondTable({
         </div>
       </div>
 
-      {/* 3. Shadcn UI Table */}
-      <div className="rounded-xl border border-stone-200 overflow-hidden bg-white shadow-xs">
+      {/* 3. Mobile Card View (visible on < lg) */}
+      <div className="block lg:hidden space-y-3">
+        {diamonds.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-stone-200 bg-stone-50/50 p-8 text-center space-y-2">
+            <Gem className="mx-auto h-7 w-7 text-stone-300" />
+            <p className="text-xs font-medium text-stone-600">
+              No gemstone lots found matching your search criteria.
+            </p>
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSearchChange("")}
+                className="text-xs text-stone-500 underline"
+              >
+                Clear Search Filter
+              </Button>
+            )}
+          </div>
+        ) : (
+          diamonds.map((diamond) => {
+            const img =
+              diamond.images && diamond.images.length > 0
+                ? diamond.images[0]
+                : "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=200&q=80";
+
+            return (
+              <div
+                key={diamond._id}
+                className="rounded-xl border border-stone-200 bg-white p-3.5 space-y-3 shadow-2xs"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="relative h-14 w-14 rounded-lg overflow-hidden border border-stone-200 shrink-0 bg-stone-50">
+                    <Image
+                      src={img}
+                      alt={diamond.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="font-semibold text-stone-900 text-xs sm:text-sm truncate">
+                        {diamond.name}
+                      </h4>
+                      {diamond.featured && (
+                        <Badge variant="cyan" className="text-[9px] gap-1 shrink-0 py-0">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          Featured
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-[10px] font-mono text-amber-700 mt-0.5">
+                      SKU: {diamond.sku}
+                    </div>
+                    <div className="text-[11px] font-mono text-stone-600 mt-1">
+                      {formatCarat(diamond.carat)} • {diamond.shape} • {diamond.color}/{diamond.clarity} • {diamond.cut}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="font-mono font-bold text-stone-900 text-sm">
+                        {formatPrice(diamond.finalPrice)}
+                      </span>
+                      {diamond.discountPercentage > 0 && (
+                        <span className="text-[10px] font-mono text-stone-400 line-through">
+                          {formatPrice(diamond.price)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-mono text-stone-400 truncate block">
+                      {diamond.lab} #{diamond.certificateNumber}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${
+                        diamond.stockQuantity > 0
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                      }`}
+                    >
+                      {diamond.stockQuantity > 0
+                        ? `${diamond.stockQuantity}`
+                        : "Sold"}
+                    </span>
+
+                    <Link
+                      href={`/diamonds/${diamond._id}`}
+                      target="_blank"
+                      title="View Live Listing"
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-stone-400 hover:text-stone-900"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(diamond)}
+                      className="h-7 w-7 p-0 text-stone-400 hover:text-stone-900"
+                      title="Edit Diamond"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(diamond)}
+                      className="h-7 w-7 p-0 text-stone-400 hover:text-rose-600"
+                      title="Delete Diamond"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* 4. Desktop Shadcn UI Table (visible on >= lg) */}
+      <div className="hidden lg:block rounded-xl border border-stone-200 overflow-hidden bg-white shadow-xs">
         <Table>
           <TableHeader>
             <TableRow>

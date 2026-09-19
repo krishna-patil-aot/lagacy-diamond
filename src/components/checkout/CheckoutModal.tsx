@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ChevronLeft,
   Lock,
+  ShieldAlert,
 } from "lucide-react";
 import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
 import { toast } from "sonner";
@@ -96,6 +97,25 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           </span>
         </div>
       </div>
+
+      {/* Curator Administrator Guidance Banner */}
+      {user?.role === "ADMIN" && (
+        <div className="mb-4 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-3 sm:p-3.5 text-xs text-amber-950 flex items-start gap-2.5 shadow-2xs">
+          <ShieldAlert className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-semibold flex items-center gap-1.5 text-amber-900">
+              <span>Administrator Session Active</span>
+              <Badge variant="gold" className="text-[10px] px-1.5 py-0 h-4">Vault Curator</Badge>
+            </div>
+            <p className="text-[11px] text-amber-800 leading-relaxed">
+              You are in the storefront checkout. To create and commission an official acquisition directly for a private client or inquiry, please use the{" "}
+              <Link href="/admin?tab=orders" onClick={onClose} className="font-semibold underline hover:text-amber-950">
+                Admin Portal Concierge Order Tool
+              </Link>. Orders finalized here will be registered directly to your administrative credentials.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* STEP 1: CART ITEMS REVIEW */}
       {step === "CART" && (

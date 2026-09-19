@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getInquiryById, getInquiryByNumber } from "@/lib/inquiry-repository";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { IGetInquiryDetailsResponse } from "@/types/inquiry.types";
 
 export async function GET(
@@ -26,11 +27,10 @@ export async function GET(
       );
     }
 
-    const authHeader = request.headers.get("authorization");
-    const cookieToken = request.cookies.get("diamond_auth_token")?.value;
-    const isPotentiallyAdmin = Boolean(authHeader || cookieToken);
+    const verified = getAuthenticatedUserFromRequest(request);
+    const isAdmin = verified?.role === "ADMIN";
 
-    const safeInquiry = isPotentiallyAdmin
+    const safeInquiry = isAdmin
       ? inquiry
       : {
           ...inquiry,

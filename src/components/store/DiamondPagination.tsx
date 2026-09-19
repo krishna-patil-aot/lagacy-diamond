@@ -9,7 +9,6 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Layers,
 } from "lucide-react";
 
 export interface DiamondPaginationProps {
@@ -48,84 +47,74 @@ export function DiamondPagination({
 
   return (
     <div
-      className={`rounded-2xl border border-stone-200 bg-white/90 p-4 sm:p-5 shadow-xs backdrop-blur-xs flex flex-col md:flex-row items-center justify-between gap-4 transition-all ${className}`}
+      className={`rounded-2xl border border-stone-200/90 bg-white p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-3.5 transition-all ${className}`}
     >
-      {/* Left: Summary & Cards Per Page Selector */}
-      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 w-full md:w-auto text-xs text-stone-600">
+      {/* Summary & Page Size Controls */}
+      <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3 w-full lg:w-auto text-xs text-stone-600">
         {/* Count summary */}
-        <div className="font-mono text-[11px] sm:text-xs">
-          Showing{" "}
-          <span className="font-semibold text-stone-900">{startRecord}</span>{" "}
-          to <span className="font-semibold text-stone-900">{endRecord}</span>{" "}
-          of{" "}
-          <span className="font-semibold text-stone-900">{totalCount}</span>{" "}
-          diamonds
-          <span className="ml-1 text-stone-400">
+        <div className="text-xs text-stone-600">
+          Showing <strong className="text-stone-900 font-semibold">{startRecord}–{endRecord}</strong> of{" "}
+          <strong className="text-stone-900 font-semibold">{totalCount}</strong> diamonds
+          <span className="ml-1.5 font-mono text-[11px] text-stone-400">
             (Page {currentPage} of {totalPages})
           </span>
         </div>
 
-        <span className="hidden sm:inline-block text-stone-300">|</span>
+        <div className="hidden sm:block h-3.5 w-px bg-stone-200" />
 
-        {/* Page Size Selector (5, 10, 15 cards) */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-[11px] font-mono text-stone-500">
-            <Layers className="h-3.5 w-3.5 text-amber-700" />
-            <span>Cards per page:</span>
-          </div>
-
-          <div className="flex items-center gap-1 bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+        {/* Page Size Selector */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-stone-500">Per page:</span>
+          <div className="inline-flex items-center p-0.5 rounded-lg bg-stone-100 border border-stone-200/80">
             {pageSizeOptions.map((size) => {
               const isSelected = limit === size;
               return (
-                <Button
+                <button
                   key={size}
                   type="button"
-                  variant={isSelected ? "luxury" : "ghost"}
-                  size="sm"
                   onClick={() => setPageSize(size)}
-                  className={`h-6 px-2.5 text-[11px] font-mono rounded-md transition-all ${
+                  className={`h-6 min-w-[24px] px-2 text-[11px] font-mono rounded-md transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-stone-900 text-white font-bold shadow-2xs"
+                      ? "bg-stone-900 text-white font-semibold shadow-2xs"
                       : "text-stone-600 hover:text-stone-900 hover:bg-stone-200/60"
                   }`}
                 >
                   {size}
-                </Button>
+                </button>
               );
             })}
           </div>
         </div>
       </div>
 
-      {/* Right: Page Navigation Buttons */}
-      <div className="flex items-center justify-center gap-1.5 w-full md:w-auto">
-        {/* First Page button */}
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-center gap-1 w-full lg:w-auto pt-1 lg:pt-0 border-t lg:border-t-0 border-stone-100">
+        {/* First Page */}
         <Button
           type="button"
           variant="outline"
           size="sm"
           disabled={!hasPrevPage}
           onClick={firstPage}
-          className="h-8 w-8 p-0 text-stone-600 disabled:opacity-40 hover:bg-stone-100"
+          className="h-8 w-8 p-0 rounded-lg text-stone-600 disabled:opacity-30 hover:bg-stone-100"
           title="First Page"
           aria-label="First Page"
         >
-          <ChevronsLeft className="h-4 w-4" />
+          <ChevronsLeft className="h-3.5 w-3.5" />
         </Button>
 
-        {/* Previous button */}
+        {/* Previous */}
         <Button
           type="button"
           variant="outline"
           size="sm"
           disabled={!hasPrevPage}
           onClick={prevPage}
-          className="h-8 w-8 p-0 text-stone-600 disabled:opacity-40 hover:bg-stone-100"
+          className="h-8 w-8 p-0 rounded-lg text-stone-600 disabled:opacity-30 hover:bg-stone-100"
           title="Previous Page"
           aria-label="Previous Page"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-3.5 w-3.5" />
         </Button>
 
         {/* Numbered Page Buttons */}
@@ -135,7 +124,7 @@ export function DiamondPagination({
               return (
                 <span
                   key={`ellipsis-${idx}`}
-                  className="px-1.5 text-stone-400 font-mono text-xs select-none"
+                  className="px-1 text-stone-400 font-mono text-xs select-none"
                 >
                   …
                 </span>
@@ -150,9 +139,9 @@ export function DiamondPagination({
                 variant={isCurrent ? "luxury" : "outline"}
                 size="sm"
                 onClick={() => goToPage(p)}
-                className={`h-8 min-w-[2rem] px-2 text-xs font-mono transition-all ${
+                className={`h-8 min-w-[32px] px-2 text-xs font-mono rounded-lg transition-all ${
                   isCurrent
-                    ? "bg-stone-900 text-white font-bold shadow-xs hover:bg-stone-800"
+                    ? "bg-stone-900 text-white font-semibold shadow-xs hover:bg-stone-800"
                     : "text-stone-700 hover:bg-stone-100 border-stone-200"
                 }`}
                 aria-current={isCurrent ? "page" : undefined}
@@ -164,32 +153,32 @@ export function DiamondPagination({
           })}
         </div>
 
-        {/* Next button */}
+        {/* Next */}
         <Button
           type="button"
           variant="outline"
           size="sm"
           disabled={!hasNextPage}
           onClick={nextPage}
-          className="h-8 w-8 p-0 text-stone-600 disabled:opacity-40 hover:bg-stone-100"
+          className="h-8 w-8 p-0 rounded-lg text-stone-600 disabled:opacity-30 hover:bg-stone-100"
           title="Next Page"
           aria-label="Next Page"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3.5 w-3.5" />
         </Button>
 
-        {/* Last Page button */}
+        {/* Last */}
         <Button
           type="button"
           variant="outline"
           size="sm"
           disabled={!hasNextPage}
           onClick={lastPage}
-          className="h-8 w-8 p-0 text-stone-600 disabled:opacity-40 hover:bg-stone-100"
+          className="h-8 w-8 p-0 rounded-lg text-stone-600 disabled:opacity-30 hover:bg-stone-100"
           title="Last Page"
           aria-label="Last Page"
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronsRight className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

@@ -10,7 +10,11 @@ export const DiamondConciergeTrigger: React.FC = () => {
   return (
     <>
       {/* Floating AI Concierge Button */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
+      <div
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 transition-opacity duration-200 ${
+          isOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+      >
         <button
           onClick={() => setIsOpen(true)}
           className="group relative flex items-center gap-2 sm:gap-2.5 bg-gradient-to-r from-stone-900 via-stone-950 to-stone-900 text-stone-100 border border-amber-500/40 hover:border-amber-400 px-3 py-2.5 sm:px-4 sm:py-3 rounded-full shadow-2xl hover:shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"

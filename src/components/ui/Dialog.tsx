@@ -27,8 +27,10 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    hideCloseButton?: boolean;
+  }
+>(({ className, children, hideCloseButton, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -40,10 +42,12 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-2.5 top-2.5 sm:right-4 sm:top-4 z-30 rounded-full p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition-colors focus:outline-none disabled:pointer-events-none bg-white/90 sm:bg-transparent backdrop-blur-xs shadow-xs sm:shadow-none">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
+      {!hideCloseButton && (
+        <DialogPrimitive.Close className="absolute right-2.5 top-2.5 sm:right-4 sm:top-4 z-30 rounded-full p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition-colors focus:outline-none disabled:pointer-events-none bg-white/90 sm:bg-transparent backdrop-blur-xs shadow-xs sm:shadow-none">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
@@ -133,19 +137,50 @@ export function Dialog({
     }
   };
 
-  return (
-    <DialogRoot open={isCurrentlyOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className={className}>
-        {(title || description) && (
+  // 1. If title or description is passed, use the managed DialogContent wrapper
+  if (title || description) {
+    return (
+      <DialogRoot open={isCurrentlyOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className={className}>
           <DialogHeader>
             {title && <DialogTitle>{title}</DialogTitle>}
             {description && (
               <DialogDescription>{description}</DialogDescription>
             )}
           </DialogHeader>
-        )}
+          {children}
+        </DialogContent>
+      </DialogRoot>
+    );
+  }
+
+  // 2. Check if children already contains a DialogContent to prevent duplicate portals
+  const isDirectContent =
+    React.isValidElement(children) &&
+    ((children.type as { displayName?: string })?.displayName ===
+      "DialogContent" ||
+      children.type === DialogContent);
+
+  if (isDirectContent) {
+    return (
+      <DialogRoot open={isCurrentlyOpen} onOpenChange={handleOpenChange}>
         {children}
-      </DialogContent>
+      </DialogRoot>
+    );
+  }
+
+  // 3. If a custom className was passed to Dialog without DialogContent children, wrap it
+  if (className) {
+    return (
+      <DialogRoot open={isCurrentlyOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className={className}>{children}</DialogContent>
+      </DialogRoot>
+    );
+  }
+
+  return (
+    <DialogRoot open={isCurrentlyOpen} onOpenChange={handleOpenChange}>
+      {children}
     </DialogRoot>
   );
 }

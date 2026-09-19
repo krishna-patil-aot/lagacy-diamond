@@ -50,6 +50,7 @@ export interface IDiamondDimensions {
 
 export interface IDiamond {
   _id: string;
+  id?: string;
   name: string;
   sku: string;
   shape: DiamondShape;

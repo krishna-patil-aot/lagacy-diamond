@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllInquiriesAdmin, getInquiryStats } from "@/lib/inquiry-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { InquiryStatus, IAdminInquiriesResponse } from "@/types/inquiry.types";
 
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<IAdminInquiriesResponse>> {
   try {
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
 
     if (!verified || verified.role !== "ADMIN") {
       return NextResponse.json<IAdminInquiriesResponse>(

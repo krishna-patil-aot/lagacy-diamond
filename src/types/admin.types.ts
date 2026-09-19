@@ -124,3 +124,30 @@ export interface IStoreDeleteDialogState {
   name: string;
   loading: boolean;
 }
+
+export interface IAdminCreateOrderItem {
+  diamondId: string;
+  quantity: number;
+}
+
+export interface IAdminCreateOrderInput {
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  items: IAdminCreateOrderItem[];
+  paymentMethod: "VAULT_ESCROW" | "WIRE_TRANSFER" | "CREDIT_CARD";
+  discountPercentage?: number;
+  adminNotes?: string;
+  inquiryId?: string;
+}
+
+export interface IAdminCreateOrderResponse {
+  success: boolean;
+  data?: import("./order.types").IOrder;
+  error?: string;
+}

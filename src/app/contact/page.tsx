@@ -336,17 +336,17 @@ export default function ContactPage() {
               </div>
 
               <div className="border-t border-stone-100 pt-4 space-y-2.5 text-xs text-stone-600">
-                <div className="flex items-center gap-2">
-                  <Phone className="h-3.5 w-3.5 text-amber-700" />
-                  <span>Call / Concierge: {siteConfig.contact.phoneDisplay}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Phone className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                  <span className="truncate">Call / Concierge: {siteConfig.contact.phoneDisplay}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-3.5 w-3.5 text-amber-700" />
-                  <span>{siteConfig.contact.supportEmail}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Mail className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                  <span className="truncate">{siteConfig.contact.supportEmail}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-amber-700" />
-                  <span>{siteConfig.contact.hours}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Clock className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                  <span className="truncate">{siteConfig.contact.hours}</span>
                 </div>
               </div>
             </div>

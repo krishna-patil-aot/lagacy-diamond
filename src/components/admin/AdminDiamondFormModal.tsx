@@ -2,7 +2,14 @@
 
 import React from "react";
 import Image from "next/image";
-import { IDiamond, DiamondShape, DiamondColor, DiamondClarity, DiamondCut, CertificationLab } from "@/types/diamond.types";
+import {
+  IDiamond,
+  DiamondShape,
+  DiamondColor,
+  DiamondClarity,
+  DiamondCut,
+  CertificationLab,
+} from "@/types/diamond.types";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -10,7 +17,13 @@ import { Textarea } from "@/components/ui/Textarea";
 import { FormSelect, FormSelectOption } from "@/components/ui/FormSelect";
 import { useAdminDiamondForm } from "@/hooks/useAdminDiamondForm";
 import { formatPrice } from "@/lib/utils";
-import { Plus, Trash2, Calculator, Sparkles, Image as ImageIcon } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Calculator,
+  Sparkles,
+  Image as ImageIcon,
+} from "lucide-react";
 
 const SHAPE_OPTIONS: FormSelectOption[] = [
   { value: "Round", label: "Round" },
@@ -201,7 +214,9 @@ export function AdminDiamondFormModal({
               <FormSelect
                 label="Clarity Grade *"
                 value={watch("clarity")}
-                onValueChange={(val) => setValue("clarity", val as DiamondClarity)}
+                onValueChange={(val) =>
+                  setValue("clarity", val as DiamondClarity)
+                }
                 options={CLARITY_OPTIONS}
                 error={errors.clarity?.message}
               />
@@ -220,15 +235,15 @@ export function AdminDiamondFormModal({
         </div>
 
         {/* 3. Pricing, Real-time Discount & Savings Calculator */}
-        <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-4 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-3 sm:p-4 space-y-4">
+          <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-700 font-mono">
-              <Calculator className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Valuation & Dynamic Discount Engine</span>
+              <Calculator className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">Valuation & Dynamic Discount</span>
             </div>
 
             {calculatedSavings > 0 && (
-              <span className="text-xs font-mono text-emerald-700 font-semibold">
+              <span className="text-xs font-mono text-emerald-700 font-semibold self-start xs:self-auto bg-emerald-50/90 px-2 py-0.5 rounded-md border border-emerald-200">
                 Client Saves {formatPrice(calculatedSavings)} ({watch("discountPercentage")}%)
               </span>
             )}
@@ -348,7 +363,7 @@ export function AdminDiamondFormModal({
               onValueChange={(val) =>
                 setValue(
                   "polish",
-                  val as "Ideal" | "Excellent" | "Very Good" | "Good"
+                  val as "Ideal" | "Excellent" | "Very Good" | "Good",
                 )
               }
               options={POLISH_OPTIONS}
@@ -361,7 +376,7 @@ export function AdminDiamondFormModal({
               onValueChange={(val) =>
                 setValue(
                   "symmetry",
-                  val as "Ideal" | "Excellent" | "Very Good" | "Good"
+                  val as "Ideal" | "Excellent" | "Very Good" | "Good",
                 )
               }
               options={POLISH_OPTIONS}
@@ -374,7 +389,7 @@ export function AdminDiamondFormModal({
               onValueChange={(val) =>
                 setValue(
                   "fluorescence",
-                  val as "None" | "Faint" | "Medium" | "Strong"
+                  val as "None" | "Faint" | "Medium" | "Strong",
                 )
               }
               options={FLUOR_OPTIONS}
@@ -484,10 +499,20 @@ export function AdminDiamondFormModal({
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-initial text-xs sm:text-sm justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 sm:flex-initial text-xs sm:text-sm justify-center"
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="luxury" isLoading={isSubmitting} className="flex-1 sm:flex-initial text-xs sm:text-sm justify-center">
+            <Button
+              type="submit"
+              variant="luxury"
+              isLoading={isSubmitting}
+              className="flex-1 sm:flex-initial text-xs sm:text-sm justify-center"
+            >
               {diamond ? "Update Diamond" : "Register to Vault"}
             </Button>
           </div>

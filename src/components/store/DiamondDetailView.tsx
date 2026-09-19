@@ -144,7 +144,7 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
                 </div>
 
                 {/* Inscription Watermark */}
-                <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 backdrop-blur-xs px-3 py-1 text-xs font-mono text-stone-800 border border-stone-200 shadow-xs">
+                <div className="absolute bottom-4 right-4 max-w-[calc(100%-2rem)] truncate rounded-lg bg-white/90 backdrop-blur-xs px-3 py-1 text-xs font-mono text-stone-800 border border-stone-200 shadow-xs pointer-events-none">
                   {diamond.lab} Inscribed: {diamond.certificateNumber}
                 </div>
               </div>
@@ -287,39 +287,39 @@ export function DiamondDetailView({ diamond }: DiamondDetailViewProps) {
               Gemological Proportions
             </h3>
             <div className="divide-y divide-stone-100">
-              <div className="flex justify-between py-1.5">
-                <span className="text-stone-500">Measurements (L × W × D)</span>
-                <span className="font-mono text-stone-800">
+              <div className="flex items-center justify-between gap-2 py-1.5">
+                <span className="text-stone-500 truncate">Measurements (L × W × D)</span>
+                <span className="font-mono text-stone-800 shrink-0 text-right">
                   {diamond.dimensions.length} × {diamond.dimensions.width} ×{" "}
                   {diamond.dimensions.depth} mm
                 </span>
               </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-stone-500">Table Percentage</span>
-                <span className="font-mono text-stone-800">
+              <div className="flex items-center justify-between gap-2 py-1.5">
+                <span className="text-stone-500 truncate">Table Percentage</span>
+                <span className="font-mono text-stone-800 shrink-0 text-right">
                   {diamond.tablePercentage}%
                 </span>
               </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-stone-500">Depth Percentage</span>
-                <span className="font-mono text-stone-800">
+              <div className="flex items-center justify-between gap-2 py-1.5">
+                <span className="text-stone-500 truncate">Depth Percentage</span>
+                <span className="font-mono text-stone-800 shrink-0 text-right">
                   {diamond.depthPercentage}%
                 </span>
               </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-stone-500">Polish / Symmetry</span>
-                <span className="text-stone-800">
+              <div className="flex items-center justify-between gap-2 py-1.5">
+                <span className="text-stone-500 truncate">Polish / Symmetry</span>
+                <span className="font-mono text-stone-800 shrink-0 text-right">
                   {diamond.polish} / {diamond.symmetry}
                 </span>
               </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-stone-500">Current Stock</span>
+              <div className="flex items-center justify-between gap-2 py-1.5">
+                <span className="text-stone-500 truncate">Current Stock</span>
                 {isOutOfStock ? (
-                  <span className="font-mono text-rose-600 font-semibold text-xs">
+                  <span className="font-mono text-rose-600 font-semibold text-xs shrink-0 text-right">
                     0 in vault (Sold Out)
                   </span>
                 ) : (
-                  <span className="font-mono text-stone-800">
+                  <span className="font-mono text-stone-800 shrink-0 text-right">
                     {diamond.stockQuantity} in foundry
                   </span>
                 )}

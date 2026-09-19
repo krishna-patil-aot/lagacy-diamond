@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateInquiryStatus, getInquiryById } from "@/lib/inquiry-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { InquiryStatus, IUpdateInquiryStatusResponse } from "@/types/inquiry.types";
 
 export async function PATCH(
@@ -9,11 +9,7 @@ export async function PATCH(
 ): Promise<NextResponse<IUpdateInquiryStatusResponse>> {
   try {
     const { id } = await params;
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
 
     if (!verified || verified.role !== "ADMIN") {
       return NextResponse.json<IUpdateInquiryStatusResponse>(

@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useForm, useWatch, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { diamondFormSchema, DiamondFormValues } from "@/lib/validations/diamond.schema";
+import {
+  diamondFormSchema,
+  DiamondFormValues,
+} from "@/lib/validations/diamond.schema";
 import { IDiamond } from "@/types/diamond.types";
 import { useAuthStore } from "@/store/useAuthStore";
 import { calculateDiscountedPrice } from "@/lib/utils";
@@ -50,7 +53,7 @@ const DEFAULT_FORM_VALUES: DiamondFormValues = {
 
 export function useAdminDiamondForm(
   initialDiamond?: IDiamond | null,
-  onSuccess?: () => void
+  onSuccess?: () => void,
 ): IUseAdminDiamondFormReturn {
   const [imageUrlInput, setImageUrlInput] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -66,10 +69,14 @@ export function useAdminDiamondForm(
   const { reset, setValue, control } = form;
 
   const currentPrice = useWatch({ control, name: "price" }) || 0;
-  const currentDiscount = useWatch({ control, name: "discountPercentage" }) || 0;
+  const currentDiscount =
+    useWatch({ control, name: "discountPercentage" }) || 0;
   const currentImages = useWatch({ control, name: "images" }) || [];
 
-  const calculatedFinalPrice = calculateDiscountedPrice(Number(currentPrice), Number(currentDiscount));
+  const calculatedFinalPrice = calculateDiscountedPrice(
+    Number(currentPrice),
+    Number(currentDiscount),
+  );
   const calculatedSavings = Number(currentPrice) - calculatedFinalPrice;
 
   useEffect(() => {
@@ -94,7 +101,10 @@ export function useAdminDiamondForm(
         polish: initialDiamond.polish,
         symmetry: initialDiamond.symmetry,
         fluorescence: initialDiamond.fluorescence,
-        images: initialDiamond.images.length > 0 ? initialDiamond.images : DEFAULT_FORM_VALUES.images,
+        images:
+          initialDiamond.images.length > 0
+            ? initialDiamond.images
+            : DEFAULT_FORM_VALUES.images,
         description: initialDiamond.description,
         stockQuantity: initialDiamond.stockQuantity,
         featured: initialDiamond.featured,
@@ -106,7 +116,9 @@ export function useAdminDiamondForm(
 
   const handleAddImage = () => {
     if (!imageUrlInput.trim()) return;
-    setValue("images", [...currentImages, imageUrlInput.trim()], { shouldValidate: true });
+    setValue("images", [...currentImages, imageUrlInput.trim()], {
+      shouldValidate: true,
+    });
     setImageUrlInput("");
   };
 
@@ -148,7 +160,9 @@ export function useAdminDiamondForm(
     };
 
     try {
-      const url = initialDiamond ? `/api/diamonds/${initialDiamond._id}` : "/api/diamonds";
+      const url = initialDiamond
+        ? `/api/diamonds/${initialDiamond._id}`
+        : "/api/diamonds";
       const method = initialDiamond ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -172,7 +186,7 @@ export function useAdminDiamondForm(
           : "New Diamond Registered to Vault!",
         {
           description: `${values.name} (${values.carat} ct ${values.shape}, ${values.sku})`,
-        }
+        },
       );
       return true;
     } catch (err) {

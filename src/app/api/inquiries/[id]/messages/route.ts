@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addInquiryMessage, getInquiryById, getInquiryByNumber } from "@/lib/inquiry-repository";
-import { verifyToken } from "@/lib/auth";
+import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { broadcastInquiryEvent, INQUIRY_EVENTS } from "@/lib/inquiry-events";
 import { sendInquiryReplyNotificationEmail } from "@/lib/mailer";
 import {
@@ -44,10 +44,7 @@ export async function POST(
     }
 
     // Determine sender identity & clearance
-    const token =
-      request.cookies.get("diamond_auth_token")?.value ||
-      request.headers.get("authorization")?.replace("Bearer ", "");
-    const verified = token ? verifyToken(token) : null;
+    const verified = getAuthenticatedUserFromRequest(request);
     const isAdmin = verified?.role === "ADMIN";
 
     let sender: MessageSenderType = "CLIENT";

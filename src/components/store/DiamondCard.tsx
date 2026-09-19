@@ -44,7 +44,7 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
 
         {/* Top Badges (Discount & Certificate & Stock) */}
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
+        <div className="absolute left-3 top-3 right-12 flex flex-wrap gap-1.5 z-10 pointer-events-none">
           {diamond.stockQuantity <= 0 && (
             <Badge
               variant="destructive"
@@ -102,8 +102,8 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
         </div>
 
         {/* Floating Lab Tag */}
-        <div className="absolute bottom-2.5 left-3 z-10">
-          <span className="rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-mono tracking-wider text-stone-800 border border-stone-200/80 shadow-xs">
+        <div className="absolute bottom-2.5 left-3 right-3 z-10 pointer-events-none">
+          <span className="inline-block max-w-full truncate rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-mono tracking-wider text-stone-800 border border-stone-200/80 shadow-xs">
             {diamond.lab} Inscribed • {diamond.certificateNumber}
           </span>
         </div>
@@ -152,15 +152,18 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
             <span className="block text-[8px] sm:text-[9px] uppercase text-stone-400 font-mono truncate">
               Cut
             </span>
-            <span className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block">
-              {diamond.cut.slice(0, 4)}
+            <span
+              className="font-semibold text-stone-800 text-[11px] sm:text-xs truncate block"
+              title={diamond.cut}
+            >
+              {diamond.cut === "Very Good" ? "VG" : diamond.cut}
             </span>
           </div>
         </div>
 
         {/* Pricing & CTA */}
         <div className="mt-auto flex items-end justify-between pt-2.5 border-t border-stone-100 gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             {diamond.discountPercentage > 0 ? (
               <div className="flex items-baseline gap-1.5 flex-wrap">
                 <span className="text-base sm:text-lg font-bold text-stone-900 font-mono tracking-tight">
@@ -181,7 +184,7 @@ export function DiamondCard({ diamond, onQuickView }: DiamondCardProps) {
           </div>
 
           <Link href={`/diamonds/${diamond._id}`} className="shrink-0">
-            <span className="text-xs font-semibold text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-700 transition-all py-1 px-1 -mr-1 inline-block">
+            <span className="text-xs font-semibold text-stone-800 hover:text-stone-600 underline underline-offset-4 decoration-stone-300 hover:decoration-stone-700 transition-all py-1 px-1 -mr-1 inline-block whitespace-nowrap">
               {diamond.stockQuantity <= 0 ? "Inspect / Alert →" : "Inspect →"}
             </span>
           </Link>

@@ -191,17 +191,18 @@ export default function HomePage() {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 rounded-full border border-amber-900/20 bg-white/90 px-4 py-1.5 text-xs font-mono font-medium text-amber-900 shadow-xs backdrop-blur-md"
+            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-amber-900/20 bg-white/90 px-3 sm:px-4 py-1 sm:py-1.5 text-[10px] sm:text-xs font-mono font-medium text-amber-900 shadow-xs backdrop-blur-md max-w-full"
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-700 animate-pulse" />
-            <span>BORN IN DARKNESS • PERFECTED IN LIGHT • 100% SOLAR TYPE IIa</span>
+            <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-700 animate-pulse shrink-0" />
+            <span className="hidden sm:inline">BORN IN DARKNESS • PERFECTED IN LIGHT • 100% SOLAR TYPE IIa</span>
+            <span className="sm:hidden tracking-wider truncate">100% SOLAR TYPE IIa • SOVEREIGN</span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="font-serif text-3xl xs:text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-stone-900 leading-[1.08]"
+            className="font-serif text-2xl xs:text-3xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-stone-900 leading-[1.1] break-words"
           >
             Where Cosmic Carbon <br />
             <span className="italic font-normal text-amber-800">
@@ -257,16 +258,17 @@ export default function HomePage() {
             <span className="text-[10px] uppercase tracking-[0.25em] text-stone-500 font-mono block mb-3">
               Explore Sovereign Solitaire Cuts
             </span>
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5">
               {QUICK_SHAPES.map((item) => (
                 <motion.button
                   key={item.shape}
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleShapeSelect(item.shape)}
-                  className="rounded-full border border-stone-200 bg-white/90 px-4 py-1.5 text-xs font-medium text-stone-700 backdrop-blur-md transition-all hover:border-amber-400 hover:bg-white hover:text-stone-900 cursor-pointer shadow-xs"
+                  className="rounded-full border border-stone-200 bg-white/90 px-3 sm:px-4 py-1 sm:py-1.5 text-xs font-medium text-stone-700 backdrop-blur-md transition-all hover:border-amber-400 hover:bg-white hover:text-stone-900 cursor-pointer shadow-xs"
                 >
-                  {item.label}
+                  <span className="sm:hidden">{item.shape}</span>
+                  <span className="hidden sm:inline">{item.label}</span>
                 </motion.button>
               ))}
             </div>
@@ -499,23 +501,23 @@ export default function HomePage() {
               </p>
 
               {/* Live Optical Metrics Grid */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-center">
-                  <div className="text-[10px] font-mono uppercase text-stone-500">Light Return</div>
-                  <div className="text-base font-bold text-stone-900 mt-1">{selectedShape.lightReturn}</div>
-                  <div className="text-[9px] font-mono text-stone-400">Total Internal Refl.</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2">
+                <div className="p-2 sm:p-3 rounded-xl bg-stone-50 border border-stone-200 text-center">
+                  <div className="text-[9px] sm:text-[10px] font-mono uppercase text-stone-500 truncate">Light Return</div>
+                  <div className="text-sm sm:text-base font-bold text-stone-900 mt-0.5 sm:mt-1 font-mono">{selectedShape.lightReturn}</div>
+                  <div className="text-[8px] sm:text-[9px] font-mono text-stone-400 hidden sm:block">Total Internal Refl.</div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-center">
-                  <div className="text-[10px] font-mono uppercase text-stone-500">Fire Dispersion</div>
-                  <div className="text-base font-bold text-amber-800 mt-1">{selectedShape.fireScore}</div>
-                  <div className="text-[9px] font-mono text-stone-400">Prismatic Spectrum</div>
+                <div className="p-2 sm:p-3 rounded-xl bg-stone-50 border border-stone-200 text-center">
+                  <div className="text-[9px] sm:text-[10px] font-mono uppercase text-stone-500 truncate">Fire Dispersion</div>
+                  <div className="text-sm sm:text-base font-bold text-amber-800 mt-0.5 sm:mt-1 font-mono">{selectedShape.fireScore}</div>
+                  <div className="text-[8px] sm:text-[9px] font-mono text-stone-400 hidden sm:block">Prismatic Spectrum</div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-center">
-                  <div className="text-[10px] font-mono uppercase text-stone-500">Facet Structure</div>
-                  <div className="text-base font-bold text-stone-900 mt-1">{selectedShape.facets} Facets</div>
-                  <div className="text-[9px] font-mono text-stone-400">Laser Engineered</div>
+                <div className="p-2 sm:p-3 rounded-xl bg-stone-50 border border-stone-200 text-center">
+                  <div className="text-[9px] sm:text-[10px] font-mono uppercase text-stone-500 truncate">Facets</div>
+                  <div className="text-sm sm:text-base font-bold text-stone-900 mt-0.5 sm:mt-1 font-mono">{selectedShape.facets}</div>
+                  <div className="text-[8px] sm:text-[9px] font-mono text-stone-400 hidden sm:block">Laser Engineered</div>
                 </div>
               </div>
             </div>
