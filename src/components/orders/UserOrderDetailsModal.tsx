@@ -22,7 +22,11 @@ import {
   Copy,
   Check,
   Shield,
+  QrCode,
+  Lock,
 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { DoorstepPaymentModal } from "@/components/orders/DoorstepPaymentModal";
 
 interface UserOrderDetailsModalProps {
   order: IOrder | null;
@@ -34,6 +38,7 @@ export function UserOrderDetailsModal({
   onClose,
 }: UserOrderDetailsModalProps) {
   const [copiedTracking, setCopiedTracking] = useState(false);
+  const [showDoorstepModal, setShowDoorstepModal] = useState(false);
 
   if (!order) return null;
 
@@ -99,7 +104,8 @@ export function UserOrderDetailsModal({
   };
 
   return (
-    <Dialog open={Boolean(order)} onOpenChange={(open) => !open && onClose()}>
+    <>
+      <Dialog open={Boolean(order)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl w-[94vw] sm:w-full max-h-[90dvh] sm:max-h-[88dvh] overflow-y-auto overflow-x-hidden p-3 sm:p-6 md:p-7 space-y-3.5 sm:space-y-5 min-w-0">
         {/* 1. Modal Header with Order Reference & Live Status */}
         <DialogHeader className="border-b border-stone-200 pb-3 sm:pb-4 pr-10 sm:pr-12 min-w-0">
@@ -327,9 +333,58 @@ export function UserOrderDetailsModal({
               <div className="flex justify-between items-center text-stone-600">
                 <span>Payment Channel:</span>
                 <span className="font-mono text-stone-800 text-[11px] sm:text-xs">
-                  {order.paymentInfo?.method?.replace("_", " ") || "CREDIT CARD"}
+                  {order.paymentInfo?.method === "DIGITAL_COD_UPI"
+                    ? "DIGITAL COD (DOORSTEP UPI)"
+                    : order.paymentInfo?.method?.replace("_", " ") || "CREDIT CARD"}
                 </span>
               </div>
+              {order.paymentInfo?.method === "DIGITAL_COD_UPI" && order.status !== "CANCELLED" && (
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 pt-1.5 border-t border-stone-200">
+                  <span className="text-[11px] text-stone-600">Doorstep Verification:</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {order.paymentInfo.paymentStatus === "PAID" ? (
+                      <>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          SETTLED • OTP READY
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowDoorstepModal(true)}
+                          className="h-6 text-[10px] px-2 text-emerald-800 border-emerald-300 hover:bg-emerald-50 gap-1"
+                        >
+                          <Lock className="w-3 h-3" />
+                          <span>View OTP</span>
+                        </Button>
+                      </>
+                    ) : order.status === "OUT_FOR_DELIVERY" ? (
+                      <>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                          COURIER AT DOORSTEP
+                        </span>
+                        <Button
+                          type="button"
+                          variant="luxury"
+                          size="sm"
+                          onClick={() => setShowDoorstepModal(true)}
+                          className="h-6 text-[10px] px-2 text-white bg-emerald-700 hover:bg-emerald-800 gap-1"
+                        >
+                          <QrCode className="w-3 h-3" />
+                          <span>Pay QR</span>
+                        </Button>
+                      </>
+                    ) : (
+                      <span
+                        className="text-[10px] font-mono px-2 py-0.5 rounded text-stone-600 bg-stone-100 border border-stone-200"
+                        title="Payment unlocks when courier arrives at delivery address"
+                      >
+                        PAYABLE UPON ARRIVAL
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between items-center text-stone-900 font-bold border-t border-stone-200 pt-2.5 text-xs sm:text-sm">
@@ -342,5 +397,12 @@ export function UserOrderDetailsModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
+
+    <DoorstepPaymentModal
+      order={order}
+      isOpen={showDoorstepModal}
+      onClose={() => setShowDoorstepModal(false)}
+    />
+  </>
+);
 }

@@ -10,6 +10,7 @@ export function useInquiryConversation(initialInquiryNumber?: string) {
   const {
     activeInquiry,
     setActiveInquiry,
+    closeConversation,
     isLoading,
     isSending,
     recentTickets,
@@ -61,9 +62,10 @@ export function useInquiryConversation(initialInquiryNumber?: string) {
       messageText: string,
       senderRole?: MessageSenderType,
       senderName?: string,
-      senderEmail?: string
+      senderEmail?: string,
+      sendEmail?: boolean
     ): Promise<boolean> => {
-      return storeSendMessage(messageText, senderRole, senderName, senderEmail);
+      return storeSendMessage(messageText, senderRole, senderName, senderEmail, sendEmail);
     },
     [storeSendMessage]
   );
@@ -84,5 +86,6 @@ export function useInquiryConversation(initialInquiryNumber?: string) {
     loadInquiry,
     sendMessage,
     saveTicketToHistory,
+    closeConversation,
   };
 }

@@ -211,7 +211,7 @@ export function Navbar() {
 
         {/* Mobile & Tablet Toggle Controls */}
         <div className="flex lg:hidden items-center gap-2">
-          {activeAuth && <NavbarNotificationBell />}
+          {activeAuth && <NavbarNotificationBell hideModal={true} />}
           <button
             onClick={openCheckout}
             className="relative p-2 text-stone-600 hover:text-stone-900"

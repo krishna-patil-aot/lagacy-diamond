@@ -30,10 +30,11 @@ export function StockNotificationModal({
   onClose,
   onSubmit,
 }: StockNotificationModalProps) {
-  if (!isOpen || !diamond) return null;
+  if (!diamond) return null;
 
   return (
     <StockNotificationModalContent
+      isOpen={isOpen}
       diamond={diamond}
       defaultEmail={defaultEmail}
       defaultName={defaultName}
@@ -46,6 +47,7 @@ export function StockNotificationModal({
 }
 
 function StockNotificationModalContent({
+  isOpen,
   diamond,
   defaultEmail,
   defaultName,
@@ -53,7 +55,7 @@ function StockNotificationModalContent({
   isSubscribed,
   onClose,
   onSubmit,
-}: Omit<StockNotificationModalProps, "isOpen"> & { diamond: IDiamond }) {
+}: StockNotificationModalProps & { diamond: IDiamond }) {
   const [email, setEmail] = useState<string>(defaultEmail);
   const name = defaultName;
 
@@ -68,7 +70,7 @@ function StockNotificationModalContent({
   };
 
   return (
-    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-sm animate-in fade-in-0 duration-200" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[94vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-stone-800 bg-stone-950 p-5 sm:p-6 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 focus:outline-hidden text-stone-100">

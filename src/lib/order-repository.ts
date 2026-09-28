@@ -2,7 +2,7 @@ import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
 import { UserModel } from "@/models/User";
 import { DiamondModel } from "@/models/Diamond";
-import { IOrder, OrderStatus, IOrderTimelineEvent } from "@/types/order.types";
+import { IOrder, OrderStatus, IOrderTimelineEvent, PaymentMethod, PaymentStatus } from "@/types/order.types";
 import {
   IDiamond,
   DiamondShape,
@@ -128,9 +128,16 @@ export function sanitizeOrderDoc(doc: {
       postalCode: "",
       country: "India",
     },
-    paymentInfo: doc.paymentInfo || {
-      method: "CREDIT_CARD",
-      couponDiscountPercentage: 0,
+    paymentInfo: {
+      method: (doc.paymentInfo?.method as PaymentMethod) || "CREDIT_CARD",
+      couponCode: doc.paymentInfo?.couponCode || "",
+      couponDiscountPercentage: doc.paymentInfo?.couponDiscountPercentage || 0,
+      paymentStatus: (doc.paymentInfo?.paymentStatus as PaymentStatus) || "UNPAID",
+      gatewayTransactionId: doc.paymentInfo?.gatewayTransactionId || "",
+      paidAt: doc.paymentInfo?.paidAt || undefined,
+      deliveryHandoverOtp: doc.paymentInfo?.deliveryHandoverOtp || undefined,
+      isOtpVerified: Boolean(doc.paymentInfo?.isOtpVerified),
+      otpVerifiedAt: doc.paymentInfo?.otpVerifiedAt || undefined,
     },
     subtotal: doc.subtotal || 0,
     couponDiscount: doc.couponDiscount || 0,
@@ -220,17 +227,25 @@ export async function createOrder(
 
   // Resilient sanitization of payment info
   const rawPayment = (orderInput.paymentInfo || {}) as unknown as Record<string, unknown>;
-  let normalizedMethod: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW" = "CREDIT_CARD";
+  let normalizedMethod: PaymentMethod = "CREDIT_CARD";
   if (rawPayment.method) {
     const m = String(rawPayment.method).toUpperCase();
     if (m.includes("WIRE")) normalizedMethod = "WIRE_TRANSFER";
     else if (m.includes("ESCROW") || m.includes("VAULT")) normalizedMethod = "VAULT_ESCROW";
+    else if (m.includes("COD") || m.includes("UPI")) normalizedMethod = "DIGITAL_COD_UPI";
     else normalizedMethod = "CREDIT_CARD";
   }
+  const defaultStatus: PaymentStatus = normalizedMethod === "DIGITAL_COD_UPI" ? "UNPAID" : "PAID";
   const sanitizedPayment = {
     method: normalizedMethod,
     couponCode: String(rawPayment.couponCode || "").toUpperCase().trim(),
     couponDiscountPercentage: Number(rawPayment.couponDiscountPercentage) || 0,
+    paymentStatus: (rawPayment.paymentStatus as PaymentStatus) || defaultStatus,
+    gatewayTransactionId: String(rawPayment.gatewayTransactionId || ""),
+    paidAt: rawPayment.paidAt ? String(rawPayment.paidAt) : undefined,
+    deliveryHandoverOtp: rawPayment.deliveryHandoverOtp ? String(rawPayment.deliveryHandoverOtp) : "",
+    isOtpVerified: Boolean(rawPayment.isOtpVerified),
+    otpVerifiedAt: rawPayment.otpVerifiedAt ? String(rawPayment.otpVerifiedAt) : undefined,
   };
 
   const mongoose = await connectToDatabase();
@@ -484,6 +499,10 @@ export async function updateOrderStatusAdmin(
     }
     if (!doc) return null;
 
+    if (newStatus === "DELIVERED" && doc.paymentInfo?.paymentStatus !== "PAID") {
+      throw new Error("Cannot confirm delivery: Order payment is still pending. Customer must complete payment before parcel handover.");
+    }
+
     const previousStatus = doc.status;
     doc.status = newStatus;
     if (newStatus === "APPROVED") {
@@ -544,6 +563,11 @@ export async function updateOrderStatusAdmin(
   if (index === -1) return null;
 
   const current = memoryOrders[index];
+
+  if (newStatus === "DELIVERED" && current.paymentInfo?.paymentStatus !== "PAID") {
+    throw new Error("Cannot confirm delivery: Order payment is still pending. Customer must complete payment before parcel handover.");
+  }
+
   const updated: IOrder = {
     ...current,
     status: newStatus,
@@ -564,3 +588,157 @@ export async function updateOrderStatusAdmin(
   memoryOrders[index] = updated;
   return updated;
 }
+
+/**
+ * Automatically confirms payment via payment gateway webhook or simulated test hook.
+ * Generates the secure 4-digit Delivery Handover OTP.
+ */
+export async function confirmOrderPaymentByWebhook(
+  orderNumberOrId: string,
+  gatewayTransactionId: string,
+  amount: number
+): Promise<IOrder | null> {
+  const mongoose = await connectToDatabase();
+  const timestamp = new Date().toISOString();
+  // Generate random secure 4-digit release OTP
+  const handoverOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+  const newTimelineEvent: IOrderTimelineEvent = {
+    status: "OUT_FOR_DELIVERY",
+    title: "Digital COD Payment Received",
+    description: `Exact payment amount of ₹${amount.toLocaleString()} settled via UPI gateway (${gatewayTransactionId}). Secure 4-digit delivery handover OTP generated.`,
+    timestamp,
+  };
+
+  if (mongoose) {
+    const query = mongoose.Types.ObjectId.isValid(orderNumberOrId)
+      ? { _id: orderNumberOrId }
+      : { orderNumber: orderNumberOrId.toUpperCase() };
+
+    const doc = await OrderModel.findOne(query);
+    if (!doc) return null;
+
+    doc.paymentInfo = {
+      ...doc.paymentInfo,
+      paymentStatus: "PAID",
+      gatewayTransactionId,
+      paidAt: timestamp,
+      deliveryHandoverOtp: handoverOtp,
+      isOtpVerified: false,
+    };
+
+    doc.timeline = [...(doc.timeline || []), newTimelineEvent];
+    await doc.save();
+    return sanitizeOrderDoc(doc.toObject());
+  }
+
+  // Memory fallback
+  const index = memoryOrders.findIndex(
+    (o) => o.id === orderNumberOrId || o.orderNumber?.toUpperCase() === orderNumberOrId.toUpperCase()
+  );
+  if (index === -1) return null;
+
+  const current = memoryOrders[index];
+  const updated: IOrder = {
+    ...current,
+    paymentInfo: {
+      ...current.paymentInfo,
+      paymentStatus: "PAID",
+      gatewayTransactionId,
+      paidAt: timestamp,
+      deliveryHandoverOtp: handoverOtp,
+      isOtpVerified: false,
+    },
+    timeline: [...(current.timeline || []), newTimelineEvent],
+    updatedAt: timestamp,
+  };
+  memoryOrders[index] = updated;
+  return updated;
+}
+
+/**
+ * Validates the delivery handover OTP presented by the customer to the delivery courier.
+ * Upon successful match, automatically transitions order to DELIVERED.
+ */
+export async function verifyDeliveryHandoverOtp(
+  orderNumberOrId: string,
+  submittedOtp: string
+): Promise<{ success: boolean; message: string; order?: IOrder }> {
+  const mongoose = await connectToDatabase();
+  const timestamp = new Date().toISOString();
+
+  if (mongoose) {
+    const query = mongoose.Types.ObjectId.isValid(orderNumberOrId)
+      ? { _id: orderNumberOrId }
+      : { orderNumber: orderNumberOrId.toUpperCase() };
+
+    const doc = await OrderModel.findOne(query);
+    if (!doc) {
+      return { success: false, message: "Order not found." };
+    }
+
+    if (doc.paymentInfo?.paymentStatus !== "PAID") {
+      return { success: false, message: "Cannot complete delivery: Payment has not yet been confirmed by gateway." };
+    }
+
+    if (doc.paymentInfo?.deliveryHandoverOtp !== submittedOtp.trim()) {
+      return { success: false, message: "Invalid delivery OTP. Handover denied." };
+    }
+
+    doc.paymentInfo.isOtpVerified = true;
+    doc.paymentInfo.otpVerifiedAt = timestamp;
+    doc.status = "DELIVERED";
+    if (doc.trackingInfo) {
+      doc.trackingInfo.actualDeliveryDate = timestamp;
+    }
+
+    const deliveryEvent: IOrderTimelineEvent = {
+      status: "DELIVERED",
+      title: "Consignment Handed Over & Verified",
+      description: "Customer presented verified 4-digit handover OTP. Parcel safely surrendered to recipient.",
+      timestamp,
+    };
+    doc.timeline = [...(doc.timeline || []), deliveryEvent];
+
+    await doc.save();
+    return { success: true, message: "OTP verified. Order marked DELIVERED.", order: sanitizeOrderDoc(doc.toObject()) };
+  }
+
+  // Memory fallback
+  const index = memoryOrders.findIndex(
+    (o) => o.id === orderNumberOrId || o.orderNumber?.toUpperCase() === orderNumberOrId.toUpperCase()
+  );
+  if (index === -1) return { success: false, message: "Order not found." };
+
+  const current = memoryOrders[index];
+  if (current.paymentInfo?.paymentStatus !== "PAID") {
+    return { success: false, message: "Cannot complete delivery: Payment has not yet been confirmed by gateway." };
+  }
+  if (current.paymentInfo?.deliveryHandoverOtp !== submittedOtp.trim()) {
+    return { success: false, message: "Invalid delivery OTP. Handover denied." };
+  }
+
+  const updated: IOrder = {
+    ...current,
+    status: "DELIVERED",
+    paymentInfo: {
+      ...current.paymentInfo,
+      isOtpVerified: true,
+      otpVerifiedAt: timestamp,
+    },
+    trackingInfo: current.trackingInfo ? { ...current.trackingInfo, actualDeliveryDate: timestamp } : undefined,
+    timeline: [
+      ...(current.timeline || []),
+      {
+        status: "DELIVERED",
+        title: "Consignment Handed Over & Verified",
+        description: "Customer presented verified 4-digit handover OTP. Parcel safely surrendered to recipient.",
+        timestamp,
+      },
+    ],
+    updatedAt: timestamp,
+  };
+  memoryOrders[index] = updated;
+  return { success: true, message: "OTP verified. Order marked DELIVERED.", order: updated };
+}
+

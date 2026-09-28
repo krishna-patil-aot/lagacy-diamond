@@ -5,7 +5,7 @@ import {
   getInquiriesByTicketNumbers,
 } from "@/lib/inquiry-repository";
 import { getAuthenticatedUserFromRequest } from "@/lib/auth";
-import { IClientNotificationsResponse } from "@/types/inquiry.types";
+import { IClientNotificationsResponse, IInquiry } from "@/types/inquiry.types";
 
 export async function GET(request: NextRequest): Promise<NextResponse<IClientNotificationsResponse>> {
   try {
@@ -23,41 +23,69 @@ export async function GET(request: NextRequest): Promise<NextResponse<IClientNot
       });
     }
 
-    // 2. Role: Authenticated CLIENT
+    // 2. Client inquiries (Authenticated and/or Guest tickets in storage)
+    const inquiriesMap = new Map<string, IInquiry>();
+
     if (verified && verified.email) {
-      const inquiries = await getClientInquiriesByEmail(verified.email);
-      const repliedInquiries = inquiries.filter((inq) => {
-        const hasUnread = (inq.unreadClientCount && inq.unreadClientCount > 0) || (!inq.isClientRead && Boolean(inq.adminReply?.trim()));
-        return hasUnread || Boolean(inq.adminReply?.trim());
-      });
-      const unreadCount = repliedInquiries.filter((inq) => (inq.unreadClientCount && inq.unreadClientCount > 0) || !inq.isClientRead).length;
-
-      return NextResponse.json<IClientNotificationsResponse>({
-        success: true,
-        data: repliedInquiries,
-        unreadCount,
-      });
+      const emailInquiries = await getClientInquiriesByEmail(verified.email);
+      for (const inq of emailInquiries) {
+        inquiriesMap.set(inq.inquiryNumber.toUpperCase(), inq);
+      }
     }
 
-    // 3. Guest Client with stored local tickets (e.g. ?tickets=INQ-123456,INQ-789012)
     if (guestTicketsParam) {
-      const tickets = guestTicketsParam.split(",").map((t) => t.trim()).filter(Boolean);
-      const inquiries = await getInquiriesByTicketNumbers(tickets);
-      const repliedInquiries = inquiries.filter((inq) => Boolean(inq.adminReply && inq.adminReply.trim()));
-      const unreadCount = repliedInquiries.filter((inq) => !inq.isClientRead || (inq.unreadClientCount && inq.unreadClientCount > 0)).length;
-
-      return NextResponse.json<IClientNotificationsResponse>({
-        success: true,
-        data: repliedInquiries,
-        unreadCount,
-      });
+      const tickets = guestTicketsParam
+        .split(",")
+        .map((t) => t.trim().toUpperCase())
+        .filter(Boolean);
+      if (tickets.length > 0) {
+        const ticketInquiries = await getInquiriesByTicketNumbers(tickets);
+        for (const inq of ticketInquiries) {
+          if (!inquiriesMap.has(inq.inquiryNumber.toUpperCase())) {
+            inquiriesMap.set(inq.inquiryNumber.toUpperCase(), inq);
+          }
+        }
+      }
     }
 
-    // No credentials or tickets provided
+    const allInquiries = Array.from(inquiriesMap.values());
+
+    // Filter to inquiries with curator activity or unread messages
+    const repliedInquiries = allInquiries.filter((inq) => {
+      const hasAdminReply =
+        Boolean(inq.adminReply && inq.adminReply.trim()) ||
+        (Array.isArray(inq.messages) && inq.messages.some((m) => m.sender === "ADMIN"));
+      const hasUnread =
+        (typeof inq.unreadClientCount === "number" && inq.unreadClientCount > 0) ||
+        inq.isClientRead === false;
+      return hasAdminReply || hasUnread;
+    });
+
+    // Sort with latest message/update on top
+    repliedInquiries.sort((a, b) => {
+      const getLatestTime = (inq: typeof a): number => {
+        const lastMsg =
+          inq.messages && inq.messages.length > 0
+            ? inq.messages[inq.messages.length - 1]
+            : null;
+        const msgTime = lastMsg?.createdAt ? new Date(lastMsg.createdAt).getTime() : 0;
+        const updateTime = inq.updatedAt ? new Date(inq.updatedAt).getTime() : 0;
+        const createTime = inq.createdAt ? new Date(inq.createdAt).getTime() : 0;
+        return Math.max(msgTime, updateTime, createTime);
+      };
+      return getLatestTime(b) - getLatestTime(a);
+    });
+
+    const unreadCount = repliedInquiries.filter(
+      (inq) =>
+        (typeof inq.unreadClientCount === "number" && inq.unreadClientCount > 0) ||
+        inq.isClientRead === false
+    ).length;
+
     return NextResponse.json<IClientNotificationsResponse>({
       success: true,
-      data: [],
-      unreadCount: 0,
+      data: repliedInquiries,
+      unreadCount,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load notifications";

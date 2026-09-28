@@ -11,6 +11,7 @@ import { useCheckout } from "@/hooks/useCheckout";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AVAILABLE_COUPONS } from "@/store/useOrderStore";
+import { PaymentMethod } from "@/types/order.types";
 import { formatPrice } from "@/lib/utils";
 import {
   ShoppingBag,
@@ -433,16 +434,17 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             <span className="text-xs font-medium text-stone-700 block">
               Payment Method
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {[
                 { id: "CREDIT_CARD", label: "Credit / Debit Card", sub: "Visa, Mastercard, RuPay" },
-                { id: "WIRE_TRANSFER", label: "Bank Transfer / UPI", sub: "NEFT, RTGS, IMPS & UPI" },
+                { id: "WIRE_TRANSFER", label: "Bank Transfer / RTGS", sub: "Direct wire & corporate transfer" },
                 { id: "VAULT_ESCROW", label: "Escrow Protection", sub: "Insured escrow handover" },
+                { id: "DIGITAL_COD_UPI", label: "Doorstep Digital COD", sub: "Dynamic UPI QR & OTP release upon delivery" },
               ].map(({ id, label, sub }) => (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setPaymentMethod(id as "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW")}
+                  onClick={() => setPaymentMethod(id as PaymentMethod)}
                   className={`rounded-xl border p-3 text-left transition-all cursor-pointer ${
                     paymentMethod === id
                       ? "border-stone-900 bg-stone-900 text-white shadow-xs"

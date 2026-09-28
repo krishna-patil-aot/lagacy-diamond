@@ -153,7 +153,7 @@ export async function getAllInquiriesAdmin(
       ];
     }
 
-    const docs = await InquiryModel.find(query).sort({ createdAt: -1 }).lean();
+    const docs = await InquiryModel.find(query).sort({ updatedAt: -1, createdAt: -1 }).lean();
     return docs.map(sanitizeInquiryDoc);
   }
 
@@ -173,7 +173,11 @@ export async function getAllInquiriesAdmin(
         item.message.toLowerCase().includes(q)
     );
   }
-  return list;
+  return [...list].sort(
+    (a, b) =>
+      new Date(b.updatedAt || b.createdAt).getTime() -
+      new Date(a.updatedAt || a.createdAt).getTime()
+  );
 }
 
 export async function getInquiryById(id: string): Promise<IInquiry | null> {
@@ -296,14 +300,18 @@ export async function getClientInquiriesByEmail(email: string): Promise<IInquiry
 
   if (mongoose) {
     const docs = await InquiryModel.find({ email: normalizedEmail })
-      .sort({ createdAt: -1 })
+      .sort({ updatedAt: -1, createdAt: -1 })
       .lean();
     return docs.map(sanitizeInquiryDoc);
   }
 
   return memoryInquiries
     .filter((item) => item.email.toLowerCase() === normalizedEmail)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime()
+    );
 }
 
 export async function markInquiryAsReadByClient(
@@ -398,7 +406,11 @@ export async function getAllUnreadInquiriesAdmin(): Promise<{ inquiries: IInquir
 
   const inquiries = memoryInquiries
     .filter((item) => (item.unreadAdminCount && item.unreadAdminCount > 0) || item.status === "NEW")
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime()
+    );
 
   const unreadCount = inquiries.reduce(
     (acc, curr) => acc + (curr.unreadAdminCount && curr.unreadAdminCount > 0 ? curr.unreadAdminCount : 1),
@@ -425,7 +437,11 @@ export async function getInquiriesByTicketNumbers(ticketNumbers: string[]): Prom
 
   return memoryInquiries
     .filter((item) => cleanNumbers.includes(item.inquiryNumber.toUpperCase()))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime()
+    );
 }
 
 export async function getInquiryByNumber(inquiryNumber: string): Promise<IInquiry | null> {

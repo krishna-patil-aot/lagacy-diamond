@@ -27,8 +27,10 @@ import {
   Award,
   X,
   Loader2,
+  QrCode,
 } from "lucide-react";
 import Link from "next/link";
+import { DoorstepPaymentModal } from "@/components/orders/DoorstepPaymentModal";
 
 interface UserOrdersTableProps {
   orders: IOrder[];
@@ -49,6 +51,8 @@ export function UserOrdersTable({
   onCancelOrder,
   isCancelling = false,
 }: UserOrdersTableProps) {
+  const [doorstepPaymentOrder, setDoorstepPaymentOrder] = React.useState<IOrder | null>(null);
+
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
       case "PENDING_APPROVAL":
@@ -113,6 +117,13 @@ export function UserOrdersTable({
           <span className="inline-flex items-center gap-1 text-[10px] font-mono text-stone-700 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 whitespace-nowrap">
             <Building className="h-2.5 w-2.5 text-stone-500 shrink-0" />
             <span>Wire Transfer</span>
+          </span>
+        );
+      case "DIGITAL_COD_UPI":
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 whitespace-nowrap">
+            <QrCode className="h-2.5 w-2.5 text-emerald-600 shrink-0" />
+            <span>Digital COD (UPI)</span>
           </span>
         );
       default:
@@ -282,7 +293,7 @@ export function UserOrdersTable({
 
                 {/* Card Actions */}
                 <div
-                  className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-stone-100"
+                  className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3 border-t border-stone-100"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Button
@@ -290,11 +301,48 @@ export function UserOrdersTable({
                     variant="luxury"
                     size="sm"
                     onClick={() => onInspectOrder(order)}
-                    className="flex-1 h-8 text-xs font-medium shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    className="flex-1 min-w-[120px] h-8 text-xs font-medium shadow-2xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                   >
                     <Eye className="h-3.5 w-3.5 shrink-0" />
                     <span>Track & Details</span>
                   </Button>
+
+                  {order.paymentInfo?.method === "DIGITAL_COD_UPI" &&
+                    order.status !== "CANCELLED" && (
+                      <>
+                        {order.paymentInfo.paymentStatus === "PAID" ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDoorstepPaymentOrder(order)}
+                            className="h-8 text-xs font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
+                          >
+                            <Lock className="h-3.5 w-3.5 shrink-0" />
+                            <span>OTP: {order.paymentInfo.deliveryHandoverOtp || "Revealed"}</span>
+                          </Button>
+                        ) : order.status === "OUT_FOR_DELIVERY" ? (
+                          <Button
+                            type="button"
+                            variant="luxury"
+                            size="sm"
+                            onClick={() => setDoorstepPaymentOrder(order)}
+                            className="h-8 text-xs font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white animate-pulse"
+                          >
+                            <QrCode className="h-3.5 w-3.5 shrink-0" />
+                            <span>Pay at Doorstep (QR)</span>
+                          </Button>
+                        ) : (
+                          <span
+                            className="h-8 px-2 text-[10px] font-mono inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-100/80 text-stone-600"
+                            title="Payment unlocks when courier arrives at delivery address"
+                          >
+                            <Lock className="h-2.5 w-2.5 text-stone-400 shrink-0" />
+                            <span>Pay on Arrival</span>
+                          </span>
+                        )}
+                      </>
+                    )}
 
                   {order.status === "PENDING_APPROVAL" && onCancelOrder && (
                     <Button
@@ -329,7 +377,7 @@ export function UserOrdersTable({
               <TableHead className="min-w-[270px] text-xs py-3.5 px-4 whitespace-nowrap">Gemstone Lot(s)</TableHead>
               <TableHead className="w-[150px] text-xs py-3.5 px-4 whitespace-nowrap">Settlement</TableHead>
               <TableHead className="min-w-[200px] text-xs py-3.5 px-4 whitespace-nowrap">Tracking & Status</TableHead>
-              <TableHead className="w-[170px] text-right text-xs py-3.5 px-4 whitespace-nowrap">Actions</TableHead>
+              <TableHead className="min-w-[240px] text-right text-xs py-3.5 px-4 whitespace-nowrap">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -463,6 +511,43 @@ export function UserOrdersTable({
                         <span>Track & Details</span>
                       </Button>
 
+                      {order.paymentInfo?.method === "DIGITAL_COD_UPI" &&
+                        order.status !== "CANCELLED" && (
+                          <>
+                            {order.paymentInfo.paymentStatus === "PAID" ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setDoorstepPaymentOrder(order)}
+                                className="h-7 text-xs font-medium inline-flex items-center gap-1 px-2.5 whitespace-nowrap border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
+                              >
+                                <Lock className="h-3 w-3 shrink-0" />
+                                <span>OTP: {order.paymentInfo.deliveryHandoverOtp || "View"}</span>
+                              </Button>
+                            ) : order.status === "OUT_FOR_DELIVERY" ? (
+                              <Button
+                                type="button"
+                                variant="luxury"
+                                size="sm"
+                                onClick={() => setDoorstepPaymentOrder(order)}
+                                className="h-7 text-xs font-medium inline-flex items-center gap-1 px-2.5 whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white animate-pulse"
+                              >
+                                <QrCode className="h-3 w-3 shrink-0" />
+                                <span>Pay at Doorstep</span>
+                              </Button>
+                            ) : (
+                              <span
+                                className="h-7 px-2.5 text-[10px] font-mono inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-100 text-stone-600 cursor-default"
+                                title="Payment QR unlocks when the courier arrives at your address"
+                              >
+                                <Lock className="h-2.5 w-2.5 text-stone-400 shrink-0" />
+                                <span>Pay on Arrival</span>
+                              </span>
+                            )}
+                          </>
+                        )}
+
                       {order.status === "PENDING_APPROVAL" && onCancelOrder && (
                         <Button
                           type="button"
@@ -489,6 +574,13 @@ export function UserOrdersTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Doorstep Dynamic QR & OTP Release Modal */}
+      <DoorstepPaymentModal
+        order={doorstepPaymentOrder}
+        isOpen={Boolean(doorstepPaymentOrder)}
+        onClose={() => setDoorstepPaymentOrder(null)}
+      />
     </div>
   );
 }

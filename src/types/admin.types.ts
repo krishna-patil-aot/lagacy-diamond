@@ -6,6 +6,7 @@ import {
   DiamondShape,
   IDiamond,
 } from "./diamond.types";
+import { PaymentMethod } from "./order.types";
 
 export interface IDiamondFormData {
   name: string;
@@ -140,7 +141,7 @@ export interface IAdminCreateOrderInput {
   postalCode?: string;
   country?: string;
   items: IAdminCreateOrderItem[];
-  paymentMethod: "VAULT_ESCROW" | "WIRE_TRANSFER" | "CREDIT_CARD";
+  paymentMethod: PaymentMethod;
   discountPercentage?: number;
   adminNotes?: string;
   inquiryId?: string;

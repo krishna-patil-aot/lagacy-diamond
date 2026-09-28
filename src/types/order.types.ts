@@ -22,12 +22,24 @@ export interface IShippingAddress {
   country: string;
 }
 
-export type PaymentMethod = "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW";
+export type PaymentMethod =
+  | "CREDIT_CARD"
+  | "WIRE_TRANSFER"
+  | "VAULT_ESCROW"
+  | "DIGITAL_COD_UPI";
+
+export type PaymentStatus = "UNPAID" | "PENDING_VERIFICATION" | "PAID" | "FAILED";
 
 export interface IPaymentInfo {
   method: PaymentMethod;
   couponCode?: string;
   couponDiscountPercentage: number;
+  paymentStatus?: PaymentStatus;
+  gatewayTransactionId?: string;
+  paidAt?: string;
+  deliveryHandoverOtp?: string;
+  isOtpVerified?: boolean;
+  otpVerifiedAt?: string;
 }
 
 export interface IOrderTrackingInfo {

@@ -58,6 +58,8 @@ export interface ISendInquiryMessageInput {
   senderEmail?: string;
   senderName?: string;
   senderRole?: "CLIENT" | "ADMIN";
+  sendEmail?: boolean;
+  isSpecialReply?: boolean;
 }
 
 export interface ISendInquiryMessageResponse {
@@ -104,5 +106,13 @@ export interface ITrackInquiryResponse {
   success: boolean;
   data?: IInquiry;
   error?: string;
+}
+
+export interface IIncomingInquiryAlert {
+  inquiry: IInquiry;
+  messageText: string;
+  senderName: string;
+  senderRole: MessageSenderType;
+  receivedAt: number;
 }
 

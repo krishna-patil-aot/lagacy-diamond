@@ -7,6 +7,7 @@ import {
   IGetInquiryDetailsResponse,
   ISendInquiryMessageResponse,
   IClientNotificationsResponse,
+  IIncomingInquiryAlert,
   MessageSenderType,
 } from "@/types/inquiry.types";
 import {
@@ -61,12 +62,14 @@ export interface IInquiryStoreState {
   isSending: boolean;
   recentTickets: string[];
   lastSyncedAt: number;
+  incomingAlert: IIncomingInquiryAlert | null;
 
   // Actions
   initialize: () => void;
   fetchNotifications: () => Promise<void>;
   openConversation: (inquiryIdOrNumber: string) => Promise<void>;
   closeConversation: () => void;
+  dismissIncomingAlert: () => void;
   setActiveInquiry: (inquiry: IInquiry | null) => void;
   setInquiries: (inquiries: IInquiry[]) => void;
   fetchActiveInquiry: (inquiryIdOrNumber?: string, silent?: boolean) => Promise<IInquiry | null>;
@@ -74,7 +77,8 @@ export interface IInquiryStoreState {
     messageText: string,
     senderRole?: MessageSenderType,
     senderName?: string,
-    senderEmail?: string
+    senderEmail?: string,
+    sendEmail?: boolean
   ) => Promise<boolean>;
   markInquiryRead: (inquiryIdOrNumber: string) => Promise<void>;
   markAllRead: () => Promise<void>;
@@ -94,6 +98,7 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
   isSending: false,
   recentTickets: [],
   lastSyncedAt: 0,
+  incomingAlert: null,
 
   initialize: () => {
     if (typeof window === "undefined") return;
@@ -136,6 +141,10 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
     void get().fetchNotifications();
   },
 
+  dismissIncomingAlert: () => {
+    set({ incomingAlert: null });
+  },
+
   fetchNotifications: async () => {
     try {
       const token =
@@ -153,17 +162,84 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
 
       const res = await fetch(`/api/inquiries/notifications?${params.toString()}`, {
         headers,
+        credentials: "same-origin",
         cache: "no-store",
       });
 
       const json = (await res.json()) as IClientNotificationsResponse;
       if (json.success && Array.isArray(json.data)) {
         const prevUnread = get().unreadCount;
+        const prevNotifications = get().notifications;
         const newUnread = json.unreadCount ?? 0;
+        const isInitialFetch = get().lastSyncedAt === 0;
 
-        // If new notifications arrived from counterpart, chime
-        if (newUnread > prevUnread) {
-          playLuxuryChime();
+        // Check if new unread messages arrived from counterpart
+        if (newUnread > prevUnread || (!isInitialFetch && newUnread > 0)) {
+          // Identify the incoming inquiry with new unread messages
+          const candidate =
+            json.data.find((inq) => {
+              const prev = prevNotifications.find((p) => p.inquiryNumber === inq.inquiryNumber);
+              const prevCount = (prev?.unreadClientCount || 0) + (prev?.unreadAdminCount || 0);
+              const newCount = (inq.unreadClientCount || 0) + (inq.unreadAdminCount || 0);
+              const newlyUnread = inq.isClientRead === false && prev?.isClientRead !== false;
+              return newCount > prevCount || newlyUnread;
+            }) ||
+            json.data.find(
+              (inq) =>
+                (typeof inq.unreadClientCount === "number" && inq.unreadClientCount > 0) ||
+                (typeof inq.unreadAdminCount === "number" && inq.unreadAdminCount > 0)
+            ) ||
+            json.data[0];
+
+          if (candidate && !isInitialFetch && newUnread > prevUnread) {
+            playLuxuryChime();
+
+            const lastMsg =
+              candidate.messages && candidate.messages.length > 0
+                ? candidate.messages[candidate.messages.length - 1]
+                : null;
+            const preview =
+              lastMsg?.message ||
+              candidate.adminReply ||
+              candidate.message ||
+              "New message received";
+            const senderName =
+              lastMsg?.senderName ||
+              (lastMsg?.sender === "ADMIN" ? "Curator Gemologist" : candidate.fullName || "Client");
+            const senderRole: MessageSenderType = lastMsg?.sender || "ADMIN";
+
+            // If user does not currently have this inquiry actively open, fire live alert
+            const isCurrentlyInspecting =
+              get().isConversationOpen &&
+              get().activeInquiry?.inquiryNumber.toUpperCase() ===
+                candidate.inquiryNumber.toUpperCase();
+
+            if (!isCurrentlyInspecting) {
+              set({
+                incomingAlert: {
+                  inquiry: candidate,
+                  messageText: preview,
+                  senderName,
+                  senderRole,
+                  receivedAt: Date.now(),
+                },
+              });
+
+              toast.info(`Message from ${senderName}`, {
+                description: `#${candidate.inquiryNumber}: "${
+                  preview.length > 70 ? preview.slice(0, 70) + "..." : preview
+                }"`,
+                duration: 9000,
+                action: {
+                  label: "View Reply",
+                  onClick: () => {
+                    void get().openConversation(candidate.inquiryNumber);
+                    set({ incomingAlert: null });
+                  },
+                },
+              });
+            }
+          }
         }
 
         set({
@@ -181,12 +257,30 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
     const cleanId = inquiryIdOrNumber.trim().toUpperCase();
     if (!cleanId) return;
 
-    set({ isConversationOpen: true, isLoading: true });
+    // Fast-open with cached inquiry if available
+    const existing =
+      get().notifications.find(
+        (n) => n.inquiryNumber.toUpperCase() === cleanId || n.id === cleanId
+      ) ||
+      get().inquiries.find(
+        (n) => n.inquiryNumber.toUpperCase() === cleanId || n.id === cleanId
+      );
+
+    if (existing) {
+      set({
+        activeInquiry: existing,
+        isConversationOpen: true,
+        isLoading: true,
+        incomingAlert: null,
+      });
+    } else {
+      set({ isConversationOpen: true, isLoading: true, incomingAlert: null });
+    }
 
     // Save ticket to local history
     try {
-      const existing = get().recentTickets;
-      const updated = [cleanId, ...existing.filter((item) => item !== cleanId)].slice(0, 10);
+      const currentTickets = get().recentTickets;
+      const updated = [cleanId, ...currentTickets.filter((item) => item !== cleanId)].slice(0, 10);
       localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(updated));
       set({ recentTickets: updated });
     } catch {
@@ -201,11 +295,15 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
   },
 
   closeConversation: () => {
-    set({ isConversationOpen: false, activeInquiry: null });
+    set({ isConversationOpen: false, activeInquiry: null, isLoading: false });
   },
 
   setActiveInquiry: (inquiry: IInquiry | null) => {
-    set({ activeInquiry: inquiry });
+    if (!inquiry) {
+      set({ activeInquiry: null, isConversationOpen: false, isLoading: false });
+    } else {
+      set({ activeInquiry: inquiry, isConversationOpen: true });
+    }
   },
 
   setInquiries: (inquiries: IInquiry[]) => {
@@ -227,6 +325,11 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
       const json = (await res.json()) as IGetInquiryDetailsResponse;
 
       if (json.success && json.data) {
+        // If the conversation was closed while fetch was in flight, do not resurrect it
+        if (!get().isConversationOpen && !inquiryIdOrNumber) {
+          return json.data;
+        }
+
         const currentInquiry = get().activeInquiry;
         const freshInquiry = json.data;
 
@@ -249,7 +352,10 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
           }
         }
 
-        set({ activeInquiry: freshInquiry, lastSyncedAt: Date.now() });
+        // Only update activeInquiry if the conversation is still supposed to be open
+        if (get().isConversationOpen) {
+          set({ activeInquiry: freshInquiry, lastSyncedAt: Date.now() });
+        }
         return freshInquiry;
       }
       return null;
@@ -266,7 +372,8 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
     messageText: string,
     senderRole?: MessageSenderType,
     senderName?: string,
-    senderEmail?: string
+    senderEmail?: string,
+    sendEmail?: boolean
   ) => {
     const active = get().activeInquiry;
     if (!active) {
@@ -316,11 +423,13 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
       const res = await fetch(`/api/inquiries/${encodeURIComponent(active.inquiryNumber)}/messages`, {
         method: "POST",
         headers,
+        credentials: "same-origin",
         body: JSON.stringify({
           message: trimmed,
           senderName: resolvedName,
           senderEmail: resolvedEmail,
           senderRole: resolvedSenderRole,
+          sendEmail: Boolean(sendEmail),
         }),
       });
 
@@ -351,7 +460,9 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
 
         toast.success(
           isRoleAdmin
-            ? "Reply transmitted to client consultation thread."
+            ? sendEmail
+              ? "Special reply transmitted & email dispatched to client."
+              : "Reply transmitted to client consultation thread."
             : "Message transmitted to DarkGem Concierge."
         );
         return true;

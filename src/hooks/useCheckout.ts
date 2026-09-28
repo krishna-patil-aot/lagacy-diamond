@@ -8,7 +8,7 @@ import {
 import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ICouponRule, IOrder } from "@/types/order.types";
+import { ICouponRule, IOrder, PaymentMethod, PaymentStatus } from "@/types/order.types";
 import { broadcastOrderEvent, ORDER_EVENTS } from "@/lib/order-events";
 import { broadcastDiamondEvent, DIAMOND_EVENTS } from "@/lib/diamond-events";
 import { toast } from "sonner";
@@ -29,10 +29,8 @@ export interface IUseCheckoutReturn {
   appliedCoupon: ICouponRule | null;
   applyCoupon: () => void;
   removeCoupon: () => void;
-  paymentMethod: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW";
-  setPaymentMethod: (
-    method: "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW",
-  ) => void;
+  paymentMethod: PaymentMethod;
+  setPaymentMethod: (method: PaymentMethod) => void;
   subtotal: number;
   couponSavings: number;
   finalTotal: number;
@@ -52,9 +50,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
   const [step, setStep] = useState<CheckoutStep>("CART");
   const [couponInput, setCouponInput] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<ICouponRule | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<
-    "CREDIT_CARD" | "WIRE_TRANSFER" | "VAULT_ESCROW"
-  >("CREDIT_CARD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CREDIT_CARD");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
@@ -170,6 +166,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
         method: paymentMethod,
         couponCode: appliedCoupon?.code,
         couponDiscountPercentage: appliedCoupon?.discountPercentage || 0,
+        paymentStatus: (paymentMethod === "DIGITAL_COD_UPI" ? "UNPAID" : "PAID") as PaymentStatus,
       },
       subtotal,
       couponDiscount: couponSavings,

@@ -39,7 +39,12 @@ export interface IUseAdminInquiriesReturn {
   inspectInquiry: IInquiry | null;
   setInspectInquiry: (inquiry: IInquiry | null) => void;
   handleStatusChange: (id: string, newStatus: InquiryStatus, notes?: string) => Promise<boolean>;
-  sendReply: (id: string, replyText: string, newStatus?: InquiryStatus) => Promise<boolean>;
+  sendReply: (
+    id: string,
+    replyText: string,
+    newStatus?: InquiryStatus,
+    sendEmail?: boolean
+  ) => Promise<boolean>;
   refetch: () => Promise<void>;
   getWhatsAppLink: (inquiry: IInquiry) => string;
   getEmailLink: (inquiry: IInquiry) => string;
@@ -79,12 +84,15 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
       setInspectInquiry(inquiry);
       if (inquiry) {
         const activeToken = getEffectiveToken();
+        const headers: Record<string, string> = {};
         if (activeToken) {
-          void fetch(`/api/inquiries/${inquiry.inquiryNumber}/read`, {
-            method: "PATCH",
-            headers: { Authorization: `Bearer ${activeToken}` },
-          });
+          headers["Authorization"] = `Bearer ${activeToken}`;
         }
+        void fetch(`/api/inquiries/${inquiry.inquiryNumber}/read`, {
+          method: "PATCH",
+          headers,
+          credentials: "same-origin",
+        });
         void useInquiryStore.getState().markInquiryRead(inquiry.inquiryNumber);
       }
     },
@@ -94,7 +102,7 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
   const loadInquiriesData = useCallback(
     async (showLoadingSpinner: boolean = false) => {
       const activeToken = getEffectiveToken();
-      if (!activeToken || user?.role !== "ADMIN") {
+      if (user && user.role !== "ADMIN") {
         setIsLoading(false);
         return;
       }
@@ -113,23 +121,33 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
           params.append("q", searchQuery.trim());
         }
 
+        const headers: Record<string, string> = {};
+        if (activeToken) {
+          headers["Authorization"] = `Bearer ${activeToken}`;
+        }
+
         const res = await fetch(`/api/admin/inquiries?${params.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${activeToken}`,
-          },
+          headers,
+          credentials: "same-origin",
           cache: "no-store",
         });
 
         const json = (await res.json()) as IAdminInquiriesResponse;
         if (json.success && Array.isArray(json.data)) {
-          setInquiries(json.data);
+          // Sort with latest activity on top
+          const sorted = [...json.data].sort((a, b) => {
+            const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+            return bTime - aTime;
+          });
+          setInquiries(sorted);
           if (json.stats) {
             setStats(json.stats);
           }
           // Live auto-update currently inspected inquiry thread
           setInspectInquiry((prev) => {
             if (!prev) return null;
-            const updated = json.data?.find(
+            const updated = sorted.find(
               (item) => item.id === prev.id || item.inquiryNumber === prev.inquiryNumber
             );
             return updated || prev;
@@ -152,7 +170,7 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
 
     async function initialLoad() {
       const activeToken = getEffectiveToken();
-      if (!activeToken || user?.role !== "ADMIN") {
+      if (user && user.role !== "ADMIN") {
         if (isSubscribed) setIsLoading(false);
         return;
       }
@@ -166,22 +184,31 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
           params.append("q", searchQuery.trim());
         }
 
+        const headers: Record<string, string> = {};
+        if (activeToken) {
+          headers["Authorization"] = `Bearer ${activeToken}`;
+        }
+
         const res = await fetch(`/api/admin/inquiries?${params.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${activeToken}`,
-          },
+          headers,
+          credentials: "same-origin",
           cache: "no-store",
         });
 
         const json = (await res.json()) as IAdminInquiriesResponse;
         if (isSubscribed && json.success && Array.isArray(json.data)) {
-          setInquiries(json.data);
+          const sorted = [...json.data].sort((a, b) => {
+            const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+            return bTime - aTime;
+          });
+          setInquiries(sorted);
           if (json.stats) {
             setStats(json.stats);
           }
           setInspectInquiry((prev) => {
             if (!prev) return null;
-            const updated = json.data?.find(
+            const updated = sorted.find(
               (item) => item.id === prev.id || item.inquiryNumber === prev.inquiryNumber
             );
             return updated || prev;
@@ -253,19 +280,24 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
   const handleStatusChange = useCallback(
     async (id: string, newStatus: InquiryStatus, notes?: string): Promise<boolean> => {
       const activeToken = getEffectiveToken();
-      if (!activeToken) {
+      if (user && user.role !== "ADMIN") {
         toast.error("Admin authentication required");
         return false;
       }
 
       setIsUpdating(true);
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (activeToken) {
+          headers["Authorization"] = `Bearer ${activeToken}`;
+        }
+
         const res = await fetch(`/api/admin/inquiries/${id}`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${activeToken}`,
-          },
+          headers,
+          credentials: "same-origin",
           body: JSON.stringify({ status: newStatus, adminNotes: notes }),
         });
 
@@ -275,9 +307,14 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
         }
 
         const updated = json.data;
-        setInquiries((prev) =>
-          prev.map((item) => (item.id === id || item.inquiryNumber === id ? updated : item))
-        );
+        setInquiries((prev) => {
+          const list = prev.map((item) => (item.id === id || item.inquiryNumber === id ? updated : item));
+          return list.sort((a, b) => {
+            const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+            return bTime - aTime;
+          });
+        });
 
         if (inspectInquiry && (inspectInquiry.id === id || inspectInquiry.inquiryNumber === id)) {
           setInspectInquiry(updated);
@@ -317,14 +354,19 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
         setIsUpdating(false);
       }
     },
-    [getEffectiveToken, inspectInquiry, inquiries]
+    [getEffectiveToken, user, inspectInquiry, inquiries]
   );
 
   // Send official client reply via conversation thread
   const sendReply = useCallback(
-    async (id: string, replyText: string, newStatus: InquiryStatus = "IN_PROGRESS"): Promise<boolean> => {
+    async (
+      id: string,
+      replyText: string,
+      newStatus: InquiryStatus = "IN_PROGRESS",
+      sendEmail: boolean = true
+    ): Promise<boolean> => {
       const activeToken = getEffectiveToken();
-      if (!activeToken) {
+      if (user && user.role !== "ADMIN") {
         toast.error("Admin authentication required");
         return false;
       }
@@ -336,15 +378,21 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
 
       setIsUpdating(true);
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (activeToken) {
+          headers["Authorization"] = `Bearer ${activeToken}`;
+        }
+
         const res = await fetch(`/api/inquiries/${id}/messages`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${activeToken}`,
-          },
+          headers,
+          credentials: "same-origin",
           body: JSON.stringify({
             message: replyText.trim(),
             senderRole: "ADMIN",
+            sendEmail: Boolean(sendEmail),
           }),
         });
 
@@ -360,9 +408,14 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
           await handleStatusChange(id, newStatus);
         }
 
-        setInquiries((prev) =>
-          prev.map((item) => (item.id === id || item.inquiryNumber === id ? updated : item))
-        );
+        setInquiries((prev) => {
+          const list = prev.map((item) => (item.id === id || item.inquiryNumber === id ? updated : item));
+          return list.sort((a, b) => {
+            const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+            const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+            return bTime - aTime;
+          });
+        });
 
         if (inspectInquiry && (inspectInquiry.id === id || inspectInquiry.inquiryNumber === id)) {
           setInspectInquiry(updated);
@@ -381,7 +434,7 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
         setIsUpdating(false);
       }
     },
-    [getEffectiveToken, inspectInquiry, handleStatusChange]
+    [getEffectiveToken, user, inspectInquiry, handleStatusChange]
   );
 
   // Generate WhatsApp direct chat link with pre-filled greeting

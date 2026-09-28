@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { useOrderDocumentsEmail } from "@/hooks/useOrderDocumentsEmail";
 import { AdminCreateOrderModal } from "@/components/admin/AdminCreateOrderModal";
+import { CourierHandoverOtpModal } from "@/components/orders/CourierHandoverOtpModal";
 
 export function AdminOrderApprovalList() {
   const {
@@ -84,6 +85,7 @@ export function AdminOrderApprovalList() {
   } = useAdminOrders();
 
   const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState<boolean>(false);
+  const [otpVerificationOrder, setOtpVerificationOrder] = useState<IOrder | null>(null);
   const [inspectOrderId, setInspectOrderId] = useState<string | null>(null);
   const inspectOrder = useMemo(() => {
     if (!inspectOrderId) return null;
@@ -477,22 +479,54 @@ export function AdminOrderApprovalList() {
                     {(order.status === "DISPATCHED" ||
                       order.status === "IN_TRANSIT" ||
                       order.status === "OUT_FOR_DELIVERY") && (
-                      <Button
-                        variant="luxury"
-                        size="sm"
-                        className="w-full h-8 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
-                        disabled={isUpdating}
-                        onClick={() =>
-                          handleAdvanceStatus(
-                            order.id,
-                            "DELIVERED",
-                            "Client identity verified and biometric delivery confirmed"
-                          )
-                        }
-                      >
-                        <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                        <span>Confirm Handover Delivery</span>
-                      </Button>
+                      <>
+                        {order.paymentInfo?.paymentStatus !== "PAID" ? (
+                          <div className="p-2.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs flex flex-col xs:flex-row xs:items-center justify-between gap-2 shadow-2xs">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-amber-600 animate-spin shrink-0" />
+                              <div className="text-left">
+                                <span className="font-semibold text-amber-950 block">Payment Pending</span>
+                                <span className="text-[10px] text-amber-800">
+                                  {order.paymentInfo?.method === "DIGITAL_COD_UPI"
+                                    ? "Customer must scan Doorstep QR before handover"
+                                    : "Payment verification pending via treasury"}
+                                </span>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="border-amber-300 text-amber-900 font-mono text-[10px] self-start xs:self-auto shrink-0">
+                              UNPAID
+                            </Badge>
+                          </div>
+                        ) : order.paymentInfo?.method === "DIGITAL_COD_UPI" ? (
+                          <Button
+                            variant="luxury"
+                            size="sm"
+                            className="w-full h-8 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
+                            disabled={isUpdating}
+                            onClick={() => setOtpVerificationOrder(order)}
+                          >
+                            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                            <span>Confirm Handover Delivery (Verify OTP)</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="luxury"
+                            size="sm"
+                            className="w-full h-8 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
+                            disabled={isUpdating}
+                            onClick={() =>
+                              handleAdvanceStatus(
+                                order.id,
+                                "DELIVERED",
+                                "Client identity verified and biometric delivery confirmed"
+                              )
+                            }
+                          >
+                            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                            <span>Confirm Handover Delivery</span>
+                          </Button>
+                        )}
+                      </>
                     )}
 
                     <div className="space-y-1.5 pt-1">
@@ -547,7 +581,7 @@ export function AdminOrderApprovalList() {
                 <TableHead className="min-w-[210px] text-xs py-3.5 px-4 whitespace-nowrap">Gemstone Lots</TableHead>
                 <TableHead className="w-[140px] text-xs py-3.5 px-4 whitespace-nowrap">Settlement</TableHead>
                 <TableHead className="min-w-[160px] text-xs py-3.5 px-4 whitespace-nowrap">Fulfillment Status</TableHead>
-                <TableHead className="w-[210px] text-right text-xs py-3.5 px-4 whitespace-nowrap">Curator Actions</TableHead>
+                <TableHead className="min-w-[230px] text-right text-xs py-3.5 px-4 whitespace-nowrap">Curator Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -755,22 +789,45 @@ export function AdminOrderApprovalList() {
                       )}
 
                       {order.status === "OUT_FOR_DELIVERY" && (
-                        <Button
-                          variant="luxury"
-                          size="sm"
-                          className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
-                          disabled={isUpdating}
-                          onClick={() =>
-                            handleAdvanceStatus(
-                              order.id,
-                              "DELIVERED",
-                              "Client identity verified and biometric delivery confirmed"
-                            )
-                          }
-                        >
-                          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                          <span>Confirm Delivery</span>
-                        </Button>
+                        <>
+                          {order.paymentInfo?.paymentStatus !== "PAID" ? (
+                            <span
+                              className="h-7 px-2.5 text-[10px] font-mono inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 text-amber-900"
+                              title="Delivery confirmation locked until customer payment is received"
+                            >
+                              <Clock className="h-3 w-3 text-amber-600 animate-spin shrink-0" />
+                              <span>Awaiting Payment</span>
+                            </span>
+                          ) : order.paymentInfo?.method === "DIGITAL_COD_UPI" ? (
+                            <Button
+                              variant="luxury"
+                              size="sm"
+                              className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+                              disabled={isUpdating}
+                              onClick={() => setOtpVerificationOrder(order)}
+                            >
+                              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                              <span>Confirm Delivery (OTP)</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="luxury"
+                              size="sm"
+                              className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+                              disabled={isUpdating}
+                              onClick={() =>
+                                handleAdvanceStatus(
+                                  order.id,
+                                  "DELIVERED",
+                                  "Client identity verified and biometric delivery confirmed"
+                                )
+                              }
+                            >
+                              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                              <span>Confirm Delivery</span>
+                            </Button>
+                          )}
+                        </>
                       )}
 
                       {order.status === "DELIVERED" && (
@@ -1061,6 +1118,16 @@ export function AdminOrderApprovalList() {
         isOpen={isCreateOrderModalOpen}
         onClose={() => setIsCreateOrderModalOpen(false)}
         onOrderCreated={() => refetch()}
+      />
+
+      {/* 7. Courier / Admin Handover OTP Verification Modal */}
+      <CourierHandoverOtpModal
+        order={otpVerificationOrder}
+        isOpen={Boolean(otpVerificationOrder)}
+        onClose={() => setOtpVerificationOrder(null)}
+        onSuccess={() => {
+          void refetch();
+        }}
       />
     </div>
   );

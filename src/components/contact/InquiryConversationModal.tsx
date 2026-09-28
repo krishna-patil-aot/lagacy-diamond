@@ -41,10 +41,16 @@ export function InquiryConversationModal({
   const { user } = useAuthStore();
   const isViewerAdmin = user?.role === "ADMIN";
 
-  const { activeInquiry, isLoading, isSending, loadInquiry, sendMessage } =
+  const { activeInquiry, isLoading, isSending, loadInquiry, sendMessage, closeConversation } =
     useInquiryConversation(inquiryNumber || undefined);
 
+  const handleClose = () => {
+    closeConversation();
+    onClose();
+  };
+
   const [messageDraft, setMessageDraft] = useState<string>("");
+  const [isSpecialReply, setIsSpecialReply] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Sync inquiry when prop changes
@@ -71,10 +77,14 @@ export function InquiryConversationModal({
       isViewerAdmin ? user?.name || "Curator Gemologist" : activeInquiry?.fullName,
       isViewerAdmin
         ? user?.email || siteConfig.contact.conciergeEmail
-        : activeInquiry?.email
+        : activeInquiry?.email,
+      isViewerAdmin ? isSpecialReply : false
     );
     if (ok) {
       setMessageDraft("");
+      if (isSpecialReply) {
+        setIsSpecialReply(false);
+      }
     }
   };
 
@@ -123,7 +133,7 @@ export function InquiryConversationModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         hideCloseButton={true}
         className="max-w-2xl w-[calc(100%-1.5rem)] sm:w-full p-0 bg-white text-stone-900 border border-stone-200/90 shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col max-h-[90dvh]"
@@ -167,7 +177,7 @@ export function InquiryConversationModal({
               type="button"
               variant="ghost"
               size="icon"
-              onClick={onClose}
+              onClick={handleClose}
               className="h-8 w-8 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-200/70 shrink-0 transition-colors"
               aria-label="Close conversation modal"
             >
@@ -336,44 +346,81 @@ export function InquiryConversationModal({
           {/* Admin Quick Presets */}
           {isViewerAdmin && activeInquiry && (
             <div className="space-y-1.5">
-              <div className="text-[10px] font-mono text-stone-400 uppercase tracking-wider">
-                Curator Response Presets:
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono text-stone-400 uppercase tracking-wider">
+                  Curator Response Presets:
+                </span>
+                <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                  Select to format official reply
+                </span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setMessageDraft(
                       `Dear ${activeInquiry.fullName},\n\nWe have verified our certified vault for diamonds matching your preference (${activeInquiry.preferredCaratRange || "selected specifications"}). Our curation team has earmarked 2 investment-grade Type IIa solitaires with GIA Dossiers for your private review.\n\nWould you like us to arrange a private video salon consultation?`
-                    )
-                  }
+                    );
+                    setIsSpecialReply(true);
+                  }}
                   className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors cursor-pointer"
                 >
                   + Solitaire Curation
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setMessageDraft(
                       `Dear ${activeInquiry.fullName},\n\nOur master bench jewelers are ready to draft custom 3D CAD renders for your bespoke setting. We specialize in 18k Yellow Gold, Rose Gold, Midnight Noir Gold, and 950 Platinum.\n\nPlease share your ring size and target delivery date.`
-                    )
-                  }
+                    );
+                    setIsSpecialReply(true);
+                  }}
                   className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors cursor-pointer"
                 >
                   + Custom Ring CAD
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setMessageDraft(
                       `Dear ${activeInquiry.fullName},\n\nThank you for reaching DarkGems Concierge. We have received your consultation request and our Head Gemologist will reach out directly via call/WhatsApp to discuss your gemstone requirements in detail.`
-                    )
-                  }
+                    );
+                    setIsSpecialReply(true);
+                  }}
                   className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 transition-colors cursor-pointer"
                 >
                   + Direct Call Notice
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Curator Mode Indicator: Normal Chat (No Email) vs Special Reply (Email Dispatched) */}
+          {isViewerAdmin && (
+            <div className="flex items-center justify-between gap-2 px-1 text-xs">
+              <div className="flex items-center gap-1.5 text-[11px] font-mono">
+                <span className="text-stone-400">Mode:</span>
+                {isSpecialReply ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-[10px]">
+                    <Mail className="h-3 w-3 text-amber-700" />
+                    Special Reply (Email will be sent)
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 text-[10px]">
+                    Normal Chat (No email)
+                  </span>
+                )}
+              </div>
+
+              <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-stone-600 hover:text-stone-900 select-none">
+                <input
+                  type="checkbox"
+                  checked={isSpecialReply}
+                  onChange={(e) => setIsSpecialReply(e.target.checked)}
+                  className="rounded border-stone-300 text-amber-600 focus:ring-amber-500 h-3.5 w-3.5"
+                />
+                <span>Send as Special Email Reply</span>
+              </label>
             </div>
           )}
 

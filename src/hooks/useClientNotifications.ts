@@ -10,6 +10,7 @@ export interface IUseClientNotificationsReturn {
   isLoading: boolean;
   selectedInquiry: IInquiry | null;
   setSelectedInquiry: (inquiry: IInquiry | null) => void;
+  closeConversation: () => void;
   markAsRead: (inquiryId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   refetch: () => Promise<void>;
@@ -22,6 +23,7 @@ export function useClientNotifications(): IUseClientNotificationsReturn {
     isLoading,
     activeInquiry,
     setActiveInquiry,
+    closeConversation: storeCloseConversation,
     fetchNotifications,
     markInquiryRead,
     markAllRead,
@@ -42,12 +44,28 @@ export function useClientNotifications(): IUseClientNotificationsReturn {
     [markInquiryRead]
   );
 
+  const closeConversation = useCallback(() => {
+    storeCloseConversation();
+  }, [storeCloseConversation]);
+
+  const setSelectedInquiry = useCallback(
+    (inquiry: IInquiry | null) => {
+      if (!inquiry) {
+        storeCloseConversation();
+      } else {
+        setActiveInquiry(inquiry);
+      }
+    },
+    [setActiveInquiry, storeCloseConversation]
+  );
+
   return {
     notifications,
     unreadCount,
     isLoading,
     selectedInquiry: activeInquiry,
-    setSelectedInquiry: setActiveInquiry,
+    setSelectedInquiry,
+    closeConversation,
     markAsRead,
     markAllAsRead: markAllRead,
     refetch: fetchNotifications,

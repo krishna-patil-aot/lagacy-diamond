@@ -81,6 +81,7 @@ export function AdminInquiriesTable() {
   const [commissionInquiry, setCommissionInquiry] = useState<IInquiryPrefill | null>(null);
   const [notesDraft, setNotesDraft] = useState<string>("");
   const [replyDraft, setReplyDraft] = useState<string>("");
+  const [tableSendEmail, setTableSendEmail] = useState<boolean>(true);
 
   const startRecord =
     totalFilteredCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
@@ -246,10 +247,9 @@ export function AdminInquiriesTable() {
                 <SelectValue placeholder={String(pageSize)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem
-                  value="5"
-                  className="text-xs font-mono"
-                ></SelectItem>
+                <SelectItem value="5" className="text-xs font-mono">
+                  5
+                </SelectItem>
                 <SelectItem value="10" className="text-xs font-mono">
                   10
                 </SelectItem>
@@ -1001,16 +1001,27 @@ export function AdminInquiriesTable() {
                 />
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
-                  <span className="text-[10px] font-mono text-stone-500 truncate">
-                    Recipient: <strong className="text-stone-700">{inspectInquiry.email}</strong>
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-mono text-stone-500 truncate">
+                      Recipient: <strong className="text-stone-700">{inspectInquiry.email}</strong>
+                    </span>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-stone-600 hover:text-stone-900 select-none">
+                      <input
+                        type="checkbox"
+                        checked={tableSendEmail}
+                        onChange={(e) => setTableSendEmail(e.target.checked)}
+                        className="rounded border-stone-300 text-amber-600 focus:ring-amber-500 h-3.5 w-3.5"
+                      />
+                      <span>Notify client via email (Special Reply)</span>
+                    </label>
+                  </div>
                   <Button
                     type="button"
                     variant="luxury"
                     size="sm"
                     disabled={isUpdating || !replyDraft.trim()}
                     onClick={async () => {
-                      const ok = await sendReply(inspectInquiry.id, replyDraft, "IN_PROGRESS");
+                      const ok = await sendReply(inspectInquiry.id, replyDraft, "IN_PROGRESS", tableSendEmail);
                       if (ok) setReplyDraft("");
                     }}
                     className="text-xs font-mono h-8 gap-1.5 shadow-xs px-4 w-full sm:w-auto"

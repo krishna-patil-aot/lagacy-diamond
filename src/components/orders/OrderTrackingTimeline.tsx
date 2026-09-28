@@ -19,7 +19,10 @@ import {
   ShieldAlert,
   Shield,
   HelpCircle,
+  Lock,
+  QrCode,
 } from "lucide-react";
+import { DoorstepPaymentModal } from "./DoorstepPaymentModal";
 
 interface OrderTrackingTimelineProps {
   order: IOrder;
@@ -27,6 +30,7 @@ interface OrderTrackingTimelineProps {
 
 export function OrderTrackingTimeline({ order }: OrderTrackingTimelineProps) {
   const [isFaqModalOpen, setIsFaqModalOpen] = useState<boolean>(false);
+  const [isDoorstepPaymentOpen, setIsDoorstepPaymentOpen] = useState<boolean>(false);
   const { currentStageIndex, progressPercentage, stages, copyTrackingNumber, copied } =
     useOrderTracking(order);
 
@@ -303,6 +307,56 @@ export function OrderTrackingTimeline({ order }: OrderTrackingTimelineProps) {
         </div>
       </div>
 
+      {/* Doorstep Payment Stage Trigger (Step right before Delivered & Signed) */}
+      {order.paymentInfo?.method === "DIGITAL_COD_UPI" && order.status === "OUT_FOR_DELIVERY" && (
+        <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 p-4 sm:p-5 space-y-2.5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+            <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 font-mono uppercase tracking-wide">
+              <QrCode className="h-4 w-4 text-emerald-700 shrink-0" />
+              <span>Doorstep Payment Active • Ready for Handover</span>
+            </span>
+            <Badge variant="success" className="text-[10px] font-mono self-start sm:self-center">
+              COURIER AT ADDRESS
+            </Badge>
+          </div>
+          <p className="text-xs text-emerald-800 leading-relaxed">
+            The armored courier van is at your delivery address. Scan the dynamic QR code to settle the consignment amount and reveal your 4-digit Handover OTP.
+          </p>
+          <div className="pt-1">
+            <Button
+              type="button"
+              variant="luxury"
+              onClick={() => setIsDoorstepPaymentOpen(true)}
+              className="h-8 text-xs font-medium bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 shadow-xs"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+              <span>
+                {order.paymentInfo.paymentStatus === "PAID"
+                  ? `View Handover OTP (${order.paymentInfo.deliveryHandoverOtp || "Ready"})`
+                  : "Pay via Doorstep QR"}
+              </span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {order.paymentInfo?.method === "DIGITAL_COD_UPI" &&
+        order.status !== "OUT_FOR_DELIVERY" &&
+        order.status !== "DELIVERED" &&
+        order.status !== "CANCELLED" && (
+          <div className="rounded-xl border border-stone-200 bg-white p-3 text-xs text-stone-600 flex flex-col xs:flex-row xs:items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 text-stone-400 shrink-0" />
+              <span className="text-[11px]">
+                Payment unlocks right before final handover at <strong>Stage 5: Out for Handover</strong>.
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 uppercase self-start xs:self-auto shrink-0">
+              Locked in Transit
+            </span>
+          </div>
+        )}
+
       {/* 3. Vault Log & Transit Milestones FAQ & Modal Trigger Card */}
       <div className="border-t border-stone-200/80 pt-3.5 space-y-2.5">
         <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-stone-50 to-amber-50/40 p-3 sm:p-4 shadow-2xs space-y-2.5">
@@ -362,6 +416,13 @@ export function OrderTrackingTimeline({ order }: OrderTrackingTimelineProps) {
         isOpen={isFaqModalOpen}
         onClose={() => setIsFaqModalOpen(false)}
         order={order}
+      />
+
+      {/* Doorstep Payment Modal triggered from Timeline */}
+      <DoorstepPaymentModal
+        order={order}
+        isOpen={isDoorstepPaymentOpen}
+        onClose={() => setIsDoorstepPaymentOpen(false)}
       />
     </div>
   );

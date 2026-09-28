@@ -82,8 +82,10 @@ export async function POST(
       console.warn("[Inquiry Broadcast Warning]:", eventError);
     }
 
-    // If Admin replied, dispatch notification email to the client
-    if (isAdmin && existing.email) {
+    // Only dispatch notification email on explicit special reply (never on normal live chat)
+    const isSpecialReply = Boolean(body.sendEmail || body.isSpecialReply);
+
+    if (isAdmin && isSpecialReply && existing.email) {
       void sendInquiryReplyNotificationEmail({
         to: existing.email,
         clientName: existing.fullName,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useClientNotifications } from "@/hooks/useClientNotifications";
 import { useAuthStore } from "@/store/useAuthStore";
 import { IInquiry } from "@/types/inquiry.types";
@@ -13,8 +13,13 @@ import {
   User,
 } from "lucide-react";
 import { InquiryConversationModal } from "@/components/contact/InquiryConversationModal";
+import { LiveInquiryAlert } from "@/components/common/LiveInquiryAlert";
 
-export function NavbarNotificationBell() {
+interface NavbarNotificationBellProps {
+  hideModal?: boolean;
+}
+
+export function NavbarNotificationBell({ hideModal = false }: NavbarNotificationBellProps = {}) {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "ADMIN";
 
@@ -24,12 +29,43 @@ export function NavbarNotificationBell() {
     isLoading,
     selectedInquiry,
     setSelectedInquiry,
+    closeConversation,
     markAsRead,
     markAllAsRead,
   } = useClientNotifications();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Compute sorted notifications: unread first, newest messages and activity at the top
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => {
+      // 1. Unread items prioritized
+      const aUnread = isAdmin
+        ? (typeof a.unreadAdminCount === "number" && a.unreadAdminCount > 0) || a.status === "NEW"
+        : (typeof a.unreadClientCount === "number" && a.unreadClientCount > 0) || a.isClientRead === false;
+      const bUnread = isAdmin
+        ? (typeof b.unreadAdminCount === "number" && b.unreadAdminCount > 0) || b.status === "NEW"
+        : (typeof b.unreadClientCount === "number" && b.unreadClientCount > 0) || b.isClientRead === false;
+
+      if (aUnread && !bUnread) return -1;
+      if (!aUnread && bUnread) return 1;
+
+      // 2. Newest message or update timestamp first
+      const getLatestTime = (inq: IInquiry): number => {
+        const lastMsg =
+          inq.messages && inq.messages.length > 0
+            ? inq.messages[inq.messages.length - 1]
+            : null;
+        const msgTime = lastMsg?.createdAt ? new Date(lastMsg.createdAt).getTime() : 0;
+        const updateTime = inq.updatedAt ? new Date(inq.updatedAt).getTime() : 0;
+        const createTime = inq.createdAt ? new Date(inq.createdAt).getTime() : 0;
+        return Math.max(msgTime, updateTime, createTime);
+      };
+
+      return getLatestTime(b) - getLatestTime(a);
+    });
+  }, [notifications, isAdmin]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -55,6 +91,8 @@ export function NavbarNotificationBell() {
 
   return (
     <>
+      {/* Real-time floating incoming inquiry alert banner */}
+      {!hideModal && <LiveInquiryAlert />}
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
@@ -95,7 +133,7 @@ export function NavbarNotificationBell() {
             </div>
 
             {/* Notification List */}
-            <div className="max-h-80 overflow-y-auto divide-y divide-stone-100 text-xs">
+            <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto divide-y divide-stone-100 text-xs">
               {isLoading && notifications.length === 0 ? (
                 <div className="py-8 text-center text-stone-400 font-mono text-xs">
                   Checking for new messages...
@@ -113,7 +151,7 @@ export function NavbarNotificationBell() {
                   </p>
                 </div>
               ) : (
-                notifications.map((inquiry) => {
+                sortedNotifications.map((inquiry) => {
                   const lastMessage =
                     inquiry.messages && inquiry.messages.length > 0
                       ? inquiry.messages[inquiry.messages.length - 1]
@@ -122,9 +160,8 @@ export function NavbarNotificationBell() {
                     ? (inquiry.unreadAdminCount && inquiry.unreadAdminCount > 0) || inquiry.status === "NEW"
                     : (inquiry.unreadClientCount && inquiry.unreadClientCount > 0) || !inquiry.isClientRead;
 
-                  const previewText = isAdmin
-                    ? lastMessage?.message || inquiry.message
-                    : inquiry.adminReply || lastMessage?.message || inquiry.message;
+                  const previewText =
+                    lastMessage?.message || inquiry.adminReply || inquiry.message;
 
                   return (
                     <div
@@ -177,12 +214,15 @@ export function NavbarNotificationBell() {
         )}
       </div>
 
-      {/* Live End-to-End Conversation Modal */}
-      {selectedInquiry && (
+      {/* Live End-to-End Conversation Modal - rendered once across viewports */}
+      {!hideModal && selectedInquiry && (
         <InquiryConversationModal
           inquiryNumber={selectedInquiry.inquiryNumber}
           isOpen={Boolean(selectedInquiry)}
-          onClose={() => setSelectedInquiry(null)}
+          onClose={() => {
+            closeConversation();
+            setSelectedInquiry(null);
+          }}
         />
       )}
     </>

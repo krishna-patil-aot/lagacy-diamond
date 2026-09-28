@@ -29,6 +29,16 @@ const PaymentInfoSchema = new Schema(
     },
     couponCode: { type: String, uppercase: true, trim: true, default: "" },
     couponDiscountPercentage: { type: Number, default: 0 },
+    paymentStatus: {
+      type: String,
+      enum: ["UNPAID", "PENDING_VERIFICATION", "PAID", "FAILED"],
+      default: "UNPAID",
+    },
+    gatewayTransactionId: { type: String, default: "" },
+    paidAt: { type: String },
+    deliveryHandoverOtp: { type: String, default: "" },
+    isOtpVerified: { type: Boolean, default: false },
+    otpVerifiedAt: { type: String },
   },
   { _id: false }
 );
