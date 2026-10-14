@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { verifyToken, isMasterAdminEmail } from "@/lib/auth";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -13,8 +13,7 @@ export function proxy(request: NextRequest) {
   const payload = sessionToken ? verifyToken(sessionToken) : null;
   const isAuthenticated = Boolean(payload);
   const isAdmin = payload?.role === "ADMIN";
-  const MASTER_ADMIN_EMAIL = "engrkrishnapatil@gmail.com";
-  const isMasterAdmin = isAdmin && payload?.email === MASTER_ADMIN_EMAIL;
+  const isMasterAdmin = isAdmin && isMasterAdminEmail(payload?.email);
 
   // 1. Protect Admin Vault routes: requires valid token, ADMIN role, and master admin email
   if (pathname.startsWith("/admin")) {

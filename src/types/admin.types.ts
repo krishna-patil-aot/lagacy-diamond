@@ -152,3 +152,25 @@ export interface IAdminCreateOrderResponse {
   data?: import("./order.types").IOrder;
   error?: string;
 }
+
+export interface IAdminOrderStatusTabsProps {
+  statusFilter: import("./order.types").OrderStatus | "ALL";
+  setStatusFilter: (status: import("./order.types").OrderStatus | "ALL") => void;
+  counts: {
+    all: number;
+    pending: number;
+    approved: number;
+    dispatched: number;
+    delivered: number;
+    cancelled: number;
+  };
+}
+
+export interface IAdminOrderInspectorModalProps {
+  order: import("./order.types").IOrder | null;
+  isOpen: boolean;
+  onClose: () => void;
+  sendOrderDocuments: (order: import("./order.types").IOrder) => Promise<boolean>;
+  isSending: (orderId: string) => boolean;
+  getStatusBadge: (status: import("./order.types").OrderStatus) => React.ReactNode;
+}

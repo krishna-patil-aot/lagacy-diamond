@@ -206,10 +206,10 @@ export function Footer() {
 
           <div className="flex items-center gap-2 bg-stone-100/90 border border-stone-200/80 px-3.5 py-1.5 rounded-full shadow-xs">
             <span className="text-stone-500 font-medium">
-              Software Engineer:
+              Software Developer:
             </span>
             <Link
-              href="https://www.linkedin.com/in/krishnapatil-dev"
+              href="https://www.linkedin.com/in/krishna-patil-dev"
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-stone-900 hover:text-amber-800 underline underline-offset-4 decoration-stone-300 hover:decoration-amber-800 transition-colors inline-flex items-center gap-1 group"

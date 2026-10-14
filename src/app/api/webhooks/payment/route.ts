@@ -39,8 +39,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid JSON payload" }, { status: 400 });
     }
 
+    // In production, strictly reject simulated payment requests
+    if (isSimulated && process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { success: false, error: "Payment simulation is disabled in production environment" },
+        { status: 403 }
+      );
+    }
+
     // In production, enforce cryptographic signature verification
-    if (!isSimulated && process.env.NODE_ENV === "production" && webhookSecret) {
+    if (process.env.NODE_ENV === "production" && webhookSecret) {
       if (!signature) {
         return NextResponse.json(
           { success: false, error: "Missing cryptographic webhook signature" },

@@ -98,3 +98,21 @@ export function getAuthenticatedUserFromRequest(request: {
   return verifyToken(token);
 }
 
+/**
+ * Returns the configured master administrator email from environment variables.
+ * Falls back safely to GMAIL_USER or default administrative account.
+ */
+export function getMasterAdminEmail(): string {
+  return (process.env.ADMIN_EMAIL || process.env.GMAIL_USER || "engrkrishnapatil@gmail.com")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Verifies whether the provided email corresponds to the authorized master administrator.
+ */
+export function isMasterAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return email.toLowerCase().trim() === getMasterAdminEmail();
+}
+

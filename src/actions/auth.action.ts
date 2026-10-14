@@ -14,6 +14,7 @@ import {
   signResetToken,
   verifyResetToken,
   sanitizeUser,
+  isMasterAdminEmail,
 } from "@/lib/auth";
 import {
   sendRegistrationSuccessEmail,
@@ -37,11 +38,10 @@ import {
 
 const SESSION_COOKIE_NAME = "diamond_session";
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
-const MASTER_ADMIN_EMAIL = "engrkrishnapatil@gmail.com";
 
 /**
  * Standard Credentials Sign In Action
- * Strictly enforces that only engrkrishnapatil@gmail.com can possess ADMIN privileges
+ * Strictly enforces that only authorized admin accounts possess ADMIN privileges
  */
 export async function loginAction(credentials: LoginFormData): Promise<IUser> {
   const normalizedEmail = credentials.email.toLowerCase().trim();
@@ -53,7 +53,7 @@ export async function loginAction(credentials: LoginFormData): Promise<IUser> {
   }
 
   // Strictly enforce master admin lockdown
-  if (found.user.role === "ADMIN" && normalizedEmail !== MASTER_ADMIN_EMAIL) {
+  if (found.user.role === "ADMIN" && !isMasterAdminEmail(normalizedEmail)) {
     throw new Error("Admin Vault is restricted to the authorized master curator.");
   }
 
@@ -269,7 +269,7 @@ export async function verifyOtpAndLoginAction(
   }
 
   // Master admin check
-  if (found.user.role === "ADMIN" && normalizedEmail !== MASTER_ADMIN_EMAIL) {
+  if (found.user.role === "ADMIN" && !isMasterAdminEmail(normalizedEmail)) {
     throw new Error("Admin Vault is restricted to the authorized master curator.");
   }
 

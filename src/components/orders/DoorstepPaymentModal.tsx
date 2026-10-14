@@ -198,20 +198,22 @@ function DoorstepPaymentContent({
               </div>
             </div>
 
-            {/* Test Simulation Button */}
-            <div className="pt-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={triggerSimulatedPayment}
-                disabled={isSimulating}
-                className="w-full border-dashed border-stone-300 text-stone-600 hover:text-stone-900 hover:border-stone-900 text-xs gap-1.5"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSimulating ? "animate-spin" : ""}`} />
-                {isSimulating ? "Simulating Gateway Webhook..." : "Test Demo: Simulate Webhook Approval"}
-              </Button>
-            </div>
+            {/* Test Simulation Button (Development & Staging only) */}
+            {process.env.NODE_ENV !== "production" && (
+              <div className="pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={triggerSimulatedPayment}
+                  disabled={isSimulating}
+                  className="w-full border-dashed border-stone-300 text-stone-600 hover:text-stone-900 hover:border-stone-900 text-xs gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSimulating ? "animate-spin" : ""}`} />
+                  {isSimulating ? "Simulating Gateway Webhook..." : "Test Demo: Simulate Webhook Approval"}
+                </Button>
+              </div>
+            )}
           </>
         ) : (
           /* Payment Completed -> Release OTP Unlocked */

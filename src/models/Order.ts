@@ -100,7 +100,7 @@ const OrderItemSchema = new Schema(
     certificateNumber: {
       type: String,
       required: true,
-      default: () => `GIA-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      default: "PENDING-CERTIFICATION",
     },
     images: { type: [String], default: [] },
     dimensions: {

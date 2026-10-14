@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
 import { UserModel } from "@/models/User";
@@ -31,7 +32,7 @@ export function sanitizeOrderItem(item: unknown, idx = 0): IDiamond {
   const certNum =
     r.certificateNumber ||
     r.certificate ||
-    `GIA-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+    "PENDING-CERTIFICATION";
 
   const rawDimensions =
     typeof r.dimensions === "object" && r.dimensions
@@ -600,8 +601,8 @@ export async function confirmOrderPaymentByWebhook(
 ): Promise<IOrder | null> {
   const mongoose = await connectToDatabase();
   const timestamp = new Date().toISOString();
-  // Generate random secure 4-digit release OTP
-  const handoverOtp = Math.floor(1000 + Math.random() * 9000).toString();
+  // Generate cryptographically secure 4-digit release OTP
+  const handoverOtp = crypto.randomInt(1000, 10000).toString();
 
   const newTimelineEvent: IOrderTimelineEvent = {
     status: "OUT_FOR_DELIVERY",

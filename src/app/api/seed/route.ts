@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { DiamondModel } from "@/models/Diamond";
 import { UserModel } from "@/models/User";
+import { getMasterAdminEmail } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -13,14 +14,14 @@ export async function GET() {
       );
     }
 
+    const masterEmail = getMasterAdminEmail();
     const diamondCount = await DiamondModel.countDocuments();
-    const adminUser = await UserModel.findOne({ email: "engrkrishnapatil@gmail.com" }).lean();
+    const adminUser = await UserModel.findOne({ email: masterEmail }).lean();
 
     return NextResponse.json({
       success: true,
       diamondCount,
       masterAdminConfigured: Boolean(adminUser),
-      adminEmail: adminUser ? adminUser.email : null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Database check failed";

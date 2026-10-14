@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { IDiamond } from "@/types/diamond.types";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
 import {
   Table,
@@ -15,13 +14,6 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/Dialog";
 import {
   Select,
   SelectContent,
@@ -56,6 +48,8 @@ import {
 import { useOrderDocumentsEmail } from "@/hooks/useOrderDocumentsEmail";
 import { AdminCreateOrderModal } from "@/components/admin/AdminCreateOrderModal";
 import { CourierHandoverOtpModal } from "@/components/orders/CourierHandoverOtpModal";
+import { AdminOrderStatusTabs } from "@/components/admin/AdminOrderStatusTabs";
+import { AdminOrderInspectorModal } from "@/components/admin/AdminOrderInspectorModal";
 
 export function AdminOrderApprovalList() {
   const {
@@ -207,49 +201,19 @@ export function AdminOrderApprovalList() {
         </div>
       </div>
 
-      {/* 2. Status Filter Tabs (Dedicated row with horizontal scroll, perfectly aligned, never wraps awkwardly) */}
-      <div className="overflow-x-auto pb-1 -mt-1 scrollbar-none">
-        <div className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-100/80 p-1 text-xs min-w-max">
-          {(
-            [
-              { id: "ALL", label: "All Orders", count: orders.length },
-              { id: "PENDING_APPROVAL", label: "Pending Review", count: pendingCount },
-              { id: "APPROVED", label: "Approved", count: approvedCount },
-              { id: "DISPATCHED", label: "In Transit", count: dispatchedCount },
-              { id: "DELIVERED", label: "Delivered", count: deliveredCount },
-              { id: "CANCELLED", label: "Cancelled", count: cancelledCount },
-            ] as const
-          ).map((tab) => {
-            const isActive = statusFilter === tab.id;
-            return (
-              <Button
-                key={tab.id}
-                variant={isActive ? "luxury" : "ghost"}
-                size="sm"
-                onClick={() => setStatusFilter(tab.id as OrderStatus | "ALL")}
-                className={`h-8 px-3.5 text-xs font-medium transition-all whitespace-nowrap shrink-0 rounded-lg ${
-                  isActive
-                    ? "bg-stone-900 text-white shadow-xs hover:bg-stone-800 font-semibold"
-                    : "text-stone-600 hover:text-stone-900 hover:bg-white/80"
-                }`}
-              >
-                <span>{tab.label}</span>
-                {tab.count !== undefined && tab.count > 0 && (
-                  <span
-                    className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-mono leading-none ${
-                      isActive
-                        ? "bg-stone-800 text-amber-300 font-bold"
-                        : "bg-stone-200/90 text-stone-700"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
+      {/* 2. Status Filter Tabs */}
+      <AdminOrderStatusTabs
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        counts={{
+          all: orders.length,
+          pending: pendingCount,
+          approved: approvedCount,
+          dispatched: dispatchedCount,
+          delivered: deliveredCount,
+          cancelled: cancelledCount,
+        }}
+      />
 
       {/* 3. Search Bar & Controls Toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-50/70 p-2.5 sm:p-3 rounded-xl border border-stone-200/80">
@@ -977,141 +941,14 @@ export function AdminOrderApprovalList() {
       </div>
 
       {/* Order Inspection Detail Dialog */}
-      {inspectOrder && (
-        <Dialog open={Boolean(inspectOrder)} onOpenChange={(open) => !open && setInspectOrder(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <div className="flex items-center justify-between">
-                <DialogTitle>Order Reference #{inspectOrder.orderNumber || inspectOrder.id}</DialogTitle>
-                <div>{getStatusBadge(inspectOrder.status)}</div>
-              </div>
-              <DialogDescription>
-                Placed on {new Date(inspectOrder.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 text-xs pt-2">
-              {/* Shipping Destination */}
-              <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 space-y-1">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-stone-500 font-semibold flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-amber-600" />
-                  <span>Insured Delivery Address</span>
-                </span>
-                <div className="font-semibold text-stone-900 text-sm">{inspectOrder.shippingAddress?.fullName}</div>
-                <div className="text-stone-600">{inspectOrder.shippingAddress?.street}</div>
-                <div className="text-stone-600">
-                  {inspectOrder.shippingAddress?.city}, {inspectOrder.shippingAddress?.state} {inspectOrder.shippingAddress?.postalCode}, {inspectOrder.shippingAddress?.country}
-                </div>
-                <div className="text-stone-600 font-mono pt-0.5">
-                  Phone: {inspectOrder.shippingAddress?.phone} • Email: {inspectOrder.shippingAddress?.email}
-                </div>
-              </div>
-
-              {/* Items in Order */}
-              <div className="space-y-2">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-stone-500 font-semibold block">
-                  Gemstone Lots ({inspectOrder.items.length})
-                </span>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {inspectOrder.items.map((item: IDiamond) => (
-                    <div
-                      key={item._id}
-                      className="flex items-center justify-between rounded-lg border border-stone-200 bg-white p-2.5"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="relative h-10 w-10 rounded overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
-                          <Image
-                            src={item.images[0] || ""}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-stone-900">{item.name}</div>
-                          <div className="text-[11px] font-mono text-stone-500">
-                            {item.carat} ct • {item.shape} • {item.color}/{item.clarity} • Cut: {item.cut}
-                          </div>
-                          <div className="text-[10px] font-mono text-amber-800">
-                            Cert: {item.lab} #{item.certificateNumber}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="font-mono font-bold text-stone-900 text-sm">
-                        {formatPrice(item.finalPrice)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Financial Breakdown */}
-              <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3.5 space-y-1.5">
-                <div className="flex justify-between text-stone-600">
-                  <span>Subtotal:</span>
-                  <span className="font-mono text-stone-900 font-medium">{formatPrice(inspectOrder.subtotal)}</span>
-                </div>
-                {inspectOrder.couponDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Coupon Discount:</span>
-                    <span className="font-mono">-{formatPrice(inspectOrder.couponDiscount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-stone-600">
-                  <span>Insured Armored Courier Transit:</span>
-                  <span className="font-mono text-emerald-700 font-semibold">FREE / COMPLIMENTARY</span>
-                </div>
-                <div className="flex justify-between text-stone-900 font-bold border-t border-stone-200 pt-1.5 text-sm">
-                  <span>Settlement Total:</span>
-                  <span className="font-mono text-base text-emerald-700">{formatPrice(inspectOrder.totalAmount)}</span>
-                </div>
-              </div>
-
-              {/* Client Documentation Email Dispatch (Admin Action) */}
-              <div className="rounded-xl border border-stone-200 bg-stone-900 p-3.5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-stone-100 flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-amber-400" />
-                    <span>Client Documentation Dispatch</span>
-                  </div>
-                  <div className="text-[11px] text-stone-400">
-                    Recipient: <strong className="text-amber-300">{inspectOrder.shippingAddress?.email}</strong>
-                  </div>
-                </div>
-
-                {inspectOrder.status === "DELIVERED" ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="luxury"
-                    onClick={() => sendOrderDocuments(inspectOrder)}
-                    disabled={isSending(inspectOrder.id)}
-                    className="h-7 text-xs font-mono gap-1.5 shrink-0 shadow-xs"
-                  >
-                    {isSending(inspectOrder.id) ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Sending Email...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="h-3.5 w-3.5" />
-                        <span>Send Invoice & Cert Email</span>
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <span className="text-[10px] font-mono text-amber-300/80 italic">
-                    {inspectOrder.status === "CANCELLED"
-                      ? "Order voided"
-                      : "Email available once order is fulfilled"}
-                  </span>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <AdminOrderInspectorModal
+        order={inspectOrder}
+        isOpen={Boolean(inspectOrder)}
+        onClose={() => setInspectOrder(null)}
+        sendOrderDocuments={sendOrderDocuments}
+        isSending={isSending}
+        getStatusBadge={getStatusBadge}
+      />
 
       {/* 6. Admin Create Client Order Modal */}
       <AdminCreateOrderModal
