@@ -54,15 +54,31 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: "#f7f3eb",
-    padding: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 2,
     border: "0.5pt solid #e5dccb",
     marginBottom: 14,
   },
   metaItem: {
-    fontSize: 8,
+    fontSize: 7.5,
     color: "#44403c",
+    width: "25%",
+    textAlign: "center",
+  },
+  metaItemLeft: {
+    fontSize: 7.5,
+    color: "#44403c",
+    width: "25%",
+    textAlign: "left",
+  },
+  metaItemRight: {
+    fontSize: 7.5,
+    color: "#44403c",
+    width: "25%",
+    textAlign: "right",
   },
   metaBold: {
     fontFamily: "Helvetica-Bold",
@@ -81,14 +97,14 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 8,
     marginBottom: 14,
   },
   fourCCard: {
-    flex: 1,
+    width: "23.5%",
     border: "1pt solid #b48c36",
     backgroundColor: "#ffffff",
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     alignItems: "center",
     borderRadius: 2,
   },
@@ -96,18 +112,24 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: "#78716c",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     marginBottom: 4,
+    textAlign: "center",
+    width: "100%",
   },
   fourCValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: "Times-Bold",
     color: "#855d14",
+    textAlign: "center",
+    width: "100%",
   },
   fourCSub: {
     fontSize: 6,
     color: "#a8a29e",
     marginTop: 2,
+    textAlign: "center",
+    width: "100%",
   },
   // Analysis Columns
   columnsWrapper: {
@@ -126,17 +148,22 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 3.5,
     borderBottom: "0.5pt solid #ebe5d8",
   },
   tableLabel: {
+    width: "55%",
     fontSize: 7.5,
     color: "#57534e",
+    textAlign: "left",
   },
   tableValue: {
+    width: "45%",
     fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
     color: "#1c1917",
+    textAlign: "right",
   },
   // Security & Signatures
   securityBlock: {
@@ -286,17 +313,17 @@ export function LabCertificatePdf({
 
             {/* Verification Metadata Bar */}
             <View style={styles.metaBar}>
-              <Text style={styles.metaItem}>
-                Report Number: <Text style={styles.metaBold}>{certificateNumber}</Text>
+              <Text style={styles.metaItemLeft}>
+                Report: <Text style={styles.metaBold}>{certificateNumber}</Text>
               </Text>
               <Text style={styles.metaItem}>
-                Issue Date: <Text style={styles.metaBold}>{issueDate}</Text>
+                Date: <Text style={styles.metaBold}>{issueDate}</Text>
               </Text>
               <Text style={styles.metaItem}>
-                Vault Registry: <Text style={styles.metaBold}>{vaultId}</Text>
+                Vault: <Text style={styles.metaBold}>{vaultId}</Text>
               </Text>
-              <Text style={styles.metaItem}>
-                Status: <Text style={styles.metaBold}>SEALED & AUTHENTICATED</Text>
+              <Text style={styles.metaItemRight}>
+                Status: <Text style={styles.metaBold}>SEALED & AUTH</Text>
               </Text>
             </View>
 

@@ -103,15 +103,34 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   thCol1: { width: "40%" },
-  thCol2: { width: "20%", textAlign: "center" },
-  thCol3: { width: "20%", textAlign: "center" },
-  thCol4: { width: "20%", textAlign: "right" },
+  thCol2: { width: "20%", alignItems: "center" },
+  thCol3: { width: "20%", alignItems: "center" },
+  thCol4: { width: "20%", alignItems: "flex-end" },
   thText: {
     fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
     color: "#ffffff",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    width: "100%",
+  },
+  thTextCenter: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    textAlign: "center",
+    width: "100%",
+  },
+  thTextRight: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    textAlign: "right",
+    width: "100%",
   },
   tableRow: {
     display: "flex",
@@ -131,16 +150,25 @@ const styles = StyleSheet.create({
     color: "#78716c",
     marginTop: 2,
   },
+  tdSubtitleCenter: {
+    fontSize: 7,
+    color: "#78716c",
+    marginTop: 2,
+    textAlign: "center",
+    width: "100%",
+  },
   tdTextCenter: {
     fontSize: 8,
     color: "#44403c",
     textAlign: "center",
+    width: "100%",
   },
   tdTextRight: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: "#1c1917",
     textAlign: "right",
+    width: "100%",
   },
   // Summary
   summaryWrapper: {
@@ -289,13 +317,13 @@ export function InvoicePdf({
               <Text style={styles.thText}>Gemstone Item Description</Text>
             </View>
             <View style={styles.thCol2}>
-              <Text style={styles.thText}>4Cs Grade</Text>
+              <Text style={styles.thTextCenter}>4Cs Grade</Text>
             </View>
             <View style={styles.thCol3}>
-              <Text style={styles.thText}>Lab Cert #</Text>
+              <Text style={styles.thTextCenter}>Lab Cert #</Text>
             </View>
             <View style={styles.thCol4}>
-              <Text style={styles.thText}>Total Amount</Text>
+              <Text style={styles.thTextRight}>Total Amount</Text>
             </View>
           </View>
 
@@ -320,11 +348,11 @@ export function InvoicePdf({
                   <Text style={styles.tdTextCenter}>
                     {item.carat || 1}ct • {item.color || "F"} • {item.clarity || "VS1"}
                   </Text>
-                  <Text style={styles.tdSubtitle}>{item.cut || "Ideal"} Cut</Text>
+                  <Text style={styles.tdSubtitleCenter}>{item.cut || "Ideal"} Cut</Text>
                 </View>
                 <View style={styles.thCol3}>
                   <Text style={styles.tdTextCenter}>{item.lab || "GIA"}</Text>
-                  <Text style={styles.tdSubtitle}>#{item.certificateNumber || "GENUINE"}</Text>
+                  <Text style={styles.tdSubtitleCenter}>#{item.certificateNumber || "GENUINE"}</Text>
                 </View>
                 <View style={styles.thCol4}>
                   <Text style={styles.tdTextRight}>${priceDisplay}</Text>
