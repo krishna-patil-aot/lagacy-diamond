@@ -154,7 +154,13 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
   const filteredOrders = useMemo(() => {
     let result = orders;
     if (statusFilter !== "ALL") {
-      result = result.filter((o) => o.status === statusFilter);
+      if (statusFilter === "DISPATCHED") {
+        result = result.filter((o) =>
+          ["DISPATCHED", "IN_TRANSIT", "OUT_FOR_DELIVERY"].includes(o.status)
+        );
+      } else {
+        result = result.filter((o) => o.status === statusFilter);
+      }
     }
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();

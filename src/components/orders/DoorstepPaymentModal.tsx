@@ -104,7 +104,9 @@ function DoorstepPaymentContent({
             className="border-amber-200 bg-amber-50 text-amber-900 font-mono text-[11px] gap-1 px-2.5 py-0.5"
           >
             <Lock className="w-3 h-3 text-amber-700" />
-            Digital COD • Direct Bank Settlement
+            {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP"
+              ? "Prepaid Online • Secure Handover"
+              : "Doorstep Settlement • Secure Handover"}
           </Badge>
           <span className="text-xs font-mono text-stone-500">Order #{orderNumber}</span>
         </div>

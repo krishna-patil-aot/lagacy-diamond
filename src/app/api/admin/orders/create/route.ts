@@ -3,7 +3,8 @@ import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { createOrder } from "@/lib/order-repository";
 import { getDiamondById } from "@/lib/diamond-repository";
 import { addInquiryMessage } from "@/lib/inquiry-repository";
-import { sendOrderReceiptPendingEmail } from "@/lib/mailer";
+import { enqueueJob } from "@/lib/queue-service";
+import { QUEUE_JOB_TYPES } from "@/types/queue.types";
 import { IDiamond } from "@/types/diamond.types";
 
 export async function POST(request: NextRequest) {
@@ -126,17 +127,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Dispatch acknowledgement email to client
+    // Offload acknowledgement email to background queue with idempotency
     if (clientEmail) {
-      sendOrderReceiptPendingEmail({
-        to: clientEmail.trim().toLowerCase(),
-        clientName: clientName.trim(),
-        orderNumber: newOrder.orderNumber || newOrder.id,
-        totalAmount: calculatedTotal,
-        itemCount: resolvedDiamonds.length,
-      }).catch((emailErr) => {
-        console.error("[Curator Order Mailer Error]:", emailErr);
-      });
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_ORDER_CONFIRMATION,
+        {
+          to: clientEmail.trim().toLowerCase(),
+          clientName: clientName.trim(),
+          orderNumber: newOrder.orderNumber || newOrder.id,
+          totalAmount: calculatedTotal,
+          itemCount: resolvedDiamonds.length,
+          orderId: newOrder.id,
+        },
+        {
+          idempotencyKey: `admin-order-confirm-${newOrder.id}`,
+          priority: "high",
+          maxRetries: 3,
+        }
+      );
     }
 
     return NextResponse.json({ success: true, data: newOrder }, { status: 201 });

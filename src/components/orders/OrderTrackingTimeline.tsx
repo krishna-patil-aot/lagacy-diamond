@@ -307,40 +307,100 @@ export function OrderTrackingTimeline({ order }: OrderTrackingTimelineProps) {
         </div>
       </div>
 
-      {/* Doorstep Payment Stage Trigger (Step right before Delivered & Signed) */}
-      {order.paymentInfo?.method === "DIGITAL_COD_UPI" && order.status === "OUT_FOR_DELIVERY" && (
-        <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 p-4 sm:p-5 space-y-2.5 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-            <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 font-mono uppercase tracking-wide">
-              <QrCode className="h-4 w-4 text-emerald-700 shrink-0" />
-              <span>Doorstep Payment Active • Ready for Handover</span>
-            </span>
-            <Badge variant="success" className="text-[10px] font-mono self-start sm:self-center">
-              COURIER AT ADDRESS
-            </Badge>
+      {/* Prepaid Online OTP Handover Trigger */}
+      {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP" &&
+        order.status === "OUT_FOR_DELIVERY" && (
+          <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 p-4 sm:p-5 space-y-2.5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 font-mono uppercase tracking-wide">
+                <ShieldCheck className="h-4 w-4 text-emerald-700 shrink-0" />
+                <span>Armored Courier at Address • Secure Handover OTP Ready</span>
+              </span>
+              <Badge variant="success" className="text-[10px] font-mono self-start sm:self-center">
+                OUT FOR HANDOVER
+              </Badge>
+            </div>
+            <p className="text-xs text-emerald-800 leading-relaxed">
+              Your diamond shipment is prepaid and verified. Show or read your 4-digit Handover OTP to the armored courier only after inspecting your tamper-evident parcel seal.
+            </p>
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="luxury"
+                onClick={() => setIsDoorstepPaymentOpen(true)}
+                className="h-8 text-xs font-medium bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 shadow-xs"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                <span>
+                  View Handover OTP ({order.paymentInfo?.deliveryHandoverOtp || "Ready"})
+                </span>
+              </Button>
+            </div>
           </div>
-          <p className="text-xs text-emerald-800 leading-relaxed">
-            The armored courier van is at your delivery address. Scan the dynamic QR code to settle the consignment amount and reveal your 4-digit Handover OTP.
-          </p>
-          <div className="pt-1">
+        )}
+
+      {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP" &&
+        order.status !== "OUT_FOR_DELIVERY" &&
+        order.status !== "DELIVERED" &&
+        order.status !== "CANCELLED" &&
+        order.status !== "PENDING_APPROVAL" && (
+          <div className="rounded-xl border border-stone-200 bg-white p-3 text-xs text-stone-600 flex flex-col xs:flex-row xs:items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span className="text-[11px]">
+                Prepaid Order Secured: Your Handover OTP is safely reserved and will be requested by courier at handover.
+              </span>
+            </div>
             <Button
               type="button"
-              variant="luxury"
+              variant="outline"
+              size="sm"
               onClick={() => setIsDoorstepPaymentOpen(true)}
-              className="h-8 text-xs font-medium bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 shadow-xs"
+              className="h-7 text-xs border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 gap-1 shrink-0 self-start xs:self-auto"
             >
-              <QrCode className="h-3.5 w-3.5" />
-              <span>
-                {order.paymentInfo.paymentStatus === "PAID"
-                  ? `View Handover OTP (${order.paymentInfo.deliveryHandoverOtp || "Ready"})`
-                  : "Pay via Doorstep QR"}
-              </span>
+              <Lock className="h-3 w-3" />
+              <span>View OTP ({order.paymentInfo?.deliveryHandoverOtp || "Ready"})</span>
             </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {order.paymentInfo?.method === "DIGITAL_COD_UPI" &&
+      {/* Doorstep Payment Stage Trigger (Step right before Delivered & Signed) */}
+      {(order.paymentInfo?.method === "CASH_ON_DELIVERY" ||
+        order.paymentInfo?.method === "DIGITAL_COD_UPI") &&
+        order.status === "OUT_FOR_DELIVERY" && (
+          <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 p-4 sm:p-5 space-y-2.5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 font-mono uppercase tracking-wide">
+                <QrCode className="h-4 w-4 text-emerald-700 shrink-0" />
+                <span>Doorstep Payment Active • Ready for Handover</span>
+              </span>
+              <Badge variant="success" className="text-[10px] font-mono self-start sm:self-center">
+                COURIER AT ADDRESS
+              </Badge>
+            </div>
+            <p className="text-xs text-emerald-800 leading-relaxed">
+              The armored courier van is at your delivery address. Settle the consignment via cash or scan the dynamic UPI QR code to release your 4-digit Handover OTP.
+            </p>
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="luxury"
+                onClick={() => setIsDoorstepPaymentOpen(true)}
+                className="h-8 text-xs font-medium bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 shadow-xs"
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                <span>
+                  {order.paymentInfo?.paymentStatus === "PAID"
+                    ? `View Handover OTP (${order.paymentInfo.deliveryHandoverOtp || "Ready"})`
+                    : "Pay via Doorstep QR / Cash"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        )}
+
+      {(order.paymentInfo?.method === "CASH_ON_DELIVERY" ||
+        order.paymentInfo?.method === "DIGITAL_COD_UPI") &&
         order.status !== "OUT_FOR_DELIVERY" &&
         order.status !== "DELIVERED" &&
         order.status !== "CANCELLED" && (
@@ -348,11 +408,11 @@ export function OrderTrackingTimeline({ order }: OrderTrackingTimelineProps) {
             <div className="flex items-center gap-2">
               <Lock className="h-3.5 w-3.5 text-stone-400 shrink-0" />
               <span className="text-[11px]">
-                Payment unlocks right before final handover at <strong>Stage 5: Out for Handover</strong>.
+                Payment settles right before final handover at <strong>Stage 5: Out for Handover</strong>.
               </span>
             </div>
             <span className="text-[10px] font-mono text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 uppercase self-start xs:self-auto shrink-0">
-              Locked in Transit
+              Payable at Doorstep
             </span>
           </div>
         )}

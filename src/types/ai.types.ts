@@ -36,5 +36,7 @@ export interface IAIChatResponse {
   reply: string;
   matchedDiamonds: IDiamond[];
   searchCriteria?: IDiamondSearchCriteria;
+  jobId?: string;
+  cached?: boolean;
   error?: string;
 }

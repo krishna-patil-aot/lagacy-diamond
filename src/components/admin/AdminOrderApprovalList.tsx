@@ -48,6 +48,7 @@ import {
 import { useOrderDocumentsEmail } from "@/hooks/useOrderDocumentsEmail";
 import { AdminCreateOrderModal } from "@/components/admin/AdminCreateOrderModal";
 import { CourierHandoverOtpModal } from "@/components/orders/CourierHandoverOtpModal";
+import { DoorstepPaymentModal } from "@/components/orders/DoorstepPaymentModal";
 import { AdminOrderStatusTabs } from "@/components/admin/AdminOrderStatusTabs";
 import { AdminOrderInspectorModal } from "@/components/admin/AdminOrderInspectorModal";
 
@@ -80,6 +81,7 @@ export function AdminOrderApprovalList() {
 
   const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState<boolean>(false);
   const [otpVerificationOrder, setOtpVerificationOrder] = useState<IOrder | null>(null);
+  const [doorstepPaymentOrder, setDoorstepPaymentOrder] = useState<IOrder | null>(null);
   const [inspectOrderId, setInspectOrderId] = useState<string | null>(null);
   const inspectOrder = useMemo(() => {
     if (!inspectOrderId) return null;
@@ -660,8 +662,12 @@ export function AdminOrderApprovalList() {
                         <span>Saved {formatPrice(order.couponDiscount)}</span>
                       </div>
                     )}
-                    <div className="text-[10px] text-stone-500 mt-1 uppercase block">
-                      {order.paymentInfo?.method?.replace("_", " ") || "Card"}
+                    <div className="text-[10px] text-stone-500 mt-1 uppercase block font-mono">
+                      {order.paymentInfo?.method === "CASH_ON_DELIVERY"
+                        ? "Cash on Delivery"
+                        : order.paymentInfo?.method === "PAYMENT_ONLINE_OTP"
+                          ? "Online Pay (OTP)"
+                          : order.paymentInfo?.method?.replace("_", " ") || "Online"}
                     </div>
                   </TableCell>
 
@@ -755,14 +761,26 @@ export function AdminOrderApprovalList() {
                       {order.status === "OUT_FOR_DELIVERY" && (
                         <>
                           {order.paymentInfo?.paymentStatus !== "PAID" ? (
-                            <span
-                              className="h-7 px-2.5 text-[10px] font-mono inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 text-amber-900"
-                              title="Delivery confirmation locked until customer payment is received"
-                            >
-                              <Clock className="h-3 w-3 text-amber-600 animate-spin shrink-0" />
-                              <span>Awaiting Payment</span>
-                            </span>
-                          ) : order.paymentInfo?.method === "DIGITAL_COD_UPI" ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <span
+                                className="h-7 px-2.5 text-[10px] font-mono inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 text-amber-900"
+                                title="Delivery confirmation locked until customer payment is received"
+                              >
+                                <Clock className="h-3 w-3 text-amber-600 animate-spin shrink-0" />
+                                <span>Awaiting Payment</span>
+                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 shadow-2xs font-mono"
+                                onClick={() => setDoorstepPaymentOrder(order)}
+                                title="Open Doorstep QR or Verify Cash Payment"
+                              >
+                                <span>Collect Payment</span>
+                              </Button>
+                            </div>
+                          ) : (
                             <Button
                               variant="luxury"
                               size="sm"
@@ -771,24 +789,7 @@ export function AdminOrderApprovalList() {
                               onClick={() => setOtpVerificationOrder(order)}
                             >
                               <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                              <span>Confirm Delivery (OTP)</span>
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="luxury"
-                              size="sm"
-                              className="h-7 text-xs px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
-                              disabled={isUpdating}
-                              onClick={() =>
-                                handleAdvanceStatus(
-                                  order.id,
-                                  "DELIVERED",
-                                  "Client identity verified and biometric delivery confirmed"
-                                )
-                              }
-                            >
-                              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                              <span>Confirm Delivery</span>
+                              <span>Verify Handover (OTP)</span>
                             </Button>
                           )}
                         </>
@@ -948,6 +949,13 @@ export function AdminOrderApprovalList() {
         sendOrderDocuments={sendOrderDocuments}
         isSending={isSending}
         getStatusBadge={getStatusBadge}
+        onApprove={handleApproveOrder}
+        onDispatch={handleDispatchOrder}
+        onAdvanceStatus={handleAdvanceStatus}
+        onVerifyOtp={(order) => setOtpVerificationOrder(order)}
+        onDoorstepPayment={(order) => setDoorstepPaymentOrder(order)}
+        onReject={handleRejectOrder}
+        isUpdating={isUpdating}
       />
 
       {/* 6. Admin Create Client Order Modal */}
@@ -963,6 +971,16 @@ export function AdminOrderApprovalList() {
         isOpen={Boolean(otpVerificationOrder)}
         onClose={() => setOtpVerificationOrder(null)}
         onSuccess={() => {
+          void refetch();
+        }}
+      />
+
+      {/* 8. Courier / Admin Doorstep Payment Modal */}
+      <DoorstepPaymentModal
+        order={doorstepPaymentOrder}
+        isOpen={Boolean(doorstepPaymentOrder)}
+        onClose={() => setDoorstepPaymentOrder(null)}
+        onPaymentSuccess={() => {
           void refetch();
         }}
       />

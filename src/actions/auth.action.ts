@@ -9,7 +9,6 @@ import {
 import {
   comparePassword,
   hashPassword,
-  signToken,
   verifyToken,
   signResetToken,
   verifyResetToken,
@@ -36,8 +35,16 @@ import {
   IOtpVerificationResult,
 } from "@/types/auth.types";
 
+import {
+  createSession,
+  revokeSession,
+  revokeAllUserSessions,
+  REFRESH_COOKIE_NAME,
+  ACCESS_TOKEN_EXPIRY_SEC,
+  REFRESH_TOKEN_EXPIRY_SEC,
+} from "@/lib/session-service";
+
 const SESSION_COOKIE_NAME = "diamond_session";
-const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
 
 /**
  * Standard Credentials Sign In Action
@@ -62,20 +69,23 @@ export async function loginAction(credentials: LoginFormData): Promise<IUser> {
     throw new Error("Invalid email or password credentials.");
   }
 
-  const token = signToken({
-    userId: found.user.id,
-    email: found.user.email,
-    role: found.user.role,
-    name: found.user.name,
-  });
+  const { tokenPair } = await createSession(found.user.id);
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
+  cookieStore.set(SESSION_COOKIE_NAME, tokenPair.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_MAX_AGE,
+    maxAge: ACCESS_TOKEN_EXPIRY_SEC,
+  });
+
+  cookieStore.set(REFRESH_COOKIE_NAME, tokenPair.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/api/auth",
+    maxAge: REFRESH_TOKEN_EXPIRY_SEC,
   });
 
   return sanitizeUser(found.user);
@@ -116,20 +126,23 @@ export async function registerAction(data: RegisterFormData): Promise<IUser> {
     console.error("[Registration Welcome Email Error]:", emailErr);
   }
 
-  const token = signToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-    name: user.name,
-  });
+  const { tokenPair } = await createSession(user.id);
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
+  cookieStore.set(SESSION_COOKIE_NAME, tokenPair.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_MAX_AGE,
+    maxAge: ACCESS_TOKEN_EXPIRY_SEC,
+  });
+
+  cookieStore.set(REFRESH_COOKIE_NAME, tokenPair.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/api/auth",
+    maxAge: REFRESH_TOKEN_EXPIRY_SEC,
   });
 
   return sanitizeUser(user);
@@ -273,20 +286,23 @@ export async function verifyOtpAndLoginAction(
     throw new Error("Admin Vault is restricted to the authorized master curator.");
   }
 
-  const token = signToken({
-    userId: found.user.id,
-    email: found.user.email,
-    role: found.user.role,
-    name: found.user.name,
-  });
+  const { tokenPair } = await createSession(found.user.id);
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
+  cookieStore.set(SESSION_COOKIE_NAME, tokenPair.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_MAX_AGE,
+    maxAge: ACCESS_TOKEN_EXPIRY_SEC,
+  });
+
+  cookieStore.set(REFRESH_COOKIE_NAME, tokenPair.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/api/auth",
+    maxAge: REFRESH_TOKEN_EXPIRY_SEC,
   });
 
   return sanitizeUser(found.user);
@@ -338,9 +354,23 @@ export async function resetPasswordAction(
 /**
  * Terminate Session (Sign Out)
  */
-export async function logoutAction(): Promise<boolean> {
+export async function logoutAction(allDevices: boolean = false): Promise<boolean> {
   const cookieStore = await cookies();
+  const refreshToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value;
+  const accessToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+
+  if (allDevices && accessToken) {
+    const payload = verifyToken(accessToken);
+    if (payload?.userId) {
+      await revokeAllUserSessions(payload.userId);
+    }
+  } else if (refreshToken) {
+    await revokeSession(refreshToken);
+  }
+
   cookieStore.delete(SESSION_COOKIE_NAME);
+  cookieStore.delete("diamond_access_token");
+  cookieStore.delete(REFRESH_COOKIE_NAME);
   cookieStore.delete("diamond_auth_token");
   return true;
 }

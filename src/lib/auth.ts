@@ -20,8 +20,15 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: IJwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+export function signToken(
+  payload: IJwtPayload,
+  expiresIn: "15m" | "1h" | "7d" | number = "15m"
+): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+}
+
+export function signAccessToken(payload: IJwtPayload): string {
+  return signToken(payload, "15m");
 }
 
 export function verifyToken(token: string): IJwtPayload | null {
@@ -82,6 +89,7 @@ export function extractTokenFromRequest(request: {
   headers: { get(name: string): string | null };
 }): string | null {
   return (
+    request.cookies.get("diamond_access_token")?.value ||
     request.cookies.get("diamond_session")?.value ||
     request.cookies.get("diamond_auth_token")?.value ||
     request.headers.get("authorization")?.replace("Bearer ", "") ||

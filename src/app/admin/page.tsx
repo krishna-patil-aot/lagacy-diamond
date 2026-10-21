@@ -15,7 +15,11 @@ import { useAdminInquiries } from "@/hooks/useAdminInquiries";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
 import { useInquiryStore } from "@/store/useInquiryStore";
 import { Button } from "@/components/ui/Button";
-import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent, MessageSquare } from "lucide-react";
+import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent, MessageSquare, Zap, Layers, ShieldCheck, Activity } from "lucide-react";
+import { AdminCacheDiagnostics } from "@/components/admin/AdminCacheDiagnostics";
+import { AdminQueueDiagnostics } from "@/components/admin/AdminQueueDiagnostics";
+import { AdminSecurityAudit } from "@/components/admin/AdminSecurityAudit";
+import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -23,7 +27,7 @@ export default function AdminPage() {
   const { stats: inquiryStats } = useAdminInquiries();
   const { unreadCount: unreadInquiriesCount } = useInquiryStore();
   const { openCreateModal } = useDiamondStore();
-  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "INQUIRIES">("INVENTORY");
+  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "INQUIRIES" | "CACHE" | "QUEUE" | "SECURITY" | "HEALTH">("INVENTORY");
   const { stats, error, refetch } = useAdminDiamonds();
 
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
@@ -139,6 +143,54 @@ export default function AdminPage() {
               </span>
             )}
           </button>
+
+          <button
+            onClick={() => setAdminTab("CACHE")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "CACHE"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <Zap className="h-4 w-4 shrink-0 text-amber-600" />
+            <span>Redis Cache &amp; Performance</span>
+          </button>
+
+          <button
+            onClick={() => setAdminTab("QUEUE")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "QUEUE"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <Layers className="h-4 w-4 shrink-0 text-sky-600" />
+            <span>Async Queues &amp; DLQ</span>
+          </button>
+
+          <button
+            onClick={() => setAdminTab("SECURITY")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "SECURITY"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
+            <span>Zero-Trust Security</span>
+          </button>
+
+          <button
+            onClick={() => setAdminTab("HEALTH")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "HEALTH"
+                ? "border-stone-900 text-stone-900 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <Activity className="h-4 w-4 shrink-0 text-teal-600" />
+            <span>System Health &amp; APM</span>
+          </button>
         </div>
       </div>
 
@@ -149,6 +201,14 @@ export default function AdminPage() {
       {adminTab === "SOLD" && <AdminSoldProductsTable />}
 
       {adminTab === "INQUIRIES" && <AdminInquiriesTable />}
+
+      {adminTab === "CACHE" && <AdminCacheDiagnostics />}
+
+      {adminTab === "QUEUE" && <AdminQueueDiagnostics />}
+
+      {adminTab === "SECURITY" && <AdminSecurityAudit />}
+
+      {adminTab === "HEALTH" && <AdminSystemHealth />}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const sortBy = (searchParams.get("sortBy") as DiamondSortOption) || "featured";
     const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
     const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : 4;
-
+    const startTime = performance.now();
     const result = await getDiamonds({
       shapes,
       colors,
@@ -55,12 +55,20 @@ export async function GET(request: NextRequest) {
       page,
       limit,
     });
+    const latencyMs = Math.round(performance.now() - startTime);
 
-    return NextResponse.json({
-      success: true,
-      data: result.diamonds,
-      meta: result.meta,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result.diamonds,
+        meta: result.meta,
+      },
+      {
+        headers: {
+          "X-Response-Time-Ms": String(latencyMs),
+        },
+      }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to retrieve diamonds";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

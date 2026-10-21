@@ -333,12 +333,38 @@ export function UserOrderDetailsModal({
               <div className="flex justify-between items-center text-stone-600">
                 <span>Payment Channel:</span>
                 <span className="font-mono text-stone-800 text-[11px] sm:text-xs">
-                  {order.paymentInfo?.method === "DIGITAL_COD_UPI"
+                  {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP"
+                    ? "PREPAID ONLINE (OTP HANDOVER)"
+                    : order.paymentInfo?.method === "CASH_ON_DELIVERY"
+                    ? "CASH ON DELIVERY (DOORSTEP)"
+                    : order.paymentInfo?.method === "DIGITAL_COD_UPI"
                     ? "DIGITAL COD (DOORSTEP UPI)"
-                    : order.paymentInfo?.method?.replace("_", " ") || "CREDIT CARD"}
+                    : order.paymentInfo?.method?.replace("_", " ") || "ONLINE PAYMENT"}
                 </span>
               </div>
-              {order.paymentInfo?.method === "DIGITAL_COD_UPI" && order.status !== "CANCELLED" && (
+              {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP" && order.status !== "CANCELLED" && (
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 pt-1.5 border-t border-stone-200">
+                  <span className="text-[11px] text-stone-600">Handover Protocol:</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      PREPAID • 4-DIGIT OTP READY
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDoorstepModal(true)}
+                      className="h-6 text-[10px] px-2 text-emerald-800 border-emerald-300 hover:bg-emerald-50 gap-1"
+                    >
+                      <Lock className="w-3 h-3" />
+                      <span>View OTP</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {(order.paymentInfo?.method === "CASH_ON_DELIVERY" ||
+                order.paymentInfo?.method === "DIGITAL_COD_UPI") &&
+                order.status !== "CANCELLED" && (
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 pt-1.5 border-t border-stone-200">
                   <span className="text-[11px] text-stone-600">Doorstep Verification:</span>
                   <div className="flex flex-wrap items-center gap-1.5">

@@ -23,6 +23,8 @@ export interface IShippingAddress {
 }
 
 export type PaymentMethod =
+  | "PAYMENT_ONLINE_OTP"
+  | "CASH_ON_DELIVERY"
   | "CREDIT_CARD"
   | "WIRE_TRANSFER"
   | "VAULT_ESCROW"

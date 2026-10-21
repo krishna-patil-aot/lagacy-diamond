@@ -50,7 +50,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
   const [step, setStep] = useState<CheckoutStep>("CART");
   const [couponInput, setCouponInput] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<ICouponRule | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CREDIT_CARD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYMENT_ONLINE_OTP");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
@@ -88,7 +88,13 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
 
   const activeOrder = useMemo(() => {
     if (!submittedOrderId) return null;
-    return orders.find((o) => o.id === submittedOrderId) || null;
+    return (
+      orders.find(
+        (o) =>
+          (o.id && o.id.toUpperCase() === submittedOrderId.toUpperCase()) ||
+          (o.orderNumber && o.orderNumber.toUpperCase() === submittedOrderId.toUpperCase())
+      ) || null
+    );
   }, [orders, submittedOrderId]);
 
   // Auto-fill user contact info if logged in
@@ -104,13 +110,9 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
     }
   }, [isAuthenticated, user, shippingForm]);
 
-  // Pure derived state: Gated to CART if unauthenticated, transitions to SUCCESS when Curator accepts
+  // Pure derived state: Gated to CART if unauthenticated
   const effectiveStep: CheckoutStep =
-    !isAuthenticated && step !== "CART"
-      ? "CART"
-      : step === "AWAITING_APPROVAL" && activeOrder?.status === "APPROVED"
-        ? "SUCCESS"
-        : step;
+    !isAuthenticated && step !== "CART" ? "CART" : step;
 
   const applyCoupon = () => {
     if (!couponInput.trim()) return;
@@ -166,7 +168,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
         method: paymentMethod,
         couponCode: appliedCoupon?.code,
         couponDiscountPercentage: appliedCoupon?.discountPercentage || 0,
-        paymentStatus: (paymentMethod === "DIGITAL_COD_UPI" ? "UNPAID" : "PAID") as PaymentStatus,
+        paymentStatus: (paymentMethod === "CASH_ON_DELIVERY" ? "UNPAID" : "PAID") as PaymentStatus,
       },
       subtotal,
       couponDiscount: couponSavings,
@@ -233,7 +235,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
     } finally {
       clearCart();
       setIsProcessing(false);
-      setStep("AWAITING_APPROVAL");
+      setStep("SUCCESS");
     }
   };
 

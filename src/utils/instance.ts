@@ -94,9 +94,88 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+let isRefreshing = false;
+interface IQueueItem {
+  resolve: (token: string) => void;
+  reject: (err: FormattedApiError) => void;
+}
+let failedQueue: IQueueItem[] = [];
+
+const processQueue = (error: FormattedApiError | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(formatAxiosError(error));
+    }
+
+    const isAuthRoute =
+      originalRequest.url?.includes("/api/auth/login") ||
+      originalRequest.url?.includes("/api/auth/register") ||
+      originalRequest.url?.includes("/api/auth/refresh");
+
+    // Enterprise Silent Refresh on 401 Unauthorized for client-side API requests
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+      if (typeof window === "undefined") {
+        return Promise.reject(formatAxiosError(error));
+      }
+
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((newToken) => {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return axiosInstance(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshResponse = await axios.post<{
+          success: boolean;
+          data?: { accessToken: string };
+        }>("/api/auth/refresh", {}, { withCredentials: true });
+
+        const newAccessToken = refreshResponse.data?.data?.accessToken;
+        if (newAccessToken) {
+          processQueue(null, newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return axiosInstance(originalRequest);
+        } else {
+          const formatted = formatAxiosError(error);
+          processQueue(formatted);
+          return Promise.reject(formatted);
+        }
+      } catch (refreshErr) {
+        const formatted =
+          refreshErr instanceof AxiosError
+            ? formatAxiosError(refreshErr)
+            : formatAxiosError(error);
+        processQueue(formatted);
+        return Promise.reject(formatted);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     return Promise.reject(formatAxiosError(error));
   }
 );

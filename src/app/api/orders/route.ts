@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, getUserOrders } from "@/lib/order-repository";
 import { getAuthenticatedUserFromRequest } from "@/lib/auth";
-import { sendOrderReceiptPendingEmail } from "@/lib/mailer";
+import { enqueueJob } from "@/lib/queue-service";
+import { QUEUE_JOB_TYPES } from "@/types/queue.types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,17 +38,24 @@ export async function POST(request: NextRequest) {
       verified?.email
     );
 
-    // Dispatch acknowledgement email (Pending Curator Review - No Invoice or Certificate attached yet)
+    // Offload acknowledgement email to background queue with idempotency key
     if (newOrder.shippingAddress?.email) {
-      sendOrderReceiptPendingEmail({
-        to: newOrder.shippingAddress.email,
-        clientName: newOrder.shippingAddress.fullName || "Valued Client",
-        orderNumber: newOrder.orderNumber || newOrder.id,
-        totalAmount: newOrder.totalAmount,
-        itemCount: newOrder.items.length,
-      }).catch((emailError) => {
-        console.error("[Order Mailer Pipeline Error]:", emailError);
-      });
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_ORDER_CONFIRMATION,
+        {
+          to: newOrder.shippingAddress.email,
+          clientName: newOrder.shippingAddress.fullName || "Valued Client",
+          orderNumber: newOrder.orderNumber || newOrder.id,
+          totalAmount: newOrder.totalAmount,
+          itemCount: newOrder.items.length,
+          orderId: newOrder.id,
+        },
+        {
+          idempotencyKey: `order-confirm-${newOrder.id}`,
+          priority: "high",
+          maxRetries: 3,
+        }
+      );
     }
 
     return NextResponse.json({ success: true, data: newOrder }, { status: 201 });

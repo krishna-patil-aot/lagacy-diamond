@@ -33,12 +33,12 @@ import {
   MapPin,
   FileText,
   CreditCard,
-  Building2,
   Shield,
   Loader2,
   CheckCircle2,
   Diamond,
   X,
+  Banknote,
 } from "lucide-react";
 
 interface AdminCreateOrderModalProps {
@@ -512,9 +512,9 @@ export function AdminCreateOrderModal({
                 <div className="grid grid-cols-3 gap-1.5">
                   {(
                     [
+                      { id: "PAYMENT_ONLINE_OTP", label: "Online + OTP", icon: ShieldCheck },
+                      { id: "CASH_ON_DELIVERY", label: "Cash on Delivery", icon: Banknote },
                       { id: "VAULT_ESCROW", label: "Vault Escrow", icon: Shield },
-                      { id: "WIRE_TRANSFER", label: "Bank Wire", icon: Building2 },
-                      { id: "CREDIT_CARD", label: "Card / Amex", icon: CreditCard },
                     ] as const
                   ).map((method) => {
                     const Icon = method.icon;

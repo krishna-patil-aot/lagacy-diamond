@@ -61,3 +61,45 @@ export type ForgotPasswordStep =
   | "RESET_PASSWORD"
   | "SUCCESS";
 
+export interface IRateLimitOptions {
+  keyPrefix: string;
+  limit: number;
+  windowMs: number;
+  identifier?: string;
+}
+
+export interface IRateLimitResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  resetTimeMs: number;
+  retryAfterSec: number;
+}
+
+export interface ISession {
+  id: string;
+  userId: string;
+  refreshTokenHash: string;
+  familyId: string;
+  isRevoked: boolean;
+  revokedAt?: string;
+  userAgent?: string;
+  ipAddress?: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface ITokenPair {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface IRefreshTokenResponse {
+  success: boolean;
+  accessToken?: string;
+  expiresIn?: number;
+  user?: IUser;
+  error?: string;
+}
+

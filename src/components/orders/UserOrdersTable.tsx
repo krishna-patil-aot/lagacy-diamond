@@ -28,6 +28,7 @@ import {
   X,
   Loader2,
   QrCode,
+  Banknote,
 } from "lucide-react";
 import Link from "next/link";
 import { DoorstepPaymentModal } from "@/components/orders/DoorstepPaymentModal";
@@ -105,6 +106,20 @@ export function UserOrdersTable({
 
   const getPaymentBadge = (method: string) => {
     switch (method) {
+      case "PAYMENT_ONLINE_OTP":
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 whitespace-nowrap">
+            <ShieldCheck className="h-2.5 w-2.5 text-emerald-600 shrink-0" />
+            <span>Prepaid Online (OTP)</span>
+          </span>
+        );
+      case "CASH_ON_DELIVERY":
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
+            <Banknote className="h-2.5 w-2.5 text-amber-600 shrink-0" />
+            <span>Cash on Delivery</span>
+          </span>
+        );
       case "VAULT_ESCROW":
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
@@ -307,7 +322,24 @@ export function UserOrdersTable({
                     <span>Track & Details</span>
                   </Button>
 
-                  {order.paymentInfo?.method === "DIGITAL_COD_UPI" &&
+                  {/* Prepaid Online OTP Button */}
+                  {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP" &&
+                    order.status !== "CANCELLED" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDoorstepPaymentOrder(order)}
+                        className="h-8 text-xs font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
+                      >
+                        <Lock className="h-3.5 w-3.5 shrink-0" />
+                        <span>OTP: {order.paymentInfo.deliveryHandoverOtp || "Ready"}</span>
+                      </Button>
+                    )}
+
+                  {/* COD & Digital COD Actions */}
+                  {(order.paymentInfo?.method === "CASH_ON_DELIVERY" ||
+                    order.paymentInfo?.method === "DIGITAL_COD_UPI") &&
                     order.status !== "CANCELLED" && (
                       <>
                         {order.paymentInfo.paymentStatus === "PAID" ? (
@@ -330,7 +362,7 @@ export function UserOrdersTable({
                             className="h-8 text-xs font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white animate-pulse"
                           >
                             <QrCode className="h-3.5 w-3.5 shrink-0" />
-                            <span>Pay at Doorstep (QR)</span>
+                            <span>Pay at Doorstep</span>
                           </Button>
                         ) : (
                           <span
@@ -511,7 +543,24 @@ export function UserOrdersTable({
                         <span>Track & Details</span>
                       </Button>
 
-                      {order.paymentInfo?.method === "DIGITAL_COD_UPI" &&
+                      {/* Prepaid Online OTP Button */}
+                      {order.paymentInfo?.method === "PAYMENT_ONLINE_OTP" &&
+                        order.status !== "CANCELLED" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDoorstepPaymentOrder(order)}
+                            className="h-7 text-xs font-medium inline-flex items-center gap-1 px-2.5 whitespace-nowrap border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
+                          >
+                            <Lock className="h-3 w-3 shrink-0" />
+                            <span>OTP: {order.paymentInfo.deliveryHandoverOtp || "Ready"}</span>
+                          </Button>
+                        )}
+
+                      {/* COD & Digital COD Actions */}
+                      {(order.paymentInfo?.method === "CASH_ON_DELIVERY" ||
+                        order.paymentInfo?.method === "DIGITAL_COD_UPI") &&
                         order.status !== "CANCELLED" && (
                           <>
                             {order.paymentInfo.paymentStatus === "PAID" ? (

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { addInquiryMessage, getInquiryById, getInquiryByNumber } from "@/lib/inquiry-repository";
 import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { broadcastInquiryEvent, INQUIRY_EVENTS } from "@/lib/inquiry-events";
-import { sendInquiryReplyNotificationEmail } from "@/lib/mailer";
+import { enqueueJob } from "@/lib/queue-service";
+import { QUEUE_JOB_TYPES } from "@/types/queue.types";
 import {
   ISendInquiryMessageInput,
   ISendInquiryMessageResponse,
@@ -86,13 +87,22 @@ export async function POST(
     const isSpecialReply = Boolean(body.sendEmail || body.isSpecialReply);
 
     if (isAdmin && isSpecialReply && existing.email) {
-      void sendInquiryReplyNotificationEmail({
-        to: existing.email,
-        clientName: existing.fullName,
-        inquiryNumber: existing.inquiryNumber,
-        inquiryType: existing.inquiryType,
-        adminReply: body.message.trim(),
-      });
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_INQUIRY_REPLY,
+        {
+          to: existing.email,
+          clientName: existing.fullName,
+          inquiryNumber: existing.inquiryNumber,
+          inquiryType: existing.inquiryType,
+          adminReply: body.message.trim(),
+          inquiryId: existing.id,
+        },
+        {
+          idempotencyKey: `inquiry-reply-${existing.inquiryNumber}-${Date.now()}`,
+          priority: "high",
+          maxRetries: 3,
+        }
+      );
     }
 
     return NextResponse.json<ISendInquiryMessageResponse>({

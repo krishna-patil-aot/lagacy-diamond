@@ -121,7 +121,27 @@ const InquirySchema = new Schema<IInquiryDocument>(
   }
 );
 
-InquirySchema.index({ createdAt: -1 });
+InquirySchema.index({ status: 1, createdAt: -1 });
+InquirySchema.index({ email: 1, createdAt: -1 });
+InquirySchema.index({ diamondId: 1, createdAt: -1 });
+InquirySchema.index({ inquiryNumber: 1 });
+InquirySchema.index(
+  {
+    clientName: "text",
+    email: "text",
+    inquiryNumber: "text",
+    message: "text",
+  },
+  {
+    weights: {
+      inquiryNumber: 10,
+      clientName: 5,
+      email: 5,
+      message: 1,
+    },
+    name: "InquiryTextIndex",
+  }
+);
 
 export const InquiryModel: Model<IInquiryDocument> =
   mongoose.models.Inquiry || mongoose.model<IInquiryDocument>("Inquiry", InquirySchema);

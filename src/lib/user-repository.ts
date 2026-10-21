@@ -57,6 +57,34 @@ export async function findUserByEmail(email: string): Promise<{ user: IUser; pas
   };
 }
 
+export async function findUserById(id: string): Promise<IUser | null> {
+  const mongoose = await connectToDatabase();
+  if (mongoose) {
+    try {
+      const doc = await UserModel.findById(id).lean();
+      if (!doc) return null;
+      const rawDoc = doc as typeof doc & { role?: string };
+      const normalizedRole: UserRole =
+        String(rawDoc.role || "").toUpperCase() === "ADMIN" ? "ADMIN" : "CUSTOMER";
+      return sanitizeUser({
+        id: String(doc._id),
+        name: doc.name,
+        email: doc.email,
+        role: normalizedRole,
+        avatarUrl: doc.avatarUrl,
+        authProvider: doc.authProvider,
+        createdAt: doc.createdAt,
+      });
+    } catch (error) {
+      console.error("[findUserById] DB query failed:", error);
+    }
+  }
+
+  const found = memoryUsers.find((u) => u.id === id);
+  if (!found) return null;
+  return sanitizeUser(found);
+}
+
 export async function createUser(data: {
   name: string;
   email: string;

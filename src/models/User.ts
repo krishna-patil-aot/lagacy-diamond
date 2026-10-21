@@ -42,5 +42,8 @@ const UserSchema = new Schema<IUserDocument>(
   }
 );
 
+UserSchema.index({ role: 1, createdAt: -1 });
+UserSchema.index({ googleId: 1 }, { sparse: true });
+
 export const UserModel: Model<IUserDocument> =
   mongoose.models.User || mongoose.model<IUserDocument>("User", UserSchema);

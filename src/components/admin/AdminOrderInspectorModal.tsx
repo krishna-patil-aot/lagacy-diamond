@@ -13,7 +13,18 @@ import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
 import { IDiamond } from "@/types/diamond.types";
 import { IAdminOrderInspectorModalProps } from "@/types/admin.types";
-import { MapPin, Mail, Loader2 } from "lucide-react";
+import {
+  MapPin,
+  Mail,
+  Loader2,
+  Check,
+  X,
+  Truck,
+  Navigation,
+  ShieldCheck,
+  Clock,
+  QrCode,
+} from "lucide-react";
 
 export function AdminOrderInspectorModal({
   order,
@@ -22,6 +33,13 @@ export function AdminOrderInspectorModal({
   sendOrderDocuments,
   isSending,
   getStatusBadge,
+  onApprove,
+  onDispatch,
+  onAdvanceStatus,
+  onVerifyOtp,
+  onDoorstepPayment,
+  onReject,
+  isUpdating = false,
 }: IAdminOrderInspectorModalProps) {
   if (!order) return null;
 
@@ -134,6 +152,151 @@ export function AdminOrderInspectorModal({
               <span className="font-mono text-base text-emerald-700">
                 {formatPrice(order.totalAmount)}
               </span>
+            </div>
+          </div>
+
+          {/* Order Lifecycle Progression Actions (Admin Control) */}
+          <div className="rounded-xl border border-stone-200 bg-stone-50/90 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-mono tracking-wider text-stone-500 font-semibold block">
+                Workflow Actions &amp; Lifecycle Progression
+              </span>
+              <span className="text-[10px] font-mono text-stone-500">
+                Current: <strong>{order.status.replace("_", " ")}</strong>
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              {order.status === "PENDING_APPROVAL" && (
+                <>
+                  {onApprove && (
+                    <Button
+                      variant="luxury"
+                      size="sm"
+                      className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 gap-1.5"
+                      disabled={isUpdating}
+                      onClick={() => onApprove(order.id)}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      <span>Accept &amp; Approve Order</span>
+                    </Button>
+                  )}
+                  {onReject && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs text-rose-700 border-rose-300 bg-rose-50 hover:bg-rose-100 gap-1"
+                      disabled={isUpdating}
+                      onClick={() => onReject(order.id)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Reject Order</span>
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {order.status === "APPROVED" && onDispatch && (
+                <Button
+                  variant="luxury"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  disabled={isUpdating}
+                  onClick={() => onDispatch(order.id)}
+                >
+                  <Truck className="h-3.5 w-3.5" />
+                  <span>Dispatch via Brink&apos;s Armored</span>
+                </Button>
+              )}
+
+              {order.status === "DISPATCHED" && onAdvanceStatus && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs text-amber-900 border-amber-300 bg-amber-50 hover:bg-amber-100 gap-1.5"
+                  disabled={isUpdating}
+                  onClick={() =>
+                    onAdvanceStatus(
+                      order.id,
+                      "IN_TRANSIT",
+                      "Armored convoy en route across regional logistics hubs"
+                    )
+                  }
+                >
+                  <Navigation className="h-3.5 w-3.5" />
+                  <span>Mark In Transit</span>
+                </Button>
+              )}
+
+              {order.status === "IN_TRANSIT" && onAdvanceStatus && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs text-amber-900 border-amber-300 bg-amber-50 hover:bg-amber-100 gap-1.5"
+                  disabled={isUpdating}
+                  onClick={() =>
+                    onAdvanceStatus(
+                      order.id,
+                      "OUT_FOR_DELIVERY",
+                      "Armored courier van dispatched for scheduled handover"
+                    )
+                  }
+                >
+                  <Truck className="h-3.5 w-3.5" />
+                  <span>Mark Out for Delivery</span>
+                </Button>
+              )}
+
+              {order.status === "OUT_FOR_DELIVERY" && (
+                <>
+                  {order.paymentInfo?.paymentStatus !== "PAID" ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="h-8 px-2.5 text-[11px] font-mono inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 text-amber-900">
+                        <Clock className="h-3.5 w-3.5 text-amber-600 animate-spin" />
+                        <span>Awaiting Payment</span>
+                      </span>
+                      {onDoorstepPayment && (
+                        <Button
+                          variant="luxury"
+                          size="sm"
+                          className="h-8 text-xs bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5"
+                          onClick={() => onDoorstepPayment(order)}
+                        >
+                          <QrCode className="h-3.5 w-3.5" />
+                          <span>Collect Doorstep Payment</span>
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    onVerifyOtp && (
+                      <Button
+                        variant="luxury"
+                        size="sm"
+                        className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 gap-1.5"
+                        disabled={isUpdating}
+                        onClick={() => onVerifyOtp(order)}
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Verify Handover (OTP)</span>
+                      </Button>
+                    )
+                  )}
+                </>
+              )}
+
+              {order.status === "DELIVERED" && (
+                <span className="text-xs font-mono text-emerald-700 font-semibold inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  <span>Consignment Fulfilled &amp; Signed</span>
+                </span>
+              )}
+
+              {order.status === "CANCELLED" && (
+                <span className="text-xs font-mono text-rose-700 font-medium inline-flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-3 py-1 rounded-lg">
+                  <X className="h-4 w-4 text-rose-600" />
+                  <span>Order Voided &amp; Lots Released</span>
+                </span>
+              )}
             </div>
           </div>
 

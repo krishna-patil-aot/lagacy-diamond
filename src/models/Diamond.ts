@@ -80,10 +80,32 @@ const DiamondSchema = new Schema<IDiamondDocument>(
   }
 );
 
-// Indexes for high performance multi-attribute filtering
+// 1. ESR (Equality, Sort, Range) Compound Indexes for instantaneous catalog queries
+DiamondSchema.index({ stockQuantity: 1, finalPrice: 1, carat: 1 });
+DiamondSchema.index({ shape: 1, finalPrice: 1 });
+DiamondSchema.index({ featured: -1, createdAt: -1 });
+DiamondSchema.index({ shape: 1, color: 1, clarity: 1, cut: 1 });
 DiamondSchema.index({ price: 1, carat: 1 });
-DiamondSchema.index({ shape: 1, color: 1, cut: 1 });
 DiamondSchema.index({ discountPercentage: -1 });
+
+// 2. High-throughput Full-Text Index (Replaces expensive unindexed $regex COLLSCAN)
+DiamondSchema.index(
+  {
+    name: "text",
+    description: "text",
+    sku: "text",
+    certificateNumber: "text",
+  },
+  {
+    weights: {
+      sku: 10,
+      certificateNumber: 8,
+      name: 5,
+      description: 1,
+    },
+    name: "DiamondCatalogTextIndex",
+  }
+);
 
 export const DiamondModel: Model<IDiamondDocument> =
   mongoose.models.Diamond || mongoose.model<IDiamondDocument>("Diamond", DiamondSchema);

@@ -25,7 +25,7 @@ const PaymentInfoSchema = new Schema(
     method: {
       type: String,
       required: true,
-      default: "CREDIT_CARD",
+      default: "PAYMENT_ONLINE_OTP",
     },
     couponCode: { type: String, uppercase: true, trim: true, default: "" },
     couponDiscountPercentage: { type: Number, default: 0 },
@@ -172,8 +172,19 @@ const OrderSchema = new Schema<IOrderDocument>(
   }
 );
 
-OrderSchema.index({ "shippingAddress.email": 1 });
-OrderSchema.index({ createdAt: -1 });
+// 1. Critical Order Lifecycle Compound Indexes
+OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ userId: 1, createdAt: -1 });
+OrderSchema.index({ "shippingAddress.email": 1, createdAt: -1 });
+
+// 2. Courier Handover Sparse Index for fast OTP validation
+OrderSchema.index(
+  { "paymentInfo.deliveryHandoverOtp": 1 },
+  { sparse: true }
+);
+
+// 3. Payment Status Settlement Index
+OrderSchema.index({ "paymentInfo.paymentStatus": 1, status: 1 });
 
 export const OrderModel: Model<IOrderDocument> =
   mongoose.models.Order || mongoose.model<IOrderDocument>("Order", OrderSchema);

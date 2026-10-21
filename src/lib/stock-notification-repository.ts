@@ -108,27 +108,39 @@ export async function dispatchStockAlertsForDiamond(
   const pending = await getPendingNotificationsForDiamond(diamondId);
   if (pending.length === 0) return 0;
 
-  const { sendBackInStockEmail } = await import("@/lib/mailer");
+  const { enqueueJob } = await import("@/lib/queue-service");
+  const { QUEUE_JOB_TYPES } = await import("@/types/queue.types");
 
   const sentIds: string[] = [];
   for (const subscriber of pending) {
     try {
-      const result = await sendBackInStockEmail({
-        to: subscriber.email,
-        clientName: subscriber.clientName,
-        diamond,
-      });
-      if (result.success) {
-        sentIds.push(subscriber.id);
-      } else {
-        console.error(
-          `[Stock Notification Dispatch Error] Service error for ${subscriber.email}:`,
-          result.error
-        );
-      }
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_BACK_IN_STOCK,
+        {
+          to: subscriber.email,
+          clientName: subscriber.clientName,
+          diamondId: diamond._id,
+          diamondName: diamond.name,
+          diamondSku: diamond.sku,
+          diamondShape: diamond.shape,
+          diamondCarat: diamond.carat,
+          diamondColor: diamond.color,
+          diamondClarity: diamond.clarity,
+          diamondCut: diamond.cut,
+          diamondPrice: diamond.finalPrice,
+          stockQuantity: diamond.stockQuantity,
+          images: diamond.images,
+        },
+        {
+          idempotencyKey: `stock-alert-${diamondId}-${subscriber.email.toLowerCase().trim()}`,
+          priority: "normal",
+          maxRetries: 3,
+        }
+      );
+      sentIds.push(subscriber.id);
     } catch (err) {
       console.error(
-        `[Stock Notification Dispatch Error] Failed to notify ${subscriber.email}:`,
+        `[Stock Notification Queue Error] Failed to queue for ${subscriber.email}:`,
         err
       );
     }

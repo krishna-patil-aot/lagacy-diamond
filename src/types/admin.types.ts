@@ -173,4 +173,32 @@ export interface IAdminOrderInspectorModalProps {
   sendOrderDocuments: (order: import("./order.types").IOrder) => Promise<boolean>;
   isSending: (orderId: string) => boolean;
   getStatusBadge: (status: import("./order.types").OrderStatus) => React.ReactNode;
+  onApprove?: (orderId: string) => Promise<void>;
+  onDispatch?: (orderId: string) => Promise<void>;
+  onAdvanceStatus?: (
+    orderId: string,
+    nextStatus: import("./order.types").OrderStatus,
+    note?: string
+  ) => Promise<void>;
+  onVerifyOtp?: (order: import("./order.types").IOrder) => void;
+  onDoorstepPayment?: (order: import("./order.types").IOrder) => void;
+  onReject?: (orderId: string) => Promise<void>;
+  isUpdating?: boolean;
+}
+
+export interface IDatabaseHealthResponse {
+  success: boolean;
+  data?: {
+    status: "CONNECTED" | "DISCONNECTED" | "CONNECTING" | "UNCONFIGURED";
+    readyState: number;
+    dbName: string;
+    pingMs?: number;
+    pool: {
+      maxPoolSize: number;
+      minPoolSize: number;
+      maxIdleTimeMS: number;
+    };
+    indexes: Record<string, string[]>;
+  };
+  error?: string;
 }

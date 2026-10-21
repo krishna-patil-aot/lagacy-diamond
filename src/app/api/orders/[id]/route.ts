@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderById, updateOrderStatusAdmin } from "@/lib/order-repository";
 import { getAuthenticatedUserFromRequest } from "@/lib/auth";
-import { sendOrderCancelledEmail } from "@/lib/mailer";
+import { enqueueJob } from "@/lib/queue-service";
+import { QUEUE_JOB_TYPES } from "@/types/queue.types";
 
 export async function GET(
   request: NextRequest,
@@ -71,16 +72,21 @@ export async function PATCH(
       const updated = await updateOrderStatusAdmin(existingOrder.id, "CANCELLED", { note });
 
       if (updated && updated.shippingAddress?.email) {
-        try {
-          await sendOrderCancelledEmail({
+        await enqueueJob(
+          QUEUE_JOB_TYPES.EMAIL_ORDER_CANCELLED,
+          {
             to: updated.shippingAddress.email,
-            clientName: updated.shippingAddress.fullName,
+            clientName: updated.shippingAddress.fullName || "Valued Client",
             orderNumber: updated.orderNumber || updated.id,
             reason: note,
-          });
-        } catch (emailErr) {
-          console.error("[Cancellation Mailer Error]:", emailErr);
-        }
+            orderId: updated.id,
+          },
+          {
+            idempotencyKey: `client-cancel-${updated.id}`,
+            priority: "high",
+            maxRetries: 3,
+          }
+        );
       }
 
       return NextResponse.json({ success: true, data: updated });

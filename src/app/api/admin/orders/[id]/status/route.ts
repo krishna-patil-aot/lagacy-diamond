@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateOrderStatusAdmin } from "@/lib/order-repository";
 import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { OrderStatus } from "@/types/order.types";
-import {
-  sendOrderApprovedEmail,
-  sendOrderDocumentsEmail,
-  sendOrderCancelledEmail,
-} from "@/lib/mailer";
+import { enqueueJob } from "@/lib/queue-service";
+import { QUEUE_JOB_TYPES } from "@/types/queue.types";
 import { siteConfig } from "@/config/site.config";
 
 export async function PATCH(
@@ -52,44 +49,59 @@ export async function PATCH(
       );
     }
 
-    // Email dispatch pipeline based on luxury brand business rules:
-    // 1. When admin approves the order: send curator review & vault preparation notice WITHOUT invoice or certificates
+    // Offload email pipeline to asynchronous background queue with idempotency:
+    // 1. When admin approves the order: queue curator review notice
     if (status === "APPROVED" && updated.shippingAddress?.email) {
-      try {
-        await sendOrderApprovedEmail({
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_ORDER_APPROVED,
+        {
           to: updated.shippingAddress.email,
           clientName: updated.shippingAddress.fullName || "Valued Client",
           orderNumber: updated.orderNumber || updated.id,
           totalAmount: updated.totalAmount || 0,
           itemCount: (updated.items || []).length,
-        });
-      } catch (mailError) {
-        console.error("[Admin Approval Mailer Error]:", mailError);
-      }
+          orderId: updated.id,
+        },
+        {
+          idempotencyKey: `order-approved-${updated.id}`,
+          priority: "high",
+          maxRetries: 3,
+        }
+      );
     } else if (status === "DELIVERED" && updated.shippingAddress?.email) {
-      // 2. Final fulfillment: ONLY when status is hand-delivered and signed (DELIVERED) do we generate & attach invoice + lab certificates
-      try {
-        await sendOrderDocumentsEmail(updated, {
+      // 2. Final fulfillment: offload heavy PDF invoice + certificates generation and dispatch
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_ORDER_DOCUMENTS,
+        {
+          orderId: updated.id,
+          recipientEmail: updated.shippingAddress.email,
           subject: `Order #${updated.orderNumber || updated.id} Delivered & Signed - Official Invoice & Lab Certificates - ${siteConfig.brandName}`,
-          badgeText: "ORDER HAND-DELIVERED & FULFILLED",
           statusTitle: `Order #${updated.orderNumber || updated.id} Delivered & Signed`,
-          customMessage: `Your order <strong>#${updated.orderNumber || updated.id}</strong> has been successfully hand-delivered and verified under armed courier protocol. Your gemstone acquisition is now complete and fulfilled. Attached to this email is your final Purchase Invoice and Lab Authorized Certificates.`,
           fulfillmentStatus: "Hand-Delivered & Signed",
-        });
-      } catch (mailError) {
-        console.error("[Admin Delivery Mailer Error]:", mailError);
-      }
+        },
+        {
+          idempotencyKey: `order-delivered-${updated.id}`,
+          priority: "critical",
+          maxRetries: 3,
+        }
+      );
     } else if (status === "CANCELLED" && updated.shippingAddress?.email) {
-      try {
-        await sendOrderCancelledEmail({
+      // 3. Order cancellation notice
+      await enqueueJob(
+        QUEUE_JOB_TYPES.EMAIL_ORDER_CANCELLED,
+        {
           to: updated.shippingAddress.email,
-          clientName: updated.shippingAddress.fullName,
+          clientName: updated.shippingAddress.fullName || "Valued Client",
           orderNumber: updated.orderNumber || updated.id,
           reason: note || "Order cancelled by vault curator administrator",
-        });
-      } catch (mailError) {
-        console.error("[Admin Cancellation Mailer Error]:", mailError);
-      }
+          orderId: updated.id,
+        },
+        {
+          idempotencyKey: `order-cancelled-${updated.id}`,
+          priority: "high",
+          maxRetries: 3,
+        }
+      );
     }
 
     return NextResponse.json({ success: true, data: updated });

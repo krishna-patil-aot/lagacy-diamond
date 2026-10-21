@@ -228,23 +228,33 @@ export async function createOrder(
 
   // Resilient sanitization of payment info
   const rawPayment = (orderInput.paymentInfo || {}) as unknown as Record<string, unknown>;
-  let normalizedMethod: PaymentMethod = "CREDIT_CARD";
+  let normalizedMethod: PaymentMethod = "PAYMENT_ONLINE_OTP";
   if (rawPayment.method) {
     const m = String(rawPayment.method).toUpperCase();
-    if (m.includes("WIRE")) normalizedMethod = "WIRE_TRANSFER";
-    else if (m.includes("ESCROW") || m.includes("VAULT")) normalizedMethod = "VAULT_ESCROW";
-    else if (m.includes("COD") || m.includes("UPI")) normalizedMethod = "DIGITAL_COD_UPI";
-    else normalizedMethod = "CREDIT_CARD";
+    if (m.includes("COD") || m.includes("CASH") || m.includes("DOORSTEP")) {
+      normalizedMethod = "CASH_ON_DELIVERY";
+    } else {
+      normalizedMethod = "PAYMENT_ONLINE_OTP";
+    }
   }
-  const defaultStatus: PaymentStatus = normalizedMethod === "DIGITAL_COD_UPI" ? "UNPAID" : "PAID";
+
+  // Cryptographically generate secure 4-digit handover OTP
+  const generatedOtp = rawPayment.deliveryHandoverOtp
+    ? String(rawPayment.deliveryHandoverOtp)
+    : crypto.randomInt(1000, 10000).toString();
+
+  const isPrepaid = normalizedMethod === "PAYMENT_ONLINE_OTP";
+  const defaultStatus: PaymentStatus = isPrepaid ? "PAID" : "UNPAID";
   const sanitizedPayment = {
     method: normalizedMethod,
     couponCode: String(rawPayment.couponCode || "").toUpperCase().trim(),
     couponDiscountPercentage: Number(rawPayment.couponDiscountPercentage) || 0,
     paymentStatus: (rawPayment.paymentStatus as PaymentStatus) || defaultStatus,
-    gatewayTransactionId: String(rawPayment.gatewayTransactionId || ""),
-    paidAt: rawPayment.paidAt ? String(rawPayment.paidAt) : undefined,
-    deliveryHandoverOtp: rawPayment.deliveryHandoverOtp ? String(rawPayment.deliveryHandoverOtp) : "",
+    gatewayTransactionId: String(
+      rawPayment.gatewayTransactionId || (isPrepaid ? `PAY-${Date.now().toString().slice(-8)}` : "")
+    ),
+    paidAt: rawPayment.paidAt ? String(rawPayment.paidAt) : (isPrepaid ? new Date().toISOString() : undefined),
+    deliveryHandoverOtp: generatedOtp,
     isOtpVerified: Boolean(rawPayment.isOtpVerified),
     otpVerifiedAt: rawPayment.otpVerifiedAt ? String(rawPayment.otpVerifiedAt) : undefined,
   };
@@ -513,7 +523,7 @@ export async function updateOrderStatusAdmin(
     // If order was cancelled, restore diamond stock quantities in vault
     if (newStatus === "CANCELLED" && previousStatus !== "CANCELLED") {
       for (const item of doc.items || []) {
-        const dId = item._id || (item as unknown as { id: string }).id;
+        const dId = item._id;
         if (dId && mongoose.Types.ObjectId.isValid(String(dId))) {
           const qtyToRestore = item.cartQuantity || 1;
           const updated = await DiamondModel.findByIdAndUpdate(
@@ -522,18 +532,27 @@ export async function updateOrderStatusAdmin(
             { new: true }
           ).lean();
 
-          if (updated && updated.stockQuantity > 0) {
+          if (updated) {
             try {
-              const { dispatchStockAlertsForDiamond } = await import(
-                "@/lib/stock-notification-repository"
-              );
-              const { getDiamondById } = await import("@/lib/diamond-repository");
-              const fullDiamond = await getDiamondById(String(updated._id));
-              if (fullDiamond) {
-                await dispatchStockAlertsForDiamond(String(fullDiamond._id), fullDiamond);
+              const { invalidateDiamondCache } = await import("@/lib/cache-service");
+              await invalidateDiamondCache(String(dId));
+            } catch (cacheErr) {
+              console.warn("[Cache Invalidation Warning on Order Cancel]:", cacheErr);
+            }
+
+            if (updated.stockQuantity > 0) {
+              try {
+                const { dispatchStockAlertsForDiamond } = await import(
+                  "@/lib/stock-notification-repository"
+                );
+                const { getDiamondById } = await import("@/lib/diamond-repository");
+                const fullDiamond = await getDiamondById(String(updated._id));
+                if (fullDiamond) {
+                  await dispatchStockAlertsForDiamond(String(fullDiamond._id), fullDiamond);
+                }
+              } catch (e) {
+                console.error("[Restock Alert Error on Order Cancel]:", e);
               }
-            } catch (e) {
-              console.error("[Restock Alert Error on Order Cancel]:", e);
             }
           }
         }
@@ -604,13 +623,6 @@ export async function confirmOrderPaymentByWebhook(
   // Generate cryptographically secure 4-digit release OTP
   const handoverOtp = crypto.randomInt(1000, 10000).toString();
 
-  const newTimelineEvent: IOrderTimelineEvent = {
-    status: "OUT_FOR_DELIVERY",
-    title: "Digital COD Payment Received",
-    description: `Exact payment amount of ₹${amount.toLocaleString()} settled via UPI gateway (${gatewayTransactionId}). Secure 4-digit delivery handover OTP generated.`,
-    timestamp,
-  };
-
   if (mongoose) {
     const query = mongoose.Types.ObjectId.isValid(orderNumberOrId)
       ? { _id: orderNumberOrId }
@@ -619,13 +631,22 @@ export async function confirmOrderPaymentByWebhook(
     const doc = await OrderModel.findOne(query);
     if (!doc) return null;
 
+    const resolvedOtp = doc.paymentInfo?.deliveryHandoverOtp || handoverOtp;
+
     doc.paymentInfo = {
       ...doc.paymentInfo,
       paymentStatus: "PAID",
       gatewayTransactionId,
       paidAt: timestamp,
-      deliveryHandoverOtp: handoverOtp,
+      deliveryHandoverOtp: resolvedOtp,
       isOtpVerified: false,
+    };
+
+    const newTimelineEvent: IOrderTimelineEvent = {
+      status: doc.status || "OUT_FOR_DELIVERY",
+      title: "Payment Received & Verified",
+      description: `Payment of ₹${amount.toLocaleString()} settled via gateway (${gatewayTransactionId}). Secure 4-digit delivery handover OTP activated.`,
+      timestamp,
     };
 
     doc.timeline = [...(doc.timeline || []), newTimelineEvent];
@@ -640,6 +661,12 @@ export async function confirmOrderPaymentByWebhook(
   if (index === -1) return null;
 
   const current = memoryOrders[index];
+  const memoryTimelineEvent: IOrderTimelineEvent = {
+    status: current.status || "OUT_FOR_DELIVERY",
+    title: "Payment Received & Verified",
+    description: `Payment of ₹${amount.toLocaleString()} settled via gateway (${gatewayTransactionId}). Secure 4-digit delivery handover OTP activated.`,
+    timestamp,
+  };
   const updated: IOrder = {
     ...current,
     paymentInfo: {
@@ -647,10 +674,10 @@ export async function confirmOrderPaymentByWebhook(
       paymentStatus: "PAID",
       gatewayTransactionId,
       paidAt: timestamp,
-      deliveryHandoverOtp: handoverOtp,
+      deliveryHandoverOtp: current.paymentInfo?.deliveryHandoverOtp || handoverOtp,
       isOtpVerified: false,
     },
-    timeline: [...(current.timeline || []), newTimelineEvent],
+    timeline: [...(current.timeline || []), memoryTimelineEvent],
     updatedAt: timestamp,
   };
   memoryOrders[index] = updated;
