@@ -1,17 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useIsMounted } from "@/hooks/useIsMounted";
 import { Sparkles } from "lucide-react";
 import { DiamondConciergeModal } from "./DiamondConciergeModal";
 
 export const DiamondConciergeTrigger: React.FC = () => {
+  const isMounted = useIsMounted();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  if (!isMounted || pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>
       {/* Floating AI Concierge Button */}
       <div
-        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 transition-opacity duration-200 ${
+        className={`fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 transition-opacity duration-200 ${
           isOpen ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
       >

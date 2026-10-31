@@ -135,7 +135,7 @@ export function useAdminDiamonds(): IUseAdminDiamondsReturn {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         silentRevalidate();
       }
-    }, 3500);
+    }, 60000);
 
     return () => {
       unsubDiamonds();

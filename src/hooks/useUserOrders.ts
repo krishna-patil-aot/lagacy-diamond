@@ -178,12 +178,12 @@ export function useUserOrders(): IUseUserOrdersReturn {
       void silentFetchOrders();
     });
 
-    // 2. Silent Heartbeat Poll every 2.5 seconds when user is viewing the page
+    // 2. Relaxed fallback heartbeat (45s) when user is viewing the page
     const heartbeat = setInterval(() => {
       if (document.visibilityState === "visible") {
         void silentFetchOrders();
       }
-    }, 2500);
+    }, 45000);
 
     return () => {
       isCancelled = true;

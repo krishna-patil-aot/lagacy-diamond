@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { useClientNotifications } from "@/hooks/useClientNotifications";
+import { useNavbarNotifications } from "@/hooks/useNavbarNotifications";
 import { useAuthStore } from "@/store/useAuthStore";
 import { IInquiry } from "@/types/inquiry.types";
 import {
   Bell,
   MessageSquare,
+  MessageCircle,
   Sparkles,
   CheckCheck,
   ShieldCheck,
@@ -14,33 +15,35 @@ import {
 } from "lucide-react";
 import { InquiryConversationModal } from "@/components/contact/InquiryConversationModal";
 import { LiveInquiryAlert } from "@/components/common/LiveInquiryAlert";
+import { useRouter } from "next/navigation";
 
 interface NavbarNotificationBellProps {
   hideModal?: boolean;
 }
 
 export function NavbarNotificationBell({ hideModal = false }: NavbarNotificationBellProps = {}) {
+  const router = useRouter();
   const { user } = useAuthStore();
   const isAdmin = user?.role === "ADMIN";
 
   const {
-    notifications,
     unreadCount,
+    inquiries,
+    chatNotifications,
     isLoading,
     selectedInquiry,
     setSelectedInquiry,
     closeConversation,
-    markAsRead,
+    markInquiryAsRead,
     markAllAsRead,
-  } = useClientNotifications();
+  } = useNavbarNotifications();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Compute sorted notifications: unread first, newest messages and activity at the top
-  const sortedNotifications = useMemo(() => {
-    return [...notifications].sort((a, b) => {
-      // 1. Unread items prioritized
+  // Compute sorted inquiries
+  const sortedInquiries = useMemo(() => {
+    return [...inquiries].sort((a, b) => {
       const aUnread = isAdmin
         ? (typeof a.unreadAdminCount === "number" && a.unreadAdminCount > 0) || a.status === "NEW"
         : (typeof a.unreadClientCount === "number" && a.unreadClientCount > 0) || a.isClientRead === false;
@@ -51,7 +54,6 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
       if (aUnread && !bUnread) return -1;
       if (!aUnread && bUnread) return 1;
 
-      // 2. Newest message or update timestamp first
       const getLatestTime = (inq: IInquiry): number => {
         const lastMsg =
           inq.messages && inq.messages.length > 0
@@ -65,7 +67,7 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
 
       return getLatestTime(b) - getLatestTime(a);
     });
-  }, [notifications, isAdmin]);
+  }, [inquiries, isAdmin]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -83,27 +85,35 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
     };
   }, [isOpen]);
 
-  const handleOpenNotification = (inquiry: IInquiry) => {
+  const handleOpenInquiry = (inquiry: IInquiry) => {
     setSelectedInquiry(inquiry);
     setIsOpen(false);
-    void markAsRead(inquiry.id || inquiry.inquiryNumber);
+    void markInquiryAsRead(inquiry.id || inquiry.inquiryNumber);
   };
+
+  const handleOpenChat = () => {
+    setIsOpen(false);
+    router.push("/admin");
+  };
+
+  const hasAnyNotifications = chatNotifications.length > 0 || sortedInquiries.length > 0;
 
   return (
     <>
-      {/* Real-time floating incoming inquiry alert banner */}
+      {/* Real-time floating incoming alert banner */}
       {!hideModal && <LiveInquiryAlert />}
+
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="relative p-2 text-stone-500 hover:text-stone-900 transition-colors rounded-lg hover:bg-stone-100/80 focus:outline-hidden"
-          title={isAdmin ? "Curator Consultation Alerts" : "Concierge Notifications"}
-          aria-label={isAdmin ? "Curator Consultation Alerts" : "Concierge Notifications"}
+          className="relative p-2 text-stone-500 hover:text-stone-900 transition-colors rounded-lg hover:bg-stone-100/80 focus:outline-hidden cursor-pointer"
+          title={isAdmin ? "Curator Alerts & Client Messages" : "Concierge Notifications"}
+          aria-label={isAdmin ? "Curator Alerts & Client Messages" : "Concierge Notifications"}
         >
           <Bell className="h-4.5 w-4.5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-xs animate-pulse">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white shadow-xs animate-pulse font-mono">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -111,13 +121,13 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
 
         {/* Dropdown Popover */}
         {isOpen && (
-          <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-full mt-1 sm:mt-2 sm:w-96 max-w-sm sm:max-w-none mx-auto sm:mx-0 rounded-2xl border border-stone-200 bg-white shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-full mt-1 sm:mt-2 sm:w-96 max-w-sm sm:max-w-none mx-auto sm:mx-0 rounded-2xl border border-stone-200 bg-white shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 font-sans">
             {/* Popover Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-stone-50/70">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-600" />
                 <span className="font-serif font-semibold text-stone-900 text-sm">
-                  {isAdmin ? "Client Inquiries & Alerts" : "Concierge Messages"}
+                  {isAdmin ? "Client Inquiries & Live Chats" : "Concierge Messages"}
                 </span>
               </div>
               {unreadCount > 0 && (
@@ -134,80 +144,115 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
 
             {/* Notification List */}
             <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto divide-y divide-stone-100 text-xs">
-              {isLoading && notifications.length === 0 ? (
+              {isLoading && !hasAnyNotifications ? (
                 <div className="py-8 text-center text-stone-400 font-mono text-xs">
                   Checking for new messages...
                 </div>
-              ) : notifications.length === 0 ? (
+              ) : !hasAnyNotifications ? (
                 <div className="py-10 px-4 text-center">
                   <MessageSquare className="h-8 w-8 mx-auto text-stone-300 mb-2" />
                   <div className="font-medium text-stone-700 text-xs">
-                    {isAdmin ? "No Unread Client Inquiries" : "No Messages Yet"}
+                    {isAdmin ? "No Unread Client Messages" : "No Messages Yet"}
                   </div>
                   <p className="text-[11px] text-stone-400 mt-1 max-w-[220px] mx-auto">
                     {isAdmin
-                      ? "All client consultation threads and messages are currently up to date."
-                      : "When our master gemologist replies to your inquiries, they will appear here."}
+                      ? "All live client chats and consultation threads are up to date."
+                      : "When our master gemologist replies, messages will appear here."}
                   </p>
                 </div>
               ) : (
-                sortedNotifications.map((inquiry) => {
-                  const lastMessage =
-                    inquiry.messages && inquiry.messages.length > 0
-                      ? inquiry.messages[inquiry.messages.length - 1]
-                      : null;
-                  const isUnread = isAdmin
-                    ? (inquiry.unreadAdminCount && inquiry.unreadAdminCount > 0) || inquiry.status === "NEW"
-                    : (inquiry.unreadClientCount && inquiry.unreadClientCount > 0) || !inquiry.isClientRead;
-
-                  const previewText =
-                    lastMessage?.message || inquiry.adminReply || inquiry.message;
-
-                  return (
+                <>
+                  {/* 1. Live WhatsApp Chat Notifications for Admin */}
+                  {isAdmin && chatNotifications.map((conv) => (
                     <div
-                      key={inquiry.id}
-                      onClick={() => handleOpenNotification(inquiry)}
-                      className={`p-3.5 hover:bg-amber-50/30 transition-colors cursor-pointer flex gap-3 items-start ${
-                        isUnread ? "bg-amber-50/25" : ""
-                      }`}
+                      key={`chat-${conv.id}`}
+                      onClick={handleOpenChat}
+                      className="p-3.5 bg-emerald-50/30 hover:bg-emerald-50/60 transition-colors cursor-pointer flex gap-3 items-start border-l-4 border-emerald-500"
                     >
-                      <div
-                        className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                          isUnread ? "bg-amber-500 shadow-xs animate-pulse" : "bg-transparent"
-                        }`}
-                      />
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 shrink-0 mt-0.5">
+                        <MessageCircle className="h-4 w-4 text-emerald-700" />
+                      </div>
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono font-bold text-stone-900 text-[11px] truncate">
-                            #{inquiry.inquiryNumber} {isAdmin && `• ${inquiry.fullName}`}
+                          <span className="font-semibold text-stone-900 text-xs truncate flex items-center gap-1.5">
+                            <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.2 rounded font-mono uppercase font-bold">
+                              Live Chat
+                            </span>
+                            {conv.participant.name}
                           </span>
-                          <span className="text-[10px] font-mono text-stone-400 shrink-0">
-                            {new Date(inquiry.updatedAt || inquiry.createdAt).toLocaleDateString([], {
-                              month: "short",
-                              day: "numeric",
-                            })}
+                          <span className="text-[10px] font-mono text-emerald-700 font-bold shrink-0">
+                            {conv.unreadCountAdmin} new
                           </span>
                         </div>
                         <p className="text-stone-700 text-xs line-clamp-2 leading-relaxed">
-                          {previewText}
+                          {conv.lastMessage?.content || "Sent a live message"}
                         </p>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-amber-800 pt-0.5">
-                          {isAdmin ? (
-                            <>
-                              <User className="h-3 w-3 text-amber-600" />
-                              <span>{inquiry.email} • Click to open thread</span>
-                            </>
-                          ) : (
-                            <>
-                              <ShieldCheck className="h-3 w-3 text-amber-600" />
-                              <span>Curator Reply • Click to view</span>
-                            </>
-                          )}
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-800 pt-0.5">
+                          <span>{conv.participant.email} • Click to open in Admin Chat</span>
                         </div>
                       </div>
                     </div>
-                  );
-                })
+                  ))}
+
+                  {/* 2. Formal Inquiry Notifications */}
+                  {sortedInquiries.map((inquiry) => {
+                    const lastMessage =
+                      inquiry.messages && inquiry.messages.length > 0
+                        ? inquiry.messages[inquiry.messages.length - 1]
+                        : null;
+                    const isUnread = isAdmin
+                      ? (inquiry.unreadAdminCount && inquiry.unreadAdminCount > 0) || inquiry.status === "NEW"
+                      : (inquiry.unreadClientCount && inquiry.unreadClientCount > 0) || !inquiry.isClientRead;
+
+                    const previewText =
+                      lastMessage?.message || inquiry.adminReply || inquiry.message;
+
+                    return (
+                      <div
+                        key={`inq-${inquiry.id}`}
+                        onClick={() => handleOpenInquiry(inquiry)}
+                        className={`p-3.5 hover:bg-amber-50/30 transition-colors cursor-pointer flex gap-3 items-start ${
+                          isUnread ? "bg-amber-50/25" : ""
+                        }`}
+                      >
+                        <div
+                          className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
+                            isUnread ? "bg-amber-500 shadow-xs animate-pulse" : "bg-transparent"
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-mono font-bold text-stone-900 text-[11px] truncate">
+                              #{inquiry.inquiryNumber} {isAdmin && `• ${inquiry.fullName}`}
+                            </span>
+                            <span className="text-[10px] font-mono text-stone-400 shrink-0">
+                              {new Date(inquiry.updatedAt || inquiry.createdAt).toLocaleDateString([], {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-stone-700 text-xs line-clamp-2 leading-relaxed">
+                            {previewText}
+                          </p>
+                          <div className="flex items-center gap-1 text-[10px] font-mono text-amber-800 pt-0.5">
+                            {isAdmin ? (
+                              <>
+                                <User className="h-3 w-3 text-amber-600" />
+                                <span>{inquiry.email} • Click to open thread</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="h-3 w-3 text-amber-600" />
+                                <span>Curator Reply • Click to view</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
               )}
             </div>
           </div>

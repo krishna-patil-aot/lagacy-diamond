@@ -9,6 +9,7 @@ import { Navbar } from "@/components/common/Navbar";
 import { Footer } from "@/components/common/Footer";
 import { ScrollToTopButton } from "@/components/common/ScrollToTopButton";
 import { DiamondConciergeTrigger } from "@/components/ai/DiamondConciergeTrigger";
+import { UserChatWidget } from "@/components/chat/UserChatWidget";
 import { Toaster } from "sonner";
 
 import { siteConfig } from "@/config/site.config";
@@ -153,6 +154,7 @@ export default async function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
           <DiamondConciergeTrigger />
+          <UserChatWidget />
           <Toaster
             richColors
             theme="light"

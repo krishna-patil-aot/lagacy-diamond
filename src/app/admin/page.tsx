@@ -15,11 +15,13 @@ import { useAdminInquiries } from "@/hooks/useAdminInquiries";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
 import { useInquiryStore } from "@/store/useInquiryStore";
 import { Button } from "@/components/ui/Button";
-import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent, MessageSquare, Zap, Layers, ShieldCheck, Activity } from "lucide-react";
+import { ShieldAlert, LogIn, Gem, ShoppingBag, BadgePercent, MessageSquare, MessageCircle, Zap, Layers, ShieldCheck, Activity } from "lucide-react";
 import { AdminCacheDiagnostics } from "@/components/admin/AdminCacheDiagnostics";
 import { AdminQueueDiagnostics } from "@/components/admin/AdminQueueDiagnostics";
 import { AdminSecurityAudit } from "@/components/admin/AdminSecurityAudit";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
+import { AdminLiveChat } from "@/components/admin/AdminLiveChat";
+import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
 
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -27,10 +29,11 @@ export default function AdminPage() {
   const { stats: inquiryStats } = useAdminInquiries();
   const { unreadCount: unreadInquiriesCount } = useInquiryStore();
   const { openCreateModal } = useDiamondStore();
-  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "INQUIRIES" | "CACHE" | "QUEUE" | "SECURITY" | "HEALTH">("INVENTORY");
+  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "CHAT" | "INQUIRIES" | "CACHE" | "QUEUE" | "SECURITY" | "HEALTH">("INVENTORY");
   const { stats, error, refetch } = useAdminDiamonds();
 
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
+  const unreadChatCount = useChatUnreadCount(isAdmin);
 
   if (!authLoading && !isAdmin) {
     return (
@@ -66,8 +69,8 @@ export default function AdminPage() {
       <AdminHeader
         onAddNew={openCreateModal}
         onRefresh={refetch}
-        unreadMessagesCount={unreadInquiriesCount}
-        onOpenInquiries={() => setAdminTab("INQUIRIES")}
+        unreadMessagesCount={unreadInquiriesCount + unreadChatCount}
+        onOpenInquiries={() => setAdminTab(unreadChatCount > 0 ? "CHAT" : "INQUIRIES")}
       />
 
       {/* 2. Top Metric KPI Cards */}
@@ -81,7 +84,7 @@ export default function AdminPage() {
       )}
 
       {/* Tab Navigation Switcher with Mobile Horizontal Scroll */}
-      <div className="overflow-x-auto no-scrollbar scroll-smooth border-b border-stone-200 pb-1 -mb-px">
+      <div className="overflow-x-auto no-scrollbar scroll-smooth touch-pan-x border-b border-stone-200 pb-1 -mb-px">
         <div className="flex items-center gap-2 sm:gap-4 min-w-max pb-1">
           <button
             onClick={() => setAdminTab("INVENTORY")}
@@ -128,6 +131,23 @@ export default function AdminPage() {
           </button>
 
           <button
+            onClick={() => setAdminTab("CHAT")}
+            className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+              adminTab === "CHAT"
+                ? "border-emerald-600 text-emerald-800 font-semibold"
+                : "border-transparent text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            <MessageCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+            <span>Live Client Chat (WhatsApp)</span>
+            {unreadChatCount > 0 && (
+              <span className="rounded-full bg-emerald-600 text-white font-mono font-bold px-2 py-0.5 text-[11px] animate-pulse shadow-xs whitespace-nowrap shrink-0">
+                {unreadChatCount} New
+              </span>
+            )}
+          </button>
+
+          <button
             onClick={() => setAdminTab("INQUIRIES")}
             className={`flex items-center gap-2 py-2 px-2 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
               adminTab === "INQUIRIES"
@@ -136,7 +156,7 @@ export default function AdminPage() {
             }`}
           >
             <MessageSquare className="h-4 w-4 shrink-0" />
-            <span>Customer Messages & Inquiries</span>
+            <span>Consultation Inquiries</span>
             {(unreadInquiriesCount > 0 || inquiryStats.newCount > 0) && (
               <span className="rounded-full bg-amber-500 text-white font-mono font-bold px-2 py-0.5 text-[11px] animate-pulse shadow-xs whitespace-nowrap shrink-0">
                 {unreadInquiriesCount > 0 ? unreadInquiriesCount : inquiryStats.newCount} New
@@ -199,6 +219,10 @@ export default function AdminPage() {
       {adminTab === "ORDERS" && <AdminOrderApprovalList />}
 
       {adminTab === "SOLD" && <AdminSoldProductsTable />}
+
+      {adminTab === "CHAT" && (
+        <AdminLiveChat onExit={() => setAdminTab("INVENTORY")} />
+      )}
 
       {adminTab === "INQUIRIES" && <AdminInquiriesTable />}
 

@@ -16,9 +16,7 @@ export interface IUseDoorstepPaymentReturn {
   paymentStatus: PaymentStatus;
   handoverOtp: string | null;
   isPolling: boolean;
-  isSimulating: boolean;
   timeRemainingSec: number;
-  triggerSimulatedPayment: () => Promise<void>;
   checkPaymentStatus: () => Promise<void>;
 }
 
@@ -39,7 +37,6 @@ export function useDoorstepPayment({
     order.paymentInfo?.deliveryHandoverOtp || null
   );
   const isPolling = paymentStatus !== "PAID";
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [timeRemainingSec, setTimeRemainingSec] = useState<number>(300); // 5 min dynamic window
 
   const resolvedOrderNumber = order.orderNumber || order.id;
@@ -117,51 +114,13 @@ export function useDoorstepPayment({
     };
   }, [paymentStatus, checkPaymentStatus]);
 
-  // 4. Developer & Demo simulator (Emulates Gateway Webhook Callback)
-  const triggerSimulatedPayment = async () => {
-    setIsSimulating(true);
-    try {
-      const simulatedTxnId = `UPI-SIM-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
-      const res = await fetch("/api/webhooks/payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-simulate-payment": "true",
-        },
-        body: JSON.stringify({
-          orderNumber: resolvedOrderNumber,
-          transactionId: simulatedTxnId,
-          amount: order.totalAmount,
-          status: "SUCCESS",
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success) {
-        toast.info("Simulated Gateway Webhook Received!", {
-          description: `Transaction ${simulatedTxnId} confirmed. Refreshing state...`,
-        });
-        await checkPaymentStatus();
-      } else {
-        toast.error("Simulation failed", { description: json.error });
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Network error";
-      toast.error("Simulation failed", { description: msg });
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
   return {
     qrCodeDataUrl,
     upiPayloadString,
     paymentStatus,
     handoverOtp,
     isPolling,
-    isSimulating,
     timeRemainingSec,
-    triggerSimulatedPayment,
     checkPaymentStatus,
   };
 }

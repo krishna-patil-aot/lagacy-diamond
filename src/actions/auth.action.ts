@@ -395,6 +395,12 @@ export async function getSessionUserAction(): Promise<IUser | null> {
 
     return sanitizeUser(found.user);
   } catch (error) {
+    if (
+      (error instanceof Error && error.message.includes("Dynamic server usage")) ||
+      (typeof error === "object" && error !== null && "digest" in error && (error as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE")
+    ) {
+      throw error;
+    }
     console.error("[getSessionUserAction] Failed to resolve session:", error instanceof Error ? error.message : error);
     return null;
   }

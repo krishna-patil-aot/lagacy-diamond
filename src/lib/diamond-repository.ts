@@ -1,6 +1,5 @@
 import type { QueryFilter } from "mongoose";
 import { connectToDatabase } from "@/lib/db";
-import { INITIAL_DIAMONDS } from "@/lib/mock-data";
 import { DiamondModel, IDiamondDocument } from "@/models/Diamond";
 import { IDiamond, DiamondShape, DiamondColor, DiamondClarity, DiamondCut } from "@/types/diamond.types";
 import { IDiamondFilterState, IFilterMeta } from "@/types/filter.types";
@@ -14,8 +13,8 @@ import {
 } from "@/lib/cache-service";
 import { isSafeObjectId } from "@/lib/sanitizer";
 
-// In-memory fallback dataset for seamless offline or local execution
-let memoryDiamonds: IDiamond[] = [...INITIAL_DIAMONDS];
+// In-memory fallback dataset for offline or resilient local execution
+let memoryDiamonds: IDiamond[] = [];
 
 export async function getDiamonds(filters: Partial<IDiamondFilterState>): Promise<{
   diamonds: IDiamond[];
@@ -111,19 +110,7 @@ export async function getDiamonds(filters: Partial<IDiamondFilterState>): Promis
             sortOptions.createdAt = -1;
         }
 
-        let totalCount = await DiamondModel.countDocuments(query);
-        if (totalCount === 0) {
-          const overallCount = await DiamondModel.countDocuments();
-          if (overallCount === 0) {
-            const sanitizedLots = INITIAL_DIAMONDS.map((item) => {
-              const lot = { ...item };
-              delete (lot as { _id?: string })._id;
-              return lot;
-            });
-            await DiamondModel.insertMany(sanitizedLots);
-            totalCount = await DiamondModel.countDocuments(query);
-          }
-        }
+        const totalCount = await DiamondModel.countDocuments(query);
         const totalPages = Math.ceil(totalCount / limit) || 1;
         const docs = await DiamondModel.find(query)
           .sort(sortOptions)

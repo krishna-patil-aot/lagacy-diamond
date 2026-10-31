@@ -5,11 +5,6 @@ import { toast } from "sonner";
 
 export const AVAILABLE_COUPONS: ICouponRule[] = [
   {
-    code: "KRISHNAVIP",
-    discountPercentage: 25,
-    description: "25% VIP Privilege Discount (Courtesy of Krishna Patil)",
-  },
-  {
     code: "AURELIA10",
     discountPercentage: 10,
     description: "10% Welcome Vault Offering",

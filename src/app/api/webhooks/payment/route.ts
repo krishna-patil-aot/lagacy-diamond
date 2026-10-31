@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
     const signature = request.headers.get("x-gateway-signature") || request.headers.get("x-razorpay-signature");
-    const isSimulated = request.headers.get("x-simulate-payment") === "true";
     const webhookSecret = process.env.PAYMENT_GATEWAY_WEBHOOK_SECRET || "dev_secret_diamond_luxury_2026";
 
     let payload: IPaymentWebhookPayload;
@@ -37,14 +36,6 @@ export async function POST(request: NextRequest) {
       payload = JSON.parse(rawBody);
     } catch {
       return NextResponse.json({ success: false, error: "Invalid JSON payload" }, { status: 400 });
-    }
-
-    // In production, strictly reject simulated payment requests
-    if (isSimulated && process.env.NODE_ENV === "production") {
-      return NextResponse.json(
-        { success: false, error: "Payment simulation is disabled in production environment" },
-        { status: 403 }
-      );
     }
 
     // In production, enforce cryptographic signature verification

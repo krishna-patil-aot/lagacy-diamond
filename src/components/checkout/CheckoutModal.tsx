@@ -389,7 +389,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="Enter code (e.g. KRISHNAVIP)"
+                placeholder="Enter code (e.g. AURELIA10)"
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                 disabled={Boolean(appliedCoupon)}

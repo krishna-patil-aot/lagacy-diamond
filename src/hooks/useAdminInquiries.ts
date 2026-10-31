@@ -235,12 +235,12 @@ export function useAdminInquiries(): IUseAdminInquiriesReturn {
       void loadInquiriesData(false);
     });
 
-    // 2. Fast Heartbeat auto-poll for new messages every 2.5 seconds when admin tab is visible
+    // 2. Relaxed fallback auto-poll for new messages (45 seconds) when admin tab is visible
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         void loadInquiriesData(false);
       }
-    }, 2500);
+    }, 45000);
 
     return () => {
       isSubscribed = false;

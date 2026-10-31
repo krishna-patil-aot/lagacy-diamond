@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Database, Sparkles, MessageSquare } from "lucide-react";
+import React from "react";
+import { Plus, Sparkles, MessageSquare, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { toast } from "sonner";
 
 interface AdminHeaderProps {
   onAddNew: () => void;
@@ -20,31 +19,6 @@ export function AdminHeader({
   unreadMessagesCount = 0,
   onOpenInquiries,
 }: AdminHeaderProps) {
-  const [isSeeding, setIsSeeding] = useState<boolean>(false);
-  const [seedMessage, setSeedMessage] = useState<string | null>(null);
-
-  const handleSeed = async () => {
-    setIsSeeding(true);
-    setSeedMessage(null);
-    try {
-      const res = await fetch("/api/seed", { method: "POST" });
-      const json = await res.json();
-      if (json.success) {
-        setSeedMessage("Catalog seeded successfully!");
-        toast.success("Vault Catalog Seeded Successfully!", {
-          description: "Certified GIA diamonds loaded into database.",
-        });
-        onRefresh();
-      }
-    } catch {
-      setSeedMessage("Failed to seed catalog.");
-      toast.error("Failed to seed catalog.");
-    } finally {
-      setIsSeeding(false);
-      setTimeout(() => setSeedMessage(null), 4000);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-stone-200 pb-6">
       <div>
@@ -63,11 +37,6 @@ export function AdminHeader({
           Curate solar-cultivated diamond lots, calibrate live atelier pricing,
           and oversee bespoke client orders.
         </p>
-        {seedMessage && (
-          <p className="mt-2 text-xs font-semibold text-emerald-700 animate-in fade-in">
-            ✓ {seedMessage}
-          </p>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
@@ -89,13 +58,12 @@ export function AdminHeader({
         <Button
           variant="outline"
           size="sm"
-          onClick={handleSeed}
-          isLoading={isSeeding}
+          onClick={onRefresh}
           className="flex-1 sm:flex-initial text-xs text-stone-700 hover:text-stone-900 border-stone-300 h-9 justify-center"
-          title="Reset database with initial certified collection"
+          title="Refresh vault inventory"
         >
-          <Database className="h-3.5 w-3.5 mr-1.5 text-stone-500" />
-          <span>Seed / Reset</span>
+          <RotateCw className="h-3.5 w-3.5 mr-1.5 text-stone-500" />
+          <span>Refresh</span>
         </Button>
 
         <Button

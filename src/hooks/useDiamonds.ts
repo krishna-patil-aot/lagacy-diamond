@@ -235,12 +235,12 @@ export function useDiamonds(): IUseDiamondsReturn {
     window.addEventListener("focus", handleFocus);
     window.addEventListener("visibilitychange", handleFocus);
 
-    // 3. Heartbeat poll every 3.5s for multi-device/multi-session background updates
+    // 3. Relaxed fallback heartbeat (60s) for multi-device/multi-session background updates
     const heartbeat = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         silentRevalidate();
       }
-    }, 3500);
+    }, 60000);
 
     return () => {
       unsubscribeDiamondEvents();

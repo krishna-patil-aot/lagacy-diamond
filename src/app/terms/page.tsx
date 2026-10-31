@@ -78,7 +78,7 @@ export default function TermsConditionsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-stone-900">4. Direct-from-Foundry Pricing & Promotional Codes</h2>
           <p>
-            Prices published on the application represent direct foundry valuation without retail markup. Promotional lot discounts (e.g. VIP privilege coupons such as <code>KRISHNAVIP</code>) are applied during checkout prior to final settlement. We reserve the right to correct typographical valuation discrepancies prior to curator approval.
+            Prices published on the application represent direct foundry valuation without retail markup. Promotional lot discounts (e.g. VIP privilege coupons such as <code>AURELIA10</code> or <code>LUXURY20</code>) are applied during checkout prior to final settlement. We reserve the right to correct typographical valuation discrepancies prior to curator approval.
           </p>
         </section>
 

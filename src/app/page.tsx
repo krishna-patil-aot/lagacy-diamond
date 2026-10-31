@@ -560,6 +560,25 @@ export default function HomePage() {
               />
             ))}
           </div>
+        ) : featuredDiamonds.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-stone-300 bg-white/70 py-16 text-center space-y-4 px-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-800 border border-amber-200/60 shadow-xs">
+              <Gem className="h-7 w-7 text-amber-700" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-serif text-lg font-semibold text-stone-900">
+                Atelier Vault In Curation
+              </h3>
+              <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+                Our gemologists are laser-verifying the latest harvest of Type IIa solar-cultivated diamonds. Explore the full catalog or contact our private salon curator.
+              </p>
+            </div>
+            <Link href="/diamonds">
+              <Button variant="luxury" size="sm" className="text-xs font-mono h-10 px-6 mt-2">
+                <span>Browse Registry</span>
+              </Button>
+            </Link>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredDiamonds.map((diamond, index) => (

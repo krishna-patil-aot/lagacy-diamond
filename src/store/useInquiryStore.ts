@@ -541,11 +541,14 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
    */
   startLiveSync: () => {
     get().initialize();
+    // Fetch notifications once on start
+    void get().fetchNotifications();
 
     if (pollingIntervalId) {
       clearInterval(pollingIntervalId);
     }
 
+    // Relaxed 45s heartbeat only when tab is visible (instant updates come via BroadcastChannel)
     pollingIntervalId = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         const state = get();
@@ -556,7 +559,7 @@ export const useInquiryStore = create<IInquiryStoreState>((set, get) => ({
         // Poll notifications
         void state.fetchNotifications();
       }
-    }, 2500);
+    }, 45000);
 
     return () => {
       if (pollingIntervalId) {

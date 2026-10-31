@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/user-repository";
-import { comparePassword } from "@/lib/auth";
+import { comparePassword, isMasterAdminEmail } from "@/lib/auth";
 import {
   checkAuthRateLimit,
   createRateLimitResponse,
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Role Authorization Constraint
-    if (found.user.role === "ADMIN" && normalizedEmail !== "engrkrishnapatil@gmail.com") {
+    if (found.user.role === "ADMIN" && !isMasterAdminEmail(normalizedEmail)) {
       const res = NextResponse.json(
         { success: false, error: "Admin Vault is restricted to authorized master curator." },
         { status: 403 }

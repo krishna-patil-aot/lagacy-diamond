@@ -124,7 +124,7 @@ export function useCheckout(onClose?: () => void): IUseCheckoutReturn {
       });
     } else {
       toast.error("Invalid Coupon Code", {
-        description: "Try codes: KRISHNAVIP (25% off) or AURELIA10 (10% off).",
+        description: "Try code: AURELIA10 (10% off) or LUXURY20 (20% off).",
       });
     }
   };

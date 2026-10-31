@@ -119,12 +119,12 @@ export function useAdminOrders(): IUseAdminOrdersReturn {
       void loadAdminOrders();
     });
 
-    // 2. Live heartbeat polling every 2.5 seconds when admin tab is visible
+    // 2. Relaxed fallback heartbeat polling (45 seconds) when admin tab is visible
     const pollInterval = setInterval(() => {
       if (document.visibilityState === "visible") {
         void loadAdminOrders();
       }
-    }, 2500);
+    }, 45000);
 
     return () => {
       isSubscribed = false;
