@@ -185,7 +185,7 @@ export function UserChatWidget() {
           {/* Chat Messages Body (WhatsApp Luxury Textured Wallpaper) */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1 bg-[#efeae2] bg-[radial-gradient(#d3cbbe_0.8px,transparent_0.8px)] [background-size:16px_16px] relative overscroll-contain"
+            className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-1 bg-[#efeae2] bg-[radial-gradient(#d3cbbe_0.8px,transparent_0.8px)] [background-size:16px_16px] relative overscroll-contain"
           >
             {/* If guest is not configured, show welcome guest card */}
             {!isGuestConfigured ? (

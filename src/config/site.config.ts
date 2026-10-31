@@ -9,10 +9,21 @@ export const siteConfig: ISiteConfig = {
   brandName: "DarkGems",
   brandTagline: "Born in Darkness. Perfected in Light. Haute Joaillerie & Sovereign Solitaires",
   brandSubtagline: "Pure Optical Brilliance · Zero Earth Displacement · GIA & IGI Certified",
-  domain: process.env.NEXT_PUBLIC_APP_URL
-    ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname
-    : "darkgems.vercel.app",
-  appUrl: (process.env.NEXT_PUBLIC_APP_URL || "https://darkgems.vercel.app").replace(/\/+$/, ""),
+  domain: (() => {
+    try {
+      const raw = process.env.NEXT_PUBLIC_APP_URL;
+      if (!raw) return "darkgems.vercel.app";
+      const normalized = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
+      return new URL(normalized).hostname;
+    } catch {
+      return "darkgems.vercel.app";
+    }
+  })(),
+  appUrl: (() => {
+    const raw = process.env.NEXT_PUBLIC_APP_URL || "https://darkgems.vercel.app";
+    const normalized = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
+    return normalized.replace(/\/+$/, "");
+  })(),
   foundryLocation: "Geneva & San Francisco Atelier",
   copyrightYear: new Date().getFullYear(),
 

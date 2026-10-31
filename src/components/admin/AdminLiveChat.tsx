@@ -130,13 +130,22 @@ export function AdminLiveChat({ onExit }: AdminLiveChatProps) {
     return groupMessagesByDateAndSender(filteredMessages);
   }, [filteredMessages]);
 
+  // Lock document body scroll while full-screen admin live chat is open
+  React.useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#efeae2] h-dvh w-screen overflow-hidden font-sans select-none sm:select-auto">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#efeae2] h-full w-full min-h-0 overflow-hidden font-sans select-none sm:select-auto">
       {/* ------------------------------------------------------------------ */}
       {/* SCREEN 1: CLIENT INQUIRY DIRECTORY (Data-Table & Pagination View)  */}
       {/* ------------------------------------------------------------------ */}
       {!activeConversation ? (
-        <div className="flex flex-col h-full bg-stone-100/90 overflow-hidden">
+        <div className="flex flex-col h-full min-h-0 bg-stone-100/90 overflow-hidden">
           {/* Top Pinned Header */}
           <div className="bg-stone-900 text-white px-4 sm:px-6 py-3.5 flex items-center justify-between border-b border-stone-800 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
@@ -334,7 +343,7 @@ export function AdminLiveChat({ onExit }: AdminLiveChatProps) {
           </div>
 
           {/* User Conversations Container (Data Table or Cards) */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 overscroll-contain">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain">
             <div className="max-w-6xl mx-auto w-full space-y-4">
               {isLoading && paginatedConversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-stone-400 gap-3">
@@ -696,7 +705,7 @@ export function AdminLiveChat({ onExit }: AdminLiveChatProps) {
         /* ------------------------------------------------------------------ */
         /* SCREEN 2: DEDICATED FULL-SCREEN CHAT APPLICATION (Pinned Top/Bottom) */
         /* ------------------------------------------------------------------ */
-        <div className="flex flex-col h-full bg-[#efeae2] overflow-hidden">
+        <div className="flex flex-col h-full min-h-0 bg-[#efeae2] overflow-hidden">
           {/* Top Pinned Navigation Header (NEVER SCROLLS) */}
           <div className="p-2.5 sm:p-3.5 bg-stone-900 text-white flex items-center justify-between border-b border-stone-800 shrink-0 gap-2 sm:gap-3 z-10">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -834,7 +843,7 @@ export function AdminLiveChat({ onExit }: AdminLiveChatProps) {
           {/* Messages Area (Pinned in middle, luxury WhatsApp textured background, NO page scroll) */}
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto p-3 sm:p-5 bg-[#efeae2] bg-[radial-gradient(#d3cbbe_0.8px,transparent_0.8px)] [background-size:16px_16px] overscroll-contain"
+            className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-[#efeae2] bg-[radial-gradient(#d3cbbe_0.8px,transparent_0.8px)] [background-size:16px_16px] overscroll-contain"
           >
             {/* Centered reading column for luxury readability */}
             <div className="max-w-4xl mx-auto w-full space-y-1">

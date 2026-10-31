@@ -11,8 +11,9 @@ import { AlertCircle, ChevronLeft } from "lucide-react";
 export default function DiamondDetailPage({
   params,
 }: {
-  params?: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const unwrappedParams = React.use(params);
   const routeParams = useParams();
   const routeId =
     typeof routeParams?.id === "string"
@@ -21,12 +22,7 @@ export default function DiamondDetailPage({
       ? routeParams.id[0]
       : "";
 
-  const propId =
-    params && "id" in params && typeof params.id === "string"
-      ? params.id
-      : "";
-
-  const id = routeId || propId;
+  const id = unwrappedParams?.id || routeId;
   const { diamond, isLoading, error, refetch } = useDiamondDetails(id);
 
   if (isLoading && !diamond) {
