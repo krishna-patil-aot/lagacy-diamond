@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import {
   useAdminCreateOrder,
   IInquiryPrefill,
@@ -29,7 +30,6 @@ import {
   Sparkles,
   User,
   Mail,
-  Phone,
   MapPin,
   FileText,
   CreditCard,
@@ -220,18 +220,13 @@ export function AdminCreateOrderModal({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-stone-600">Client Phone (Optional)</label>
-                <div className="relative">
-                  <Input
-                    type="tel"
-                    value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="+41 22 710 8800"
-                    className="text-xs h-9 pl-8 bg-stone-50 border-stone-200 font-mono"
-                  />
-                  <Phone className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-stone-400" />
-                </div>
+              <div>
+                <PhoneInput
+                  label="Client Phone (Optional)"
+                  value={clientPhone}
+                  onChange={(val) => setClientPhone(val)}
+                  defaultCountry="CH"
+                />
               </div>
             </div>
 

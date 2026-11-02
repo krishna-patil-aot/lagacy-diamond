@@ -82,12 +82,12 @@ export function useNavbarNotifications(): IUseNavbarNotificationsReturn {
 
     window.addEventListener("focus", handleFocus);
 
-    // Relaxed 60s background heartbeat only when tab is visible
+    // 10s background heartbeat only when tab is visible
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         void fetchChatNotifications();
       }
-    }, 60000);
+    }, 10000);
 
     return () => {
       isSubscribed = false;
@@ -96,11 +96,12 @@ export function useNavbarNotifications(): IUseNavbarNotificationsReturn {
     };
   }, [fetchChatNotifications]);
 
-  // Real-time bus listener (event-driven, only on real new messages)
+  // Real-time bus listener (event-driven, on message sent, read, or updated)
   useEffect(() => {
     const unsub = subscribeToChatEvents((event) => {
       if (
         event.type === CHAT_EVENTS.MESSAGE_SENT ||
+        event.type === CHAT_EVENTS.MESSAGES_READ ||
         event.type === CHAT_EVENTS.CONVERSATION_UPDATED
       ) {
         void fetchChatNotifications();

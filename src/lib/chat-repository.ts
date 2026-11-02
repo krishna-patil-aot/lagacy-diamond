@@ -478,6 +478,19 @@ export async function markConversationAsRead(
         await convDoc.save();
         const serialized = serializeConversation(convDoc);
         memoryConversations.set(serialized.id, serialized);
+
+        // Always keep in-memory messages array updated in sync
+        const cached = memoryMessages.get(serialized.id);
+        if (cached) {
+          for (const m of cached) {
+            if (reader === "ADMIN" && m.sender === "USER") {
+              m.status = "READ";
+            } else if (reader === "USER" && m.sender === "ADMIN") {
+              m.status = "READ";
+            }
+          }
+        }
+
         return serialized;
       }
     }

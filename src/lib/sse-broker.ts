@@ -5,12 +5,13 @@ declare global {
   var __darkgems_chat_sse_emitter: EventEmitter | undefined;
 }
 
-const sseEmitter: EventEmitter =
-  globalThis.__darkgems_chat_sse_emitter ||
-  (globalThis.__darkgems_chat_sse_emitter = new EventEmitter());
+if (!globalThis.__darkgems_chat_sse_emitter) {
+  const emitter = new EventEmitter();
+  emitter.setMaxListeners(5000);
+  globalThis.__darkgems_chat_sse_emitter = emitter;
+}
 
-// Allow high concurrency for active client streams
-sseEmitter.setMaxListeners(2500);
+const sseEmitter = globalThis.__darkgems_chat_sse_emitter;
 
 /**
  * Publish real-time chat event to all active Server-Sent Events (SSE) connections

@@ -26,16 +26,63 @@ export interface IChatEventPayload {
 const CHAT_BROADCAST_CHANNEL_NAME = "darkgems_chat_broadcast_channel";
 const CHAT_STORAGE_SYNC_KEY = "darkgems_chat_last_sync";
 
-// Shared SSE singleton to stream real-time events across different physical devices
+// Client-wide unified listener registry
+const chatListeners = new Set<(payload: IChatEventPayload) => void>();
+
+// Persistent BroadcastChannel singleton (never closed synchronously to avoid dropping queued IPC packets)
+let sharedBroadcastChannel: BroadcastChannel | null = null;
+
+function getSharedBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return null;
+  if (!sharedBroadcastChannel) {
+    try {
+      sharedBroadcastChannel = new BroadcastChannel(CHAT_BROADCAST_CHANNEL_NAME);
+      sharedBroadcastChannel.onmessage = (event: MessageEvent<IChatEventPayload>) => {
+        if (event.data && event.data.type) {
+          dispatchToLocalListeners(event.data);
+        }
+      };
+    } catch {
+      sharedBroadcastChannel = null;
+    }
+  }
+  return sharedBroadcastChannel;
+}
+
+// Persistent SSE connection singleton with self-healing auto-reconnect
 let sharedEventSource: EventSource | null = null;
-let sseSubscriberCount = 0;
-const sseListeners = new Set<(payload: IChatEventPayload) => void>();
+let sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+function dispatchToLocalListeners(payload: IChatEventPayload): void {
+  for (const listener of Array.from(chatListeners)) {
+    try {
+      listener(payload);
+    } catch (err) {
+      console.warn("[ChatBus] Listener exception:", err);
+    }
+  }
+}
 
 function ensureSharedEventSource(): void {
   if (typeof window === "undefined" || typeof EventSource === "undefined") return;
-  if (sharedEventSource) return;
+  if (
+    sharedEventSource &&
+    (sharedEventSource.readyState === EventSource.OPEN ||
+      sharedEventSource.readyState === EventSource.CONNECTING)
+  ) {
+    return;
+  }
 
   try {
+    if (sharedEventSource) {
+      try {
+        sharedEventSource.close();
+      } catch {
+        // Ignore
+      }
+      sharedEventSource = null;
+    }
+
     sharedEventSource = new EventSource("/api/chat/stream");
 
     sharedEventSource.onmessage = (e: MessageEvent<string>) => {
@@ -43,34 +90,71 @@ function ensureSharedEventSource(): void {
         if (!e.data) return;
         const payload = JSON.parse(e.data) as IChatEventPayload;
         if (payload && payload.type) {
-          for (const listener of sseListeners) {
-            listener(payload);
-          }
+          dispatchToLocalListeners(payload);
         }
       } catch {
-        // Keep-alive or non-JSON chunk ignored
+        // Non-JSON or keepalive packet ignored
       }
     };
 
     sharedEventSource.onerror = () => {
-      // EventSource automatically attempts reconnection
+      try {
+        sharedEventSource?.close();
+      } catch {
+        // Ignore
+      }
+      sharedEventSource = null;
+
+      if (!sseReconnectTimer) {
+        sseReconnectTimer = setTimeout(() => {
+          sseReconnectTimer = null;
+          ensureSharedEventSource();
+        }, 3000);
+      }
     };
   } catch {
     sharedEventSource = null;
   }
 }
 
-function closeSharedEventSourceIfOrphaned(): void {
-  if (sseSubscriberCount <= 0 && sharedEventSource) {
-    try {
-      sharedEventSource.close();
-    } catch {
-      // Ignore
-    }
-    sharedEventSource = null;
+let isStorageListenerAttached = false;
+
+function ensureGlobalListeners(): void {
+  if (typeof window === "undefined") return;
+
+  getSharedBroadcastChannel();
+  ensureSharedEventSource();
+
+  if (!isStorageListenerAttached) {
+    isStorageListenerAttached = true;
+
+    // Cross-window storage fallback
+    window.addEventListener("storage", (e: StorageEvent) => {
+      if (e.key === CHAT_STORAGE_SYNC_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue) as IChatEventPayload;
+          if (parsed && parsed.type) {
+            dispatchToLocalListeners(parsed);
+          }
+        } catch {
+          // Ignore parse failure
+        }
+      }
+    });
+
+    // Custom local window events
+    window.addEventListener("darkgems_chat_event", (e: Event) => {
+      const custom = e as CustomEvent<IChatEventPayload>;
+      if (custom.detail && custom.detail.type) {
+        dispatchToLocalListeners(custom.detail);
+      }
+    });
   }
 }
 
+/**
+ * Broadcasts an event immediately across all browser tabs, windows, and local UI components.
+ */
 export function broadcastChatEvent(
   type: ChatEventType,
   conversationId: string,
@@ -91,85 +175,46 @@ export function broadcastChatEvent(
     timestamp: Date.now(),
   };
 
-  // 1. BroadcastChannel (fastest inter-tab messaging on same device)
-  try {
-    const bc = new BroadcastChannel(CHAT_BROADCAST_CHANNEL_NAME);
-    bc.postMessage(payload);
-    bc.close();
-  } catch {
-    // BroadcastChannel unsupported or restricted
+  // 1. Dispatch instantly to current window components
+  dispatchToLocalListeners(payload);
+
+  // 2. BroadcastChannel for zero-latency inter-tab messaging on the same device
+  const bc = getSharedBroadcastChannel();
+  if (bc) {
+    try {
+      bc.postMessage(payload);
+    } catch {
+      // Ignore
+    }
   }
 
-  // 2. localStorage sync for cross-window notifications
+  // 3. localStorage for cross-window / iframe storage sync
   try {
     localStorage.setItem(CHAT_STORAGE_SYNC_KEY, JSON.stringify(payload));
   } catch {
-    // LocalStorage quota or access exception
+    // Ignore storage quota limits
   }
 
-  // 3. Local custom event for current window components
+  // 4. Window custom event
   try {
     window.dispatchEvent(new CustomEvent("darkgems_chat_event", { detail: payload }));
   } catch {
-    // CustomEvent dispatch error
+    // Ignore
   }
 }
 
+/**
+ * Subscribes a React component or hook to real-time chat events.
+ */
 export function subscribeToChatEvents(
   callback: (payload: IChatEventPayload) => void
 ): () => void {
   if (typeof window === "undefined") return () => {};
 
-  // 1. Register with shared Server-Sent Events stream (for cross-device real-time sync)
-  sseListeners.add(callback);
-  sseSubscriberCount++;
-  ensureSharedEventSource();
-
-  // 2. Register BroadcastChannel for inter-tab instant sync
-  let bc: BroadcastChannel | null = null;
-  try {
-    bc = new BroadcastChannel(CHAT_BROADCAST_CHANNEL_NAME);
-    bc.onmessage = (event: MessageEvent<IChatEventPayload>) => {
-      if (event.data && event.data.type) {
-        callback(event.data);
-      }
-    };
-  } catch {
-    bc = null;
-  }
-
-  // 3. Register local window event
-  const handleCustomEvent = (e: Event) => {
-    const custom = e as CustomEvent<IChatEventPayload>;
-    if (custom.detail) {
-      callback(custom.detail);
-    }
-  };
-
-  // 4. Register cross-window storage event
-  const handleStorageEvent = (e: StorageEvent) => {
-    if (e.key === CHAT_STORAGE_SYNC_KEY && e.newValue) {
-      try {
-        const parsed = JSON.parse(e.newValue) as IChatEventPayload;
-        callback(parsed);
-      } catch {
-        // Parse error ignored
-      }
-    }
-  };
-
-  window.addEventListener("darkgems_chat_event", handleCustomEvent);
-  window.addEventListener("storage", handleStorageEvent);
+  ensureGlobalListeners();
+  chatListeners.add(callback);
 
   return () => {
-    sseListeners.delete(callback);
-    sseSubscriberCount--;
-    closeSharedEventSourceIfOrphaned();
-
-    if (bc) {
-      bc.close();
-    }
-    window.removeEventListener("darkgems_chat_event", handleCustomEvent);
-    window.removeEventListener("storage", handleStorageEvent);
+    chatListeners.delete(callback);
   };
 }

@@ -91,9 +91,25 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
     void markInquiryAsRead(inquiry.id || inquiry.inquiryNumber);
   };
 
-  const handleOpenChat = () => {
+  const handleOpenChat = (conversationId?: string) => {
     setIsOpen(false);
-    router.push("/admin");
+    if (isAdmin) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("darkgems_open_admin_chat", {
+            detail: { conversationId },
+          })
+        );
+      }
+      const targetUrl = conversationId
+        ? `/admin?tab=CHAT&conversationId=${encodeURIComponent(conversationId)}`
+        : "/admin?tab=CHAT";
+      router.push(targetUrl);
+    } else {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("darkgems_open_user_chat"));
+      }
+    }
   };
 
   const hasAnyNotifications = chatNotifications.length > 0 || sortedInquiries.length > 0;
@@ -166,7 +182,7 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
                   {isAdmin && chatNotifications.map((conv) => (
                     <div
                       key={`chat-${conv.id}`}
-                      onClick={handleOpenChat}
+                      onClick={() => handleOpenChat(conv.id)}
                       className="p-3.5 bg-emerald-50/30 hover:bg-emerald-50/60 transition-colors cursor-pointer flex gap-3 items-start border-l-4 border-emerald-500"
                     >
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 shrink-0 mt-0.5">
@@ -185,7 +201,7 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
                           </span>
                         </div>
                         <p className="text-stone-700 text-xs line-clamp-2 leading-relaxed">
-                          {conv.lastMessage?.content || "Sent a live message"}
+                          {conv.lastMessage?.content || "Client started a live consultation"}
                         </p>
                         <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-800 pt-0.5">
                           <span>{conv.participant.email} • Click to open in Admin Chat</span>
@@ -193,6 +209,37 @@ export function NavbarNotificationBell({ hideModal = false }: NavbarNotification
                       </div>
                     </div>
                   ))}
+
+                  {/* 1b. Live WhatsApp Chat Notification for Non-Admin Client */}
+                  {!isAdmin && chatNotifications.length === 0 && unreadCount > 0 && (
+                    <div
+                      onClick={() => handleOpenChat()}
+                      className="p-3.5 bg-emerald-50/40 hover:bg-emerald-50/70 transition-colors cursor-pointer flex gap-3 items-start border-l-4 border-emerald-500"
+                    >
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 shrink-0 mt-0.5">
+                        <MessageCircle className="h-4 w-4 text-emerald-700" />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-stone-900 text-xs truncate flex items-center gap-1.5">
+                            <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.2 rounded font-mono uppercase font-bold">
+                              Atelier Chat
+                            </span>
+                            Curator Response
+                          </span>
+                          <span className="text-[10px] font-mono text-emerald-700 font-bold shrink-0">
+                            New
+                          </span>
+                        </div>
+                        <p className="text-stone-700 text-xs line-clamp-2 leading-relaxed">
+                          Our Master Gemologist has sent an update regarding your diamond consultation.
+                        </p>
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-800 pt-0.5">
+                          <span>Click to open live chat modal</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 2. Formal Inquiry Notifications */}
                   {sortedInquiries.map((inquiry) => {

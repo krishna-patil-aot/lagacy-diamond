@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useAdminChat } from "@/hooks/useAdminChat";
 import { ChatMessageBubble, ChatDateDivider } from "@/components/chat/ChatMessageBubble";
 import { groupMessagesByDateAndSender } from "@/lib/chat-utils";
@@ -47,6 +47,7 @@ import { ChatSortOption } from "@/types/chat.types";
 
 interface AdminLiveChatProps {
   onExit?: () => void;
+  initialConversationId?: string;
 }
 
 const CANNED_REPLIES = [
@@ -57,7 +58,7 @@ const CANNED_REPLIES = [
   "Would you like me to reserve this stone in the vault while we confirm your carat and setting preferences?",
 ];
 
-export function AdminLiveChat({ onExit }: AdminLiveChatProps) {
+export function AdminLiveChat({ onExit, initialConversationId }: AdminLiveChatProps) {
   const {
     filteredConversations,
     paginatedConversations,
@@ -94,12 +95,33 @@ export function AdminLiveChat({ onExit }: AdminLiveChatProps) {
     adminDraft,
     setAdminDraft,
     selectConversation,
+    selectConversationById,
     handleSendReply,
     refreshConversations,
     messagesContainerRef,
     isSoundEnabled,
     setIsSoundEnabled,
   } = useAdminChat();
+
+  // If initialConversationId was provided (e.g. from notification click or URL), open it immediately
+  useEffect(() => {
+    if (initialConversationId) {
+      void selectConversationById(initialConversationId);
+    }
+  }, [initialConversationId, selectConversationById]);
+
+  // Listen to custom window event "darkgems_open_admin_chat" for in-page instant notification clicks
+  useEffect(() => {
+    const handleOpenChatEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ conversationId?: string }>;
+      if (custom.detail?.conversationId) {
+        void selectConversationById(custom.detail.conversationId);
+      }
+    };
+
+    window.addEventListener("darkgems_open_admin_chat", handleOpenChatEvent);
+    return () => window.removeEventListener("darkgems_open_admin_chat", handleOpenChatEvent);
+  }, [selectConversationById]);
 
   const [isSearchInChatOpen, setIsSearchInChatOpen] = useState<boolean>(false);
 

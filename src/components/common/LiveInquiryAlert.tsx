@@ -102,8 +102,16 @@ export function LiveInquiryAlert() {
               <button
                 type="button"
                 onClick={() => {
+                  const convId = chatAlert.conversationId;
                   setChatAlert(null);
-                  router.push("/admin");
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("darkgems_open_admin_chat", {
+                        detail: { conversationId: convId },
+                      })
+                    );
+                  }
+                  router.push(`/admin?tab=CHAT&conversationId=${encodeURIComponent(convId)}`);
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition-all shadow-md cursor-pointer hover:scale-102 active:scale-98"
               >

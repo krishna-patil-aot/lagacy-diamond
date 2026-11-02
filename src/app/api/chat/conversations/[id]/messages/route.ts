@@ -5,7 +5,7 @@ import {
   saveChatMessage,
   getConversationById,
 } from "@/lib/chat-repository";
-import { broadcastChatEvent, CHAT_EVENTS } from "@/lib/chat-events";
+import { CHAT_EVENTS } from "@/lib/chat-events";
 import { publishServerChatEvent } from "@/lib/sse-broker";
 import { ChatSenderRole } from "@/types/chat.types";
 
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest, context: IRouteContext) {
       );
     }
 
-    // Broadcast real-time message event across SSE (cross-device) and BroadcastChannel
+    // Broadcast real-time message event across SSE (cross-device)
     publishServerChatEvent({
       type: CHAT_EVENTS.MESSAGE_SENT,
       conversationId: id,
@@ -122,13 +122,6 @@ export async function POST(request: NextRequest, context: IRouteContext) {
       content: result.message.content,
       timestamp: Date.now(),
     });
-
-    broadcastChatEvent(
-      CHAT_EVENTS.MESSAGE_SENT,
-      id,
-      resolvedSender,
-      result.message.id
-    );
 
     return NextResponse.json({
       success: true,

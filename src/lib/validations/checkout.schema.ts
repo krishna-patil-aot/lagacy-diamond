@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { phoneZodSchema } from "@/lib/phone-validation";
 
 export const shippingAddressSchema = z.object({
   fullName: z.string().min(2, "Full legal name is required"),
   email: z.string().email("Valid email address required for insured tracking"),
-  phone: z.string().min(6, "Contact phone is required for armored delivery"),
+  phone: phoneZodSchema,
   street: z.string().min(4, "Street address is required"),
   city: z.string().min(2, "City is required"),
   state: z.string().min(2, "State/Province is required"),

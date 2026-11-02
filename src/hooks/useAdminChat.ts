@@ -9,7 +9,12 @@ import {
   ChatSortOption,
   IChatPaginationState,
 } from "@/types/chat.types";
-import { subscribeToChatEvents, CHAT_EVENTS, IChatEventPayload } from "@/lib/chat-events";
+import {
+  subscribeToChatEvents,
+  broadcastChatEvent,
+  CHAT_EVENTS,
+  IChatEventPayload,
+} from "@/lib/chat-events";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 
@@ -81,6 +86,7 @@ export interface IUseAdminChatReturn {
   adminDraft: string;
   setAdminDraft: (draft: string) => void;
   selectConversation: (conv: IChatConversation | null) => void;
+  selectConversationById: (convId: string) => Promise<void>;
   handleSendReply: (e?: React.FormEvent, customContent?: string) => Promise<boolean>;
   refreshConversations: () => Promise<void>;
   messagesContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -159,6 +165,31 @@ export function useAdminChat(): IUseAdminChatReturn {
     [searchQuery]
   );
 
+  // Mark conversation read by Admin
+  const markAsRead = useCallback(async (convId: string) => {
+    try {
+      const res = await fetch(`/api/chat/conversations/${convId}/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "ADMIN" }),
+      });
+      const data = await res.json();
+      if (data.success && data.conversation) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? (data.conversation as IChatConversation) : c))
+        );
+        setMessages((prev) =>
+          prev.map((m) => (m.sender === "USER" ? { ...m, status: "READ" } : m))
+        );
+
+        // Broadcast lively update across tabs and SSE
+        broadcastChatEvent(CHAT_EVENTS.MESSAGES_READ, convId, "ADMIN");
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
   // Load messages for a conversation with cursor pagination support
   const loadMessages = useCallback(
     async (convId: string, isSilent: boolean = false) => {
@@ -198,6 +229,14 @@ export function useAdminChat(): IUseAdminChatReturn {
 
           prevMessagesCountRef.current = newMsgs.length;
           setMessages(newMsgs);
+
+          // AUTO-READ: If Admin is actively viewing this conversation, mark unread client messages as READ immediately
+          const hasUnreadUserMsg = newMsgs.some(
+            (m) => m.sender === "USER" && m.status !== "READ"
+          );
+          if (hasUnreadUserMsg) {
+            void markAsRead(convId);
+          }
         }
       } catch {
         // Silently fail on poll
@@ -205,7 +244,7 @@ export function useAdminChat(): IUseAdminChatReturn {
         if (!isSilent) setIsLoadingMessages(false);
       }
     },
-    [isSoundEnabled]
+    [isSoundEnabled, markAsRead]
   );
 
   // Load earlier historical messages on demand (cursor pagination)
@@ -262,28 +301,6 @@ export function useAdminChat(): IUseAdminChatReturn {
     }
   }, [isLoadingEarlier, hasMoreMessages]);
 
-  // Mark conversation read by Admin
-  const markAsRead = useCallback(async (convId: string) => {
-    try {
-      const res = await fetch(`/api/chat/conversations/${convId}/read`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "ADMIN" }),
-      });
-      const data = await res.json();
-      if (data.success && data.conversation) {
-        setConversations((prev) =>
-          prev.map((c) => (c.id === convId ? (data.conversation as IChatConversation) : c))
-        );
-        setMessages((prev) =>
-          prev.map((m) => (m.sender === "USER" ? { ...m, status: "READ" } : m))
-        );
-      }
-    } catch {
-      // Ignore
-    }
-  }, []);
-
   // Select a conversation from the sidebar (or null to unselect on mobile)
   const selectConversation = useCallback(
     (conv: IChatConversation | null) => {
@@ -291,14 +308,37 @@ export function useAdminChat(): IUseAdminChatReturn {
       if (conv) {
         prevMessagesCountRef.current = 0;
         void loadMessages(conv.id);
-        if (conv.unreadCountAdmin > 0) {
-          void markAsRead(conv.id);
-        }
+        void markAsRead(conv.id);
       } else {
         setMessages([]);
       }
     },
     [loadMessages, markAsRead]
+  );
+
+  // Directly select and open a specific client conversation by ID
+  const selectConversationById = useCallback(
+    async (convId: string) => {
+      if (!convId) return;
+      let conv = conversations.find((c) => c.id === convId);
+      if (!conv) {
+        try {
+          const res = await fetch(`/api/chat/conversations/${convId}/messages?limit=1`);
+          const data = await res.json();
+          if (data.success && data.conversation) {
+            conv = data.conversation as IChatConversation;
+          }
+        } catch {
+          // Ignore
+        }
+      }
+      if (conv) {
+        selectConversation(conv);
+        void markAsRead(conv.id);
+      }
+      void loadConversations(true);
+    },
+    [conversations, selectConversation, markAsRead, loadConversations]
   );
 
   // Initial fetch deferred past synchronous effect execution
@@ -316,19 +356,22 @@ export function useAdminChat(): IUseAdminChatReturn {
     };
   }, [loadConversations]);
 
-  // Gentle fallback heartbeat (30s) only if tab is active and visible
+  // Active chat lively sync: 1.5 seconds for active consultation, 4 seconds for general list
   useEffect(() => {
+    const isChatActive = Boolean(activeConversation?.id);
+    const intervalTime = isChatActive ? 1500 : 4000;
+
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        void loadConversations(true);
         if (activeConvIdRef.current) {
           void loadMessages(activeConvIdRef.current, true);
         }
+        void loadConversations(true);
       }
-    }, 30000);
+    }, intervalTime);
 
     return () => clearInterval(interval);
-  }, [loadConversations, loadMessages]);
+  }, [loadConversations, loadMessages, activeConversation?.id]);
 
   // Sync on window focus when admin returns to tab
   useEffect(() => {
@@ -354,11 +397,13 @@ export function useAdminChat(): IUseAdminChatReturn {
             void markAsRead(activeConvIdRef.current);
           }
         }
-      } else if (event.type === CHAT_EVENTS.MESSAGES_READ && event.sender === "USER") {
-        // Client marked our admin message as READ -> update status locally without network request
-        setMessages((prev) =>
-          prev.map((m) => (m.sender === "ADMIN" ? { ...m, status: "READ" } : m))
-        );
+      } else if (event.type === CHAT_EVENTS.MESSAGES_READ) {
+        // When client marks admin messages as read, lively update local admin messages to READ (double ticks!)
+        if (activeConvIdRef.current && event.conversationId === activeConvIdRef.current) {
+          setMessages((prev) =>
+            prev.map((m) => (m.sender === "ADMIN" ? { ...m, status: "READ" } : m))
+          );
+        }
       }
     });
 
@@ -425,6 +470,17 @@ export function useAdminChat(): IUseAdminChatReturn {
             )
           );
         }
+
+        // Lively update: Broadcast real-time message event to all client windows
+        broadcastChatEvent(
+          CHAT_EVENTS.MESSAGE_SENT,
+          activeConversation.id,
+          "ADMIN",
+          data.message.id,
+          user?.name || "Atelier Curator Gemologist",
+          content.trim()
+        );
+
         return true;
       } else {
         throw new Error(data.error || "Failed to send reply");
@@ -589,6 +645,7 @@ export function useAdminChat(): IUseAdminChatReturn {
     adminDraft,
     setAdminDraft,
     selectConversation,
+    selectConversationById,
     handleSendReply,
     refreshConversations: () => loadConversations(false),
     messagesContainerRef,

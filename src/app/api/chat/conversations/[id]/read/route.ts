@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserFromRequest } from "@/lib/auth";
 import { markConversationAsRead } from "@/lib/chat-repository";
-import { broadcastChatEvent, CHAT_EVENTS } from "@/lib/chat-events";
+import { CHAT_EVENTS } from "@/lib/chat-events";
 import { publishServerChatEvent } from "@/lib/sse-broker";
 import { ChatSenderRole } from "@/types/chat.types";
 
@@ -20,15 +20,14 @@ export async function POST(request: NextRequest, context: IRouteContext) {
     }
 
     const authUser = getAuthenticatedUserFromRequest(request);
+    const body = (await request.json().catch(() => ({}))) as { role?: string };
     let readerRole: ChatSenderRole = "USER";
 
-    if (authUser?.role === "ADMIN") {
-      readerRole = "ADMIN";
-    } else {
-      const body = (await request.json().catch(() => ({}))) as { role?: string };
-      if (body.role === "ADMIN") {
+    if (authUser?.role === "ADMIN" || body.role === "ADMIN") {
+      if (authUser && authUser.role !== "ADMIN") {
         return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
       }
+      readerRole = "ADMIN";
     }
 
     const updated = await markConversationAsRead(id, readerRole);
@@ -45,8 +44,6 @@ export async function POST(request: NextRequest, context: IRouteContext) {
       sender: readerRole,
       timestamp: Date.now(),
     });
-
-    broadcastChatEvent(CHAT_EVENTS.MESSAGES_READ, id, readerRole);
 
     return NextResponse.json({
       success: true,

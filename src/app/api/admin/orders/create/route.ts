@@ -6,6 +6,7 @@ import { addInquiryMessage } from "@/lib/inquiry-repository";
 import { enqueueJob } from "@/lib/queue-service";
 import { QUEUE_JOB_TYPES } from "@/types/queue.types";
 import { IDiamond } from "@/types/diamond.types";
+import { validateMobileNumber } from "@/lib/phone-validation";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +41,14 @@ export async function POST(request: NextRequest) {
         { success: false, error: "Client full name and email are required to create an order." },
         { status: 400 }
       );
+    }
+
+    let normalizedClientPhone = String(clientPhone || "").trim();
+    if (normalizedClientPhone) {
+      const phoneValidation = validateMobileNumber(normalizedClientPhone, country === "India" ? "IN" : "CH");
+      if (phoneValidation.isValid) {
+        normalizedClientPhone = phoneValidation.e164;
+      }
     }
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -85,7 +94,7 @@ export async function POST(request: NextRequest) {
         shippingAddress: {
           fullName: clientName.trim(),
           email: clientEmail.trim().toLowerCase(),
-          phone: clientPhone.trim(),
+          phone: normalizedClientPhone,
           street: street.trim(),
           city: city.trim(),
           state: state.trim(),

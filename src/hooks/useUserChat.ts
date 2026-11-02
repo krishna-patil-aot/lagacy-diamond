@@ -120,10 +120,30 @@ export function useUserChat(): IUseUserChatReturn {
     };
   }, []);
 
+  // Listen to global open user chat event (e.g. from notification clicks)
+  useEffect(() => {
+    const handleOpenUserChat = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener("darkgems_open_user_chat", handleOpenUserChat);
+    return () => window.removeEventListener("darkgems_open_user_chat", handleOpenUserChat);
+  }, []);
+
   const isGuestConfigured = Boolean((isAuthenticated && user) || isGuestSaved);
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const prevMessagesCountRef = useRef<number>(0);
+  const isOpenRef = useRef<boolean>(isOpen);
+  const conversationRef = useRef<IChatConversation | null>(conversation);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  useEffect(() => {
+    conversationRef.current = conversation;
+  }, [conversation]);
 
   // Resolve channel ID
   const getChannelId = useCallback((): string => {
@@ -170,6 +190,26 @@ export function useUserChat(): IUseUserChatReturn {
     return null;
   }, [getChannelId, isAuthenticated, user, guestName, guestEmail]);
 
+  // Mark messages as read when drawer is open
+  const markAsRead = useCallback(async (convId: string) => {
+    try {
+      await fetch(`/api/chat/conversations/${convId}/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "USER" }),
+      });
+      setUnreadCount(0);
+      setMessages((prev) =>
+        prev.map((m) => (m.sender === "ADMIN" ? { ...m, status: "READ" } : m))
+      );
+
+      // Lively update: Broadcast that user read admin messages
+      broadcastChatEvent(CHAT_EVENTS.MESSAGES_READ, convId, "USER");
+    } catch {
+      // Ignore
+    }
+  }, []);
+
   // Load messages for the active conversation with cursor pagination
   const loadMessages = useCallback(
     async (convId: string, isSilent: boolean = false) => {
@@ -200,7 +240,7 @@ export function useUserChat(): IUseUserChatReturn {
             const latest = newMsgs[newMsgs.length - 1];
             if (latest.sender === "ADMIN") {
               if (isSoundEnabled) playNotificationChime();
-              if (!isOpen) {
+              if (!isOpenRef.current) {
                 toast("New Atelier Message", {
                   description: latest.content.length > 50 ? `${latest.content.slice(0, 50)}...` : latest.content,
                 });
@@ -215,6 +255,16 @@ export function useUserChat(): IUseUserChatReturn {
             setConversation(data.conversation);
             setUnreadCount(data.conversation.unreadCountUser || 0);
           }
+
+          // AUTO-READ: If chat drawer is OPEN, mark unread admin messages as READ immediately
+          if (isOpenRef.current) {
+            const hasUnreadAdminMsg = newMsgs.some(
+              (m) => m.sender === "ADMIN" && m.status !== "READ"
+            );
+            if (hasUnreadAdminMsg || (data.conversation && data.conversation.unreadCountUser > 0)) {
+              void markAsRead(convId);
+            }
+          }
         }
       } catch {
         // Silently fail on background poll
@@ -222,7 +272,7 @@ export function useUserChat(): IUseUserChatReturn {
         if (!isSilent) setIsLoading(false);
       }
     },
-    [isOpen, isSoundEnabled]
+    [isSoundEnabled, markAsRead]
   );
 
   // Load earlier messages on demand for client chat
@@ -274,23 +324,6 @@ export function useUserChat(): IUseUserChatReturn {
     }
   }, [conversation, isLoadingEarlier, hasMoreMessages]);
 
-  // Mark messages as read when drawer is open
-  const markAsRead = useCallback(async (convId: string) => {
-    try {
-      await fetch(`/api/chat/conversations/${convId}/read`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "USER" }),
-      });
-      setUnreadCount(0);
-      setMessages((prev) =>
-        prev.map((m) => (m.sender === "ADMIN" ? { ...m, status: "READ" } : m))
-      );
-    } catch {
-      // Ignore
-    }
-  }, []);
-
   // Poll unread count badge
   const fetchUnreadCount = useCallback(async () => {
     const email = user?.email || guestEmail;
@@ -322,19 +355,17 @@ export function useUserChat(): IUseUserChatReturn {
     };
   }, [fetchUnreadCount]);
 
-  // When opening chat, load conversation and messages (only mark read if there are unread messages)
+  // When opening chat, load conversation and messages, and lively mark read
   useEffect(() => {
     if (isOpen) {
       let isSubscribed = true;
       const setupOpenChat = async () => {
         await Promise.resolve();
         if (!isSubscribed) return;
-        const conv = conversation || (await initConversation());
+        const conv = conversationRef.current || (await initConversation());
         if (conv?.id && isSubscribed) {
           await loadMessages(conv.id);
-          if (conv.unreadCountUser > 0) {
-            await markAsRead(conv.id);
-          }
+          await markAsRead(conv.id);
         }
       };
       void setupOpenChat();
@@ -342,20 +373,28 @@ export function useUserChat(): IUseUserChatReturn {
         isSubscribed = false;
       };
     }
-  }, [isOpen, conversation, initConversation, loadMessages, markAsRead]);
+  }, [isOpen, initConversation, loadMessages, markAsRead]);
 
-  // Low-frequency fallback heartbeat (30s) only if chat is open and window is visible
+  // Active chat lively sync: 1.5s when chat drawer is open, 5s for unread badge when closed
   useEffect(() => {
-    if (!isOpen || !conversation?.id) return;
+    if (isOpen && conversation?.id) {
+      const interval = setInterval(() => {
+        if (typeof document !== "undefined" && document.visibilityState === "visible") {
+          void loadMessages(conversation.id, true);
+        }
+      }, 1500);
 
-    const interval = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        void loadMessages(conversation.id, true);
-      }
-    }, 30000);
+      return () => clearInterval(interval);
+    } else {
+      const interval = setInterval(() => {
+        if (typeof document !== "undefined" && document.visibilityState === "visible") {
+          void fetchUnreadCount();
+        }
+      }, 5000);
 
-    return () => clearInterval(interval);
-  }, [isOpen, conversation?.id, loadMessages]);
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, conversation?.id, loadMessages, fetchUnreadCount]);
 
   // Sync on window focus when user returns to tab
   useEffect(() => {
@@ -371,18 +410,18 @@ export function useUserChat(): IUseUserChatReturn {
     return () => window.removeEventListener("focus", handleFocus);
   }, [isOpen, conversation?.id, loadMessages, fetchUnreadCount]);
 
-  // Listen to cross-tab BroadcastChannel events with strict type-guarding (NO infinite loops)
+  // Listen to cross-tab BroadcastChannel & SSE events with strict type-guarding
   useEffect(() => {
     const unsubscribe = subscribeToChatEvents((event: IChatEventPayload) => {
-      if (conversation?.id && event.conversationId === conversation.id) {
+      const currentConvId = conversation?.id;
+      if (currentConvId && event.conversationId === currentConvId) {
         if (event.type === CHAT_EVENTS.MESSAGE_SENT) {
-          void loadMessages(conversation.id, true);
-          // Only mark as read if an ADMIN sent the message and chat is currently open
-          if (isOpen && event.sender === "ADMIN") {
-            void markAsRead(conversation.id);
+          void loadMessages(currentConvId, true);
+          if (isOpenRef.current && event.sender === "ADMIN") {
+            void markAsRead(currentConvId);
           }
-        } else if (event.type === CHAT_EVENTS.MESSAGES_READ && event.sender === "ADMIN") {
-          // Admin read our messages -> update local status without another network request
+        } else if (event.type === CHAT_EVENTS.MESSAGES_READ) {
+          // Admin read our messages -> INSTANTLY update all USER messages to status: READ (double ticks!)
           setMessages((prev) =>
             prev.map((m) => (m.sender === "USER" ? { ...m, status: "READ" } : m))
           );
@@ -393,7 +432,7 @@ export function useUserChat(): IUseUserChatReturn {
     });
 
     return unsubscribe;
-  }, [conversation?.id, isOpen, loadMessages, markAsRead, fetchUnreadCount]);
+  }, [conversation?.id, loadMessages, markAsRead, fetchUnreadCount]);
 
   // Auto-scroll messages container safely without scrolling the parent window
   useEffect(() => {

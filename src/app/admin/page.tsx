@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAdminDiamonds } from "@/hooks/useAdminDiamonds";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useDiamondStore } from "@/store/diamond.store";
@@ -23,14 +24,63 @@ import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminLiveChat } from "@/components/admin/AdminLiveChat";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
 
-export default function AdminPage() {
+type AdminTabType =
+  | "INVENTORY"
+  | "ORDERS"
+  | "SOLD"
+  | "CHAT"
+  | "INQUIRIES"
+  | "CACHE"
+  | "QUEUE"
+  | "SECURITY"
+  | "HEALTH";
+
+function resolveTabFromParam(param: string | null): AdminTabType | null {
+  if (param === "CHAT") return "CHAT";
+  if (param === "ORDERS") return "ORDERS";
+  if (param === "INQUIRIES") return "INQUIRIES";
+  if (param === "SOLD") return "SOLD";
+  if (param === "CACHE") return "CACHE";
+  if (param === "QUEUE") return "QUEUE";
+  if (param === "SECURITY") return "SECURITY";
+  if (param === "HEALTH") return "HEALTH";
+  return null;
+}
+
+function AdminPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { pendingCount: pendingOrdersCount } = useAdminOrders();
   const { stats: inquiryStats } = useAdminInquiries();
   const { unreadCount: unreadInquiriesCount } = useInquiryStore();
   const { openCreateModal } = useDiamondStore();
-  const [adminTab, setAdminTab] = React.useState<"INVENTORY" | "ORDERS" | "SOLD" | "CHAT" | "INQUIRIES" | "CACHE" | "QUEUE" | "SECURITY" | "HEALTH">("INVENTORY");
   const { stats, error, refetch } = useAdminDiamonds();
+
+  const tabParam = searchParams.get("tab");
+  const conversationIdParam = searchParams.get("conversationId");
+
+  const [selectedTab, setSelectedTab] = React.useState<AdminTabType>("INVENTORY");
+
+  // Active tab is derived directly from query parameter or local tab state
+  const adminTab: AdminTabType = resolveTabFromParam(tabParam) || selectedTab;
+
+  const setAdminTab = (tab: AdminTabType) => {
+    setSelectedTab(tab);
+    if (tabParam || conversationIdParam) {
+      router.replace(tab === "CHAT" ? `/admin?tab=CHAT` : `/admin`);
+    }
+  };
+
+  // Zero-latency in-page custom event for opening chat directly from notification click
+  React.useEffect(() => {
+    const handleOpenChatEvent = () => {
+      setSelectedTab("CHAT");
+    };
+
+    window.addEventListener("darkgems_open_admin_chat", handleOpenChatEvent);
+    return () => window.removeEventListener("darkgems_open_admin_chat", handleOpenChatEvent);
+  }, []);
 
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
   const unreadChatCount = useChatUnreadCount(isAdmin);
@@ -221,7 +271,15 @@ export default function AdminPage() {
       {adminTab === "SOLD" && <AdminSoldProductsTable />}
 
       {adminTab === "CHAT" && (
-        <AdminLiveChat onExit={() => setAdminTab("INVENTORY")} />
+        <AdminLiveChat
+          initialConversationId={conversationIdParam || undefined}
+          onExit={() => {
+            setAdminTab("INVENTORY");
+            if (tabParam || conversationIdParam) {
+              router.replace("/admin");
+            }
+          }}
+        />
       )}
 
       {adminTab === "INQUIRIES" && <AdminInquiriesTable />}
@@ -234,6 +292,26 @@ export default function AdminPage() {
 
       {adminTab === "HEALTH" && <AdminSystemHealth />}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-pulse">
+          <div className="h-10 bg-stone-200 rounded-xl w-64" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="h-28 bg-stone-200 rounded-2xl" />
+            <div className="h-28 bg-stone-200 rounded-2xl" />
+            <div className="h-28 bg-stone-200 rounded-2xl" />
+            <div className="h-28 bg-stone-200 rounded-2xl" />
+          </div>
+        </div>
+      }
+    >
+      <AdminPageContent />
+    </Suspense>
   );
 }
 

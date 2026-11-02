@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { IContactInquiry, IContactResponse } from "@/types/contact.types";
 import { broadcastInquiryEvent, INQUIRY_EVENTS } from "@/lib/inquiry-events";
+import { validateMobileNumber } from "@/lib/phone-validation";
 
 const INITIAL_FORM: IContactInquiry = {
   fullName: "",
@@ -17,6 +18,7 @@ const INITIAL_FORM: IContactInquiry = {
 
 export function useContactForm() {
   const [formData, setFormData] = useState<IContactInquiry>(INITIAL_FORM);
+  const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [createdInquiryId, setCreatedInquiryId] = useState<string | null>(null);
@@ -24,6 +26,9 @@ export function useContactForm() {
   const updateField = useCallback(
     <K extends keyof IContactInquiry>(field: K, value: IContactInquiry[K]) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
+      if (field === "phone") {
+        setPhoneError(undefined);
+      }
     },
     []
   );
@@ -37,6 +42,18 @@ export function useContactForm() {
         return;
       }
 
+      // Standard mobile number validation
+      let normalizedPhone = formData.phone.trim();
+      if (normalizedPhone) {
+        const phoneCheck = validateMobileNumber(normalizedPhone);
+        if (!phoneCheck.isValid) {
+          setPhoneError(phoneCheck.error || "Please enter a valid standard mobile number.");
+          toast.error(phoneCheck.error || "Invalid mobile number format.");
+          return;
+        }
+        normalizedPhone = phoneCheck.e164 || normalizedPhone;
+      }
+
       setIsSubmitting(true);
       toast.loading("Transmitting consultation request to DarkGem Concierge...", { id: "contact-submit" });
 
@@ -44,7 +61,10 @@ export function useContactForm() {
         const response = await fetch("/api/contact", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            phone: normalizedPhone,
+          }),
         });
 
         const data = (await response.json()) as IContactResponse;
@@ -68,6 +88,7 @@ export function useContactForm() {
         }
 
         setFormData(INITIAL_FORM);
+        setPhoneError(undefined);
 
         // Broadcast event immediately so Admin Panel updates in real time without refreshing
         broadcastInquiryEvent(INQUIRY_EVENTS.INQUIRY_CREATED, data.inquiryId, data.inquiryId);
@@ -93,6 +114,7 @@ export function useContactForm() {
 
   return {
     formData,
+    phoneError,
     updateField,
     submitInquiry,
     isSubmitting,

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Label } from "@/components/ui/Label";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import {
   Select,
   SelectContent,
@@ -61,6 +62,7 @@ const FAQ_ITEMS = [
 export default function ContactPage() {
   const {
     formData,
+    phoneError,
     updateField,
     submitInquiry,
     isSubmitting,
@@ -176,17 +178,13 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Phone */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="phone">Phone / WhatsApp Number *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => updateField("phone", e.target.value)}
-                      placeholder="e.g. +91 98765 43210"
-                      className="bg-stone-50/50 border-stone-200 focus-visible:border-amber-600 focus-visible:ring-amber-600"
-                    />
-                  </div>
+                  <PhoneInput
+                    label="Phone / WhatsApp Number"
+                    required
+                    value={formData.phone}
+                    onChange={(val) => updateField("phone", val)}
+                    error={phoneError}
+                  />
 
                   {/* Inquiry Type - SHADCN SELECT */}
                   <div className="space-y-1.5">

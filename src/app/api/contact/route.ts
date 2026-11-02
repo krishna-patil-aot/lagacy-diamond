@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { IContactInquiry, IContactResponse } from "@/types/contact.types";
 import { createInquiry } from "@/lib/inquiry-repository";
 import { siteConfig } from "@/config/site.config";
+import { validateMobileNumber } from "@/lib/phone-validation";
 
 export async function POST(request: NextRequest): Promise<NextResponse<IContactResponse>> {
   try {
@@ -18,10 +19,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<IContactR
       );
     }
 
+    // Server-side mobile number validation
+    let normalizedPhone = body.phone?.trim() || "";
+    if (normalizedPhone) {
+      const phoneValidation = validateMobileNumber(normalizedPhone);
+      if (!phoneValidation.isValid) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: phoneValidation.error || "Please enter a valid standard mobile number.",
+            error: "Invalid mobile number",
+          },
+          { status: 400 }
+        );
+      }
+      normalizedPhone = phoneValidation.e164;
+    }
+
     const savedInquiry = await createInquiry({
       fullName: body.fullName,
       email: body.email,
-      phone: body.phone,
+      phone: normalizedPhone,
       inquiryType: body.inquiryType,
       preferredCaratRange: body.preferredCaratRange,
       budgetRange: body.budgetRange,

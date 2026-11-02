@@ -42,12 +42,12 @@ export function useChatUnreadCount(isAdmin: boolean = false, email?: string): nu
 
     window.addEventListener("focus", handleFocus);
 
-    // Relaxed 60s background heartbeat when tab is active
+    // 10s background heartbeat when tab is active
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         void fetchCount();
       }
-    }, 60000);
+    }, 10000);
 
     return () => {
       isMounted = false;
@@ -58,7 +58,10 @@ export function useChatUnreadCount(isAdmin: boolean = false, email?: string): nu
 
   useEffect(() => {
     const unsub = subscribeToChatEvents((event) => {
-      if (event.type === CHAT_EVENTS.MESSAGE_SENT) {
+      if (
+        event.type === CHAT_EVENTS.MESSAGE_SENT ||
+        event.type === CHAT_EVENTS.MESSAGES_READ
+      ) {
         void fetchCount();
       }
     });

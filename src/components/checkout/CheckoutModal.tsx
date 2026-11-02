@@ -1,12 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -23,8 +30,17 @@ import {
   ChevronLeft,
   Lock,
   ShieldAlert,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { LoginRequiredModal } from "@/components/common/LoginRequiredModal";
+import { PhoneInput } from "@/components/ui/PhoneInput";
+import { usePostalLookup } from "@/hooks/usePostalLookup";
+import {
+  POPULAR_COUNTRIES,
+  getCountryCodeByName,
+  getCountryNameByCode,
+} from "@/lib/phone-validation";
 import { toast } from "sonner";
 
 interface CheckoutModalProps {
@@ -64,8 +80,29 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = shippingForm;
+
+  const currentCountry = watch("country") || "India";
+  const currentCountryCode = useMemo(() => {
+    return getCountryCodeByName(currentCountry) || "IN";
+  }, [currentCountry]);
+
+  const {
+    isLoading: isPostalLoading,
+    detectedInfo: postalInfo,
+    lookupPostalCode,
+  } = usePostalLookup({
+    onAutoFill: (result) => {
+      if (result.city) setValue("city", result.city, { shouldValidate: true });
+      if (result.state) setValue("state", result.state, { shouldValidate: true });
+      toast.success(`Postal Code recognized: ${result.city}, ${result.state}`, {
+        duration: 2500,
+      });
+    },
+  });
 
   if (!isOpen) return null;
 
@@ -307,42 +344,125 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-xs font-medium text-stone-700">Full Legal Name *</label>
-              <Input placeholder="e.g. Rahul Sharma" {...register("fullName")} error={errors.fullName?.message} />
+              <Input placeholder="Full legal name" {...register("fullName")} error={errors.fullName?.message} />
             </div>
             <div>
               <label className="block mb-1 text-xs font-medium text-stone-700">Tracking Email Address *</label>
-              <Input type="email" placeholder="e.g. rahul.sharma@example.com" {...register("email")} error={errors.email?.message} />
+              <Input type="email" placeholder="name@example.com" {...register("email")} error={errors.email?.message} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 text-xs font-medium text-stone-700">Contact Telephone *</label>
-              <Input placeholder="e.g. +91 98765 43210" {...register("phone")} error={errors.phone?.message} />
+              <PhoneInput
+                label="Contact Telephone"
+                required
+                value={watch("phone") || ""}
+                country={currentCountryCode}
+                onCountryChange={(code) => {
+                  const countryName = getCountryNameByCode(code);
+                  setValue("country", countryName, { shouldValidate: true });
+                  const pin = watch("postalCode");
+                  if (pin) lookupPostalCode(pin, countryName);
+                }}
+                onChange={(val) => setValue("phone", val, { shouldValidate: true })}
+                error={errors.phone?.message}
+              />
             </div>
             <div>
-              <label className="block mb-1 text-xs font-medium text-stone-700">Country *</label>
-              <Input placeholder="e.g. India" {...register("country")} error={errors.country?.message} />
+              <label className="block mb-1.5 text-xs font-medium text-stone-700">Country *</label>
+              <Select
+                value={currentCountry}
+                onValueChange={(val) => {
+                  setValue("country", val, { shouldValidate: true });
+                  const pin = watch("postalCode");
+                  if (pin) lookupPostalCode(pin, val);
+                }}
+              >
+                <SelectTrigger className="h-10 text-xs bg-white border-stone-200">
+                  <SelectValue placeholder="Select destination country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 bg-white border border-stone-200 shadow-xl rounded-xl z-50">
+                  {POPULAR_COUNTRIES.map((c) => (
+                    <SelectItem
+                      key={c.code}
+                      value={c.name}
+                      className="text-xs py-2 cursor-pointer focus:bg-amber-50"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-base">{c.flag}</span>
+                        <span className="font-medium text-stone-800">{c.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.country && (
+                <p className="text-[11px] text-rose-500 font-medium mt-1">
+                  {errors.country.message}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block mb-1 text-xs font-medium text-stone-700">Street & Apartment / Building Address *</label>
-            <Input placeholder="e.g. 102, Bandra Kurla Complex, Bandra East" {...register("street")} error={errors.street?.message} />
+            <label className="block mb-1 text-xs font-medium text-stone-700">Street & Building Address *</label>
+            <Input
+              placeholder="House / Flat / Suite no., Street name, Landmark"
+              {...register("street")}
+              error={errors.street?.message}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block mb-1 text-xs font-medium text-stone-700">City *</label>
-              <Input placeholder="e.g. Mumbai" {...register("city")} error={errors.city?.message} />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-stone-700">
+                  {currentCountryCode === "US" ? "ZIP Code *" : "PIN / Postal Code *"}
+                </label>
+                {isPostalLoading ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-700">
+                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    <span>Detecting...</span>
+                  </span>
+                ) : postalInfo ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 font-medium">
+                    <Check className="h-2.5 w-2.5 stroke-[2.5]" />
+                    <span>Auto-filled</span>
+                  </span>
+                ) : null}
+              </div>
+              <Input
+                placeholder={
+                  currentCountryCode === "IN"
+                    ? "6-digit PIN code"
+                    : currentCountryCode === "US"
+                    ? "5-digit ZIP code"
+                    : "Postal code"
+                }
+                {...register("postalCode")}
+                onChange={(e) => {
+                  register("postalCode").onChange(e);
+                  lookupPostalCode(e.target.value, currentCountry);
+                }}
+                error={errors.postalCode?.message}
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-xs font-medium text-stone-700">City / District *</label>
+              <Input
+                placeholder="City or District"
+                {...register("city")}
+                error={errors.city?.message}
+              />
             </div>
             <div>
               <label className="block mb-1 text-xs font-medium text-stone-700">State / Region *</label>
-              <Input placeholder="e.g. Maharashtra" {...register("state")} error={errors.state?.message} />
-            </div>
-            <div>
-              <label className="block mb-1 text-xs font-medium text-stone-700">PIN / Postal Code *</label>
-              <Input placeholder="e.g. 400051" {...register("postalCode")} error={errors.postalCode?.message} />
+              <Input
+                placeholder="State / Province"
+                {...register("state")}
+                error={errors.state?.message}
+              />
             </div>
           </div>
 
